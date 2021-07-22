@@ -74,6 +74,6 @@ def inspect(filename):
         if 'abs_pos' in obj and obj['o_num'] != -2:
             pos_index[obj['abs_pos']] = f"{obj['o_num']}.{obj['o_gen']}.{obj['o_ver']}"
     file_seq.sort(key=lambda x: x.get('abs_pos') or x.get('a_'))  
-    print(build_html(file_seq, pos_index, filename))
+    print(build_html(file_seq, pos_index, filename, bdata[:8]))
 
 

@@ -70,12 +70,12 @@ TRAILER = '''
 TRUNCATED = '<em> ...(truncated) </em>'
 
 
-def build_html(articles, pos_index, filename):
+def build_html(articles, pos_index, filename, version):
     """Compose the page layout"""
     page = HEADER
     last_o = max(list(pos_index.keys()))
     startxref = pos_index[last_o]
-    page += build_header(filename, startxref)
+    page += build_header(filename, startxref, version)
     for article in articles:
         obj_attr = (article['o_num'], article['o_gen'], article['o_ver'])
         obj = article['content']
@@ -94,7 +94,7 @@ def build_html(articles, pos_index, filename):
     page += TRAILER
     return page
 
-def build_header(filename, startxref):
+def build_header(filename, startxref, version):
     """Add a banner with the file name"""
     ret = ''
     ret += f'<div class="header">\n'
@@ -103,6 +103,7 @@ def build_header(filename, startxref):
     ret += f'<a class="header-link" href="https://github.com/desgeeko/pdfsyntax">pdfsyntax</a></pre>'
     ret += f'</div>\n'
     ret += f'<div class="content">\n'
+    ret += f'<pre>{version.decode("ascii")}</pre>\n'
     return ret
 
 def add_startxref(article, pos_index):
