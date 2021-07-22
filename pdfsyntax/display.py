@@ -218,7 +218,8 @@ def build_obj_header(article):
     ret = ''
     ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n<pre>\n'
     if o_num == 0:
-        ret += f'<span class="obj-header"><strong>XREF table & trailer</strong></span>\n'
+        ret += f'<span class="obj-header"><strong>XREF table & trailer</strong></span>'
+        ret += f'<em class="obj-low">  at offset {article.get("abs_pos")}</em>'
     else:
         ret += f'<span class="obj-header"><strong>{o_num}</strong> <span class="obj-low">{o_gen} obj</span></span>'
         if 'abs_pos' in article:

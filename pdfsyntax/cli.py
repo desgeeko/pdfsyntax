@@ -43,7 +43,7 @@ def inspect(filename):
             memoize_obj_in_cache([snapshot], doc.bdata, i, cache)
             snapshot[i]['content'] = cache[i]
             snapshot[i]['mini_index'] = mini_index
-            if i == 0: print(snapshot[i])
+            #if i == 0: print(snapshot[i])
         file_seq.extend(snapshot)
     file_seq = [x for x in file_seq if x is not None and 'ignore' not in x]
     pos_index = {}
@@ -72,6 +72,8 @@ def inspect(filename):
     
     for obj in file_seq:
         if 'abs_pos' in obj and obj['o_num'] != -2:
+            if 'xref_table_pos' in obj:
+                obj['abs_pos'] = obj['xref_table_pos']
             pos_index[obj['abs_pos']] = f"{obj['o_num']}.{obj['o_gen']}.{obj['o_ver']}"
     file_seq.sort(key=lambda x: x.get('abs_pos') or x.get('a_'))  
     print(build_html(file_seq, pos_index, filename, bdata[:8]))
