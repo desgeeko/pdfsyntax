@@ -57,6 +57,10 @@ HEADER = '''
         .content {
             margin-top: 5em;
         }
+        pre {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+        }
     </style>
 </head>
 <body>
@@ -216,7 +220,7 @@ def build_obj_header(article):
     obj = article['content']
     o_num, o_gen, o_ver = article['o_num'], article['o_gen'], article['o_ver']
     ret = ''
-    ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n<pre>\n'
+    ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n<pre>\n\n\n'
     if o_num == 0:
         ret += f'<span class="obj-header"><strong>XREF table & trailer</strong></span>'
         ret += f'<em class="obj-low">  at offset {article.get("abs_pos")}</em>'
@@ -226,14 +230,14 @@ def build_obj_header(article):
             ret += f'<em class="obj-low">  at offset {article.get("abs_pos")}</em>'
         else:
             ret += f'<em class="obj-low">  from object stream {article.get("env_num")} above</em>'
-    ret += f'<pre class="obj-body">\n'
+    ret += f'<div class="obj-body">\n'
     return ret
 
 def build_obj_trailer():
     """Add closing elements to object"""
     ret = ''
-    ret += f'</pre>\n'
-    ret += f'\n</pre>\n</div>\n'
+    ret += f'</div>\n'
+    ret += f'</pre>\n</div>\n'
     return ret
 
 
