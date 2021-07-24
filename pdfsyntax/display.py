@@ -226,7 +226,7 @@ def build_obj_header(article):
         ret += f'<em class="obj-low">  at offset {article.get("abs_pos")}</em>'
     else:
         ret += f'<span class="obj-header"><strong>{o_num}</strong> <span class="obj-low">{o_gen} obj</span></span>'
-        if 'abs_pos' in article:
+        if 'a_' not in article:
             ret += f'<em class="obj-low">  at offset {article.get("abs_pos")}</em>'
         else:
             ret += f'<em class="obj-low">  from object stream {article.get("env_num")} above</em>'

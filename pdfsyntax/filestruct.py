@@ -135,7 +135,7 @@ def build_index_from_chrono(chrono):
         for obj in abs_list:
             abs_pos_array[obj['o_num']] = obj['abs_pos']
         for obj in env_list:
-            obj['a_'] = abs_pos_array[obj['env_num']] + obj['o_pos'] / 1000
+            obj['a_'] = abs_pos_array[obj['env_num']] + (obj['o_pos'] + 1) / 1000
     return index
 
 
