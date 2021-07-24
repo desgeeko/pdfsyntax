@@ -93,6 +93,7 @@ def build_chrono_from_xref(bdata):
             tmp_index = parse_xref_table(bdata, xref_pos)
             chrono = tmp_index + chrono
             i, j, _ = next_token(bdata, chrono[0]['abs_pos'])
+            i, j, _ = next_token(bdata, j)                     # actual trailer dict
             trailer = parse_obj(bdata[i:j])
         else: # must be a /XRef stream
             i = beginning_next_non_empty_line(bdata, xref_pos)
@@ -111,23 +112,26 @@ def build_index_from_chrono(chrono):
     prev_pos = 0
     for obj in chrono:
         if obj['o_num'] == 0 and obj['abs_pos'] > prev_pos:
-           m = m[:]
-           m[0] = None # NEW
-           index.append(m)
-           doc_ver += 1
-           prev_pos = obj['abs_pos']
+            m = m[:]
+            m[0] = None
+            index.append(m)
+            doc_ver += 1
+            prev_pos = obj['abs_pos']
         if m[obj['o_num']] is None:
-            obj['o_ver'] = 0
+            if obj['o_num'] == 0:
+                obj['o_ver'] = doc_ver
+            else:
+                obj['o_ver'] = 0
         else:
             obj['o_ver'] = index[-1][obj['o_num']]['o_ver'] + 1
         obj['doc_ver'] = doc_ver
-        if obj['o_num'] == 0 and m[obj['o_num']] is not None: #NEW
-            m[0] = [m[0] ,obj] #NEW
+        if obj['o_num'] == 0 and m[obj['o_num']] is not None:
+            m[0] = [m[0] ,obj]
         else:
             m[obj['o_num']] = obj
     for rev in index:
-        abs_list = [obj for obj in rev if 'abs_pos' in obj]
-        env_list = [obj for obj in rev if 'env_num' in obj]
+        abs_list = [obj for obj in rev if obj is not None and 'abs_pos' in obj]
+        env_list = [obj for obj in rev if obj is not None and 'env_num' in obj]
         for obj in abs_list:
             abs_pos_array[obj['o_num']] = obj['abs_pos']
         for obj in env_list:

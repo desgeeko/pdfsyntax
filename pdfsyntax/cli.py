@@ -26,6 +26,8 @@ def inspect(filename):
         cache = nb_obj * [None]
         mini_index = nb_obj * [None]
         for i in range(1, len(snapshot)):
+            if snapshot[i] is None:
+                continue
             mini_index[i] = (snapshot[i]['o_gen'], snapshot[i]['o_ver'])
         if type(snapshot[0]) == list:
             second = snapshot[0].pop()
@@ -37,13 +39,14 @@ def inspect(filename):
                 file_seq.append(snapshot[0])
             snapshot[0] = second
         for i in range(len(snapshot)):
+            if snapshot[i] is None:
+                continue
             if snapshot[i]['o_num'] == 0 and 'xref_stream' in snapshot[i]:
                 snapshot[i]['ignore'] = True
                 continue
             memoize_obj_in_cache([snapshot], doc.bdata, i, cache)
             snapshot[i]['content'] = cache[i]
             snapshot[i]['mini_index'] = mini_index
-            #if i == 0: print(snapshot[i])
         file_seq.extend(snapshot)
     file_seq = [x for x in file_seq if x is not None and 'ignore' not in x]
     pos_index = {}
@@ -75,7 +78,10 @@ def inspect(filename):
             if 'xref_table_pos' in obj:
                 obj['abs_pos'] = obj['xref_table_pos']
             pos_index[obj['abs_pos']] = f"{obj['o_num']}.{obj['o_gen']}.{obj['o_ver']}"
-    file_seq.sort(key=lambda x: x.get('abs_pos') or x.get('a_'))  
+        if 'abs_pos' not in obj:
+            obj['abs_pos'] = obj['a_']
+    file_seq.sort(key=lambda x: x.get('abs_pos') or x.get('a_'))
+    file_seq = [x for i, x in enumerate(file_seq) if i == 0 or file_seq[i-1]['abs_pos'] != x['abs_pos']]
     print(build_html(file_seq, pos_index, filename, bdata[:8]))
 
 
