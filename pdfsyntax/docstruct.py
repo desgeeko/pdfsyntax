@@ -9,6 +9,15 @@ from collections import namedtuple
 
 Doc = namedtuple('Doc', 'bdata index cache')
 
+class Doc(Doc):
+    def __repr__(self):
+        present = [i for i, obj in enumerate(self.cache) if obj is not None]
+        res = ""
+        res += f"bdata={self.bdata[:30]}...{self.bdata[-30:]} ({len(self.bdata)} bytes)\n"
+        res += f"index=list of list, {len(self.index)} update(s) with {len(self.index[0])} objects\n"
+        res += f"cache=list, {len(present)} / {len(self.cache)} objects loaded\n"
+        return res
+
 EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
 
