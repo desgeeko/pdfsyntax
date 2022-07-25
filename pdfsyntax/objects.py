@@ -16,7 +16,7 @@ def skip_chars(chars, text, i):
     return None        
 
 
-def next_token(text, i):
+def next_token(text, i=0):
     """ syntax Find next token in raw string starting at some index
     """
     search = "TBD"
@@ -65,10 +65,18 @@ def next_token(text, i):
                     return (h, i + 1, 'TEXT')
         elif search == "KEYWORD":
             if single in b' \n\r>/]' or i == len(text) - 1:
-                return (h, i, 'KEYWORD')
+                if b'true' == text[h:i]:
+                    return (h, i, 'TRUE')
+                elif b'false' == text[h:i]:
+                    return (h, i, 'FALSE')
+                else:
+                    return (h, i, 'KEYWORD')
         elif search == "VALUE":
             if single in b' \n\r>/]' or i == len(text) - 1:
-                return (h, i, 'VALUE')
+                if b'.' in text[h:i]:
+                    return (h, i, 'REAL')
+                else:
+                    return (h, i, 'INTEGER')
         elif search == "STREAM":
             if text[i:i+11] == b'\r\nendstream' or text[i:i+10] == b'\nendstream':
                 return (h, i, 'STREAM')

@@ -11,7 +11,7 @@ clean:
 	rm -rf $(BLD_DIR)
 
 test:
-	python3 -m unittest discover $(TST_DIR)
+	python3 -m unittest discover $(TST_DIR) -v
 
 build:
 	python3 -m build
