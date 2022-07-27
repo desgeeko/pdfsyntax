@@ -43,6 +43,59 @@ class Tokenization(unittest.TestCase):
     def test_stream(self):
         self.assertEqual(pdf.next_token(b'stream\n xyz \nendstream '), (7, 12, 'STREAM'))
 
+class Parsing(unittest.TestCase):
+
+    def test_dictionary(self):
+        self.assertEqual(pdf.parse_obj(b'<< /abc 123 >>'), {b'/abc': b'123'})
+
+    def test_array(self):
+        self.assertEqual(pdf.parse_obj(b'[ /abc 123 ]'), [b'/abc', b'123'])
+
+    def test_nested_dictionary(self):
+        self.assertEqual(pdf.parse_obj(b'<< /abc << /def 123 >> >>'), {b'/abc': {b'/def': b'123'}})
+
+    def test_nested_dict_array(self):
+        self.assertEqual(pdf.parse_obj(b'<< /abc [ /def 123 ] >>'), {b'/abc': [b'/def', b'123']})
+
+    def test_compressed(self):
+        self.assertEqual(pdf.parse_obj(b'<</abc[/def/ghi]>>'), {b'/abc': [b'/def', b'/ghi']})
+
+class Xref(unittest.TestCase):
+
+    xt =  b'xref\n'
+    xt += b'0 2\n'
+    xt += b'0000000000 65535 f\n'
+    xt += b'0000000123 00001 n\n'
+    xt += b'0000000456 00001 n\n'
+
+    def test_xref_table(self):
+        self.assertEqual(len(pdf.parse_xref_table(self.xt, 0)), 3)
+
+    def test_xref_table2(self):
+        self.assertEqual(pdf.parse_xref_table(self.xt, 0)[1]['o_num'], 1)
+
+    def test_xref_table3(self):
+        self.assertEqual(pdf.parse_xref_table(self.xt, 0)[2]['abs_pos'], 456)
+
+class Chrono(unittest.TestCase):
+
+    xt =  b'   \n'
+    xt += b'xref\n'
+    xt += b'0 2\n'
+    xt += b'0000000000 65535 f\n'
+    xt += b'0000000123 00001 n\n'
+    xt += b'0000000456 00001 n\n'
+    xt += b'\n'
+    xt += b'trailer\n'
+    xt += b'<< /abc /ok >>'
+    xt += b'\n'
+    xt += b'startxref\n'
+    xt += b'4\n'
+
+    def test_xref_table(self):
+        self.assertEqual(pdf.build_chrono_from_xref(self.xt), [])
+
+
 #class Unicode(unittest.TestCase):
 #
 #    def test_unicode(self):

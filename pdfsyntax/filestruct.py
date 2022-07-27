@@ -82,7 +82,11 @@ def build_chrono_from_xref(bdata):
         i, j, _ = next_token(bdata, j)                     # actual trailer dict
         trailer = parse_obj(bdata[i:j])
     else: # must be a /XRef stream
-        i = beginning_next_non_empty_line(bdata, xref_pos)
+        #i = beginning_next_non_empty_line(bdata, xref_pos)
+        i, j, _ = next_token(bdata, xref_pos)
+        i, j, _ = next_token(bdata, j)
+        i, j, _ = next_token(bdata, j)
+        i, j, _ = next_token(bdata, j)
         xref = parse_obj(bdata, i)
         chrono = parse_xref_stream(xref, xref_pos)
         trailer = xref['stream_def']
@@ -96,7 +100,10 @@ def build_chrono_from_xref(bdata):
             i, j, _ = next_token(bdata, j)                     # actual trailer dict
             trailer = parse_obj(bdata[i:j])
         else: # must be a /XRef stream
-            i = beginning_next_non_empty_line(bdata, xref_pos)
+            #i = beginning_next_non_empty_line(bdata, xref_pos)
+            i, j, _ = next_token(bdata, xref_pos)
+            i, j, _ = next_token(bdata, j)
+            i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)
             chrono = parse_xref_stream(xref, xref_pos) + chrono
             trailer = xref['stream_def']

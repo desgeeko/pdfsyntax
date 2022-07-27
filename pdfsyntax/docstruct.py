@@ -48,7 +48,9 @@ def memoize_obj_in_cache(idx, bdata, key, cache, rev=-1):
             indexes = index
         obj = {}
         for index in indexes:
-            i = beginning_next_non_empty_line(bdata, index['abs_pos'])
+            #i = beginning_next_non_empty_line(bdata, index['abs_pos'])
+            i, j, _ = next_token(bdata, index['abs_pos'])
+            i, j, _ = next_token(bdata, j)
             text = bdata
             i_obj = parse_obj(text, i)
             if 'stream_def' in i_obj:
@@ -56,7 +58,11 @@ def memoize_obj_in_cache(idx, bdata, key, cache, rev=-1):
             obj.update(i_obj)
         cache[key] = obj    
     elif 'env_num' not in idx[rev][key]:
-        i = beginning_next_non_empty_line(bdata, idx[rev][key]['abs_pos'])
+        #i = beginning_next_non_empty_line(bdata, idx[rev][key]['abs_pos'])
+        i, j, _ = next_token(bdata, idx[rev][key]['abs_pos'])
+        i, j, _ = next_token(bdata, j)
+        i, j, _ = next_token(bdata, j)
+        i, j, _ = next_token(bdata, j)
         text = bdata
         obj = parse_obj(text, i)
         if key == 0 and 'stream_def' in obj:
@@ -64,9 +70,11 @@ def memoize_obj_in_cache(idx, bdata, key, cache, rev=-1):
         cache[key] = obj    
     else:
         container = idx[rev][key]['env_num']
-        #print(key)
-        #print(container)
-        i = beginning_next_non_empty_line(bdata, idx[rev][container]['abs_pos'])
+        #i = beginning_next_non_empty_line(bdata, idx[rev][container]['abs_pos'])
+        i, j, _ = next_token(bdata, idx[rev][container]['abs_pos'])
+        i, j, _ = next_token(bdata, j)
+        i, j, _ = next_token(bdata, j)
+        i, j, _ = next_token(bdata, j)
         text = bdata
         c_obj = parse_obj(text, i)
         cache[container] = c_obj
@@ -91,10 +99,8 @@ def follow_node(idx, bdata, obj, cache):
 def get_pages(idx, bdata, node, cache):
     """ """
     accu = []
-    #print(node)
     if node[b'/Type'] == b'/Pages':
         for i in node[b'/Kids']:
-            #print(i)
             ref = isRef(i)
             if ref:
                 memoize_obj_in_cache(idx, bdata, int(ref), cache)

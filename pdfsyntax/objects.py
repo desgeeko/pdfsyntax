@@ -186,14 +186,14 @@ def parse_obj(text, start=0):
         return None
 
 
-def beginning_next_non_empty_line(bdata, i):
-    """ doc
-    """
-    while bdata[i] not in EOL:
-        i += 1
-    while bdata[i] in EOL:
-        i += 1
-    return i
+#def beginning_next_non_empty_line(bdata, i):
+#    """ doc
+#    """
+#    while bdata[i] not in EOL:
+#        i += 1
+#    while bdata[i] in EOL:
+#        i += 1
+#    return i
 
 
 
