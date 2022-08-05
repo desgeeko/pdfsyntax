@@ -202,7 +202,9 @@ def follow_obj(obj, mini_index, pos_index, depth=0):
         ret += ']'        
     else:
         comment = False
-        if obj[0:1] == b'(':
+        if type(obj) == int or type(obj) == float or type(obj) == bool or type(obj) == str:
+            ret += str(obj)
+        elif obj[0:1] == b'(':
             if len(obj) > VALUE_MAX_WIDTH:
                 obj = obj[:VALUE_MAX_WIDTH]
                 comment = True

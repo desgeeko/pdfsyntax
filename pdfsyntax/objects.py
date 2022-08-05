@@ -98,7 +98,7 @@ def replace_ref(tokens):
     new_list = []
     i = 0
     while i < size:
-        if i < size - 2 and tokens[i + 2]  == b'R':
+        if i < size - 2 and tokens[i + 2]  == 'R':
             new_list.append({'_REF': tokens[i]})
             i += 3
         else:
@@ -131,6 +131,19 @@ def decode_stream(stream, stream_def):
         res = decode_predictor(res, predictor, columns)
     return res
 
+def dedicated_type(text, type):
+    if type == 'INTEGER':
+        return int(text)
+    elif type == 'REAL':
+        return float(text)
+    elif type == 'TRUE':
+        return True
+    elif type == 'FALSE':
+        return False
+    elif type == 'KEYWORD':
+        return text.decode('ascii')
+    else:
+        return text
 
 def parse_obj(text, start=0):
     """ syntax
@@ -156,7 +169,8 @@ def parse_obj(text, start=0):
                 if ttt == 'DICT' or ttt == 'ARRAY':
                     obj = parse_obj(text[h:i])
                 else:
-                    obj = text[h:i]
+                    #obj = text[h:i]
+                    obj = dedicated_type(text[h:i], ttt)
                 res_array.append(obj)
         toggle = True
         res_array = replace_ref(res_array)
@@ -178,12 +192,13 @@ def parse_obj(text, start=0):
         while i < j1:
             h, i, ttt = next_token(text, i)
             if ttt:
-                obj = text[h:i]
+                obj = dedicated_type(text[h:i], ttt)
                 res.append(obj)
         res = replace_ref(res)
         return res
+    
     else:
-        return None
+        return dedicated_type(text[h1:j1], t1)
 
 
 #def beginning_next_non_empty_line(bdata, i):

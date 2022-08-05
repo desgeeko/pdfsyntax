@@ -123,7 +123,9 @@ def build_cache(bdata, index):
     """ """
     size = len(index[-1])
     cache = memoize_obj_in_cache(index, bdata, 0, size * [None])
-    cat = int(cache[0][b'/Root']['_REF'].split()[0])
+    #cat = int(cache[0][b'/Root']['_REF'].split()[0])
+    #print(cache)
+    cat = cache[0][b'/Root']['_REF']
     cache = memoize_obj_in_cache(index, bdata, cat, cache)
     return cache
 
