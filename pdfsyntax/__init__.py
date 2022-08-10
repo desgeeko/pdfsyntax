@@ -1,5 +1,5 @@
 """Package pdfsyntax"""
 
-from .docstruct import *
+from .api import *
 
 __all__ = []

@@ -113,7 +113,8 @@ def build_page_list(doc):
     """ """
     bdata, idx, cache = doc
     cache = memoize_obj_in_cache(idx, bdata, 0, cache)
-    cat = int(cache[0][b'/Root']['_REF'].split()[0])
+    #cat = int(cache[0][b'/Root']['_REF'].split()[0])
+    cat = cache[0][b'/Root']['_REF']
     cache = memoize_obj_in_cache(idx, bdata, cat, cache)
     pages = follow_node(idx, bdata, cache[cat][b'/Pages'], cache)
     page_index = get_pages(idx, bdata, pages, cache)
@@ -128,14 +129,6 @@ def build_cache(bdata, index):
     cat = cache[0][b'/Root']['_REF']
     cache = memoize_obj_in_cache(index, bdata, cat, cache)
     return cache
-
-def init_doc(bdata):
-    """ """
-    chrono = build_chrono_from_xref(bdata)
-    index = build_index_from_chrono(chrono)
-    cache = build_cache(bdata, index)
-    doc = Doc(bdata, index, cache)
-    return doc, chrono
 
 def get_fonts(doc, page_num):
     """ """
@@ -170,23 +163,7 @@ def print_page(doc, page_num):
             print(dec_fun(text))
     return None
 
-def load(fp):
+def version(doc: Doc) -> bytes:
     """ """
-    bdata = fp.read()
-    doc, _ = init_doc(bdata)
-    return doc
-
-def loads(bdata):
-    """ """
-    doc, _ = init_doc(bdata)
-    return doc
-
-def read_pdf(filename):
-    """ """
-    bfile = open(filename, 'rb')
-    bdata = bfile.read()
-    bfile.close()
-    doc, _ = init_doc(bdata)
-    return doc
-
+    return doc.bdata[5:8]
 

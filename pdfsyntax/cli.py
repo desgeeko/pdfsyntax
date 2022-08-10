@@ -3,6 +3,7 @@
 import argparse
 from .docstruct import *
 from .objects import *
+from .api import *
 from .display import build_html
 
 def main():
