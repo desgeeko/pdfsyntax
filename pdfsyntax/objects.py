@@ -1,6 +1,5 @@
 """Module pdfsyntax.objects: Parser"""
 
-import re
 import zlib
 from collections import namedtuple
 
