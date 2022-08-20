@@ -33,10 +33,20 @@ def read_pdf(filename: str, use_cache=True) -> Doc:
     doc, _ = init_doc(bdata, use_cache)
     return doc
 
-def info(doc: Doc) -> dict:
+def metadata(doc: Doc) -> dict:
     """ """
     ret = {}
     ret['version'] = version(doc)
+    ret['pages'] = number_pages(doc)
+    i = info(doc) or {}
+    ret['title'] = i.get(b'/Title', "N/A")
+    ret['author'] = i.get(b'/Author', "N/A")
+    ret['subject'] = i.get(b'/Subject', "N/A")
+    ret['keywords'] = i.get(b'/Keywords', "N/A")
+    ret['creator'] = i.get(b'/Creator', "N/A")
+    ret['producer'] = i.get(b'/Producer', "N/A")
+    ret['creationdate'] = i.get(b'/CreationDate', "N/A")
+    ret['moddate'] = i.get(b'/ModDate', "N/A")
     return ret
 
 

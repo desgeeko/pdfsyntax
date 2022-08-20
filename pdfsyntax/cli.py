@@ -8,11 +8,23 @@ from .display import build_html
 
 def main():
     parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax', description='Navigate through the structure of a PDF file')
-    parser.add_argument('command', type=str, choices=['inspect'], help='Command')
+    parser.add_argument('command', type=str, choices=['inspect', 'overview'], help='Command')
     parser.add_argument('filename', type=str, help='PDF file name')
     args = parser.parse_args()
     if args.command == 'inspect':
         inspect(args.filename)
+    elif args.command == 'overview':
+        overview(args.filename)
+
+def overview(filename):
+    """ """
+    bfile = open(filename, 'rb')
+    bdata = bfile.read()
+    bfile.close()
+    doc = loads(bdata)
+    m = metadata(doc)
+    for key in m:
+        print(f"{key}: {m[key]}")
 
 def inspect(filename):
     """Reconstruct file sequence of objects from index, sorted by absolute position"""

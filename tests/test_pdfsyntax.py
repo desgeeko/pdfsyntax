@@ -77,6 +77,30 @@ class Xref(unittest.TestCase):
     def test_xref_table3(self):
         self.assertEqual(pdf.parse_xref_table(self.xt, 0)[2]['abs_pos'], 456)
 
+class SimpleFile(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.doc = pdf.read_pdf('./samples/simple_text_string.pdf')
+
+    def test_index_length(self):
+        self.assertEqual(len(self.doc.index), 1)
+
+    def test_prev(self):
+        self.assertEqual(b'/Prev' in self.doc.cache[0], False)
+
+class Updating(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.doc = pdf.read_pdf('./samples/add_text_annotation.pdf')
+
+    def test_index_length(self):
+        self.assertEqual(len(self.doc.index), 2)
+
+    def test_prev(self):
+        self.assertEqual(b'/Prev' in self.doc.cache[0], True)
+
 
 #class Unicode(unittest.TestCase):
 #

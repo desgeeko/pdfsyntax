@@ -146,12 +146,32 @@ def print_page(doc: Doc, page_num: int) -> None:
 
 def version(doc: Doc) -> bytes:
     """Return PDF version"""
-    return doc.bdata[5:8]
+    ver = doc.bdata[5:8]
+    cat = catalog(doc)
+    if b'/Version' in cat and cat[b'/Version'] > ver:
+            return cat[b'/Version']
+    return ver
 
 def trailer(doc: Doc):
-    """ """
+    """Return doc trailer dictionary"""
     return get_object(doc, {'_REF': 0})
 
 def catalog(doc: Doc):
-    """ """
+    """Return doc Root/Catalog dictionary"""
     return get_object(doc, trailer(doc)[b'/Root'])
+
+def info(doc: Doc):
+    """Return doc Info dictionary if present"""
+    trail = trailer(doc)
+    info = trail.get(b'/Info')
+    if info:
+        return get_object(doc, info)
+
+def pages(doc: Doc):
+    """Return doc Pages dictionary"""
+    return get_object(doc, catalog(doc)[b'/Pages'])
+
+def number_pages(doc: Doc):
+    """Return doc number of pages"""
+    return pages(doc)[b'/Count']
+
