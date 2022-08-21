@@ -39,14 +39,14 @@ def metadata(doc: Doc) -> dict:
     ret['version'] = version(doc)
     ret['pages'] = number_pages(doc)
     i = info(doc) or {}
-    ret['title'] = i.get(b'/Title', "N/A")
-    ret['author'] = i.get(b'/Author', "N/A")
-    ret['subject'] = i.get(b'/Subject', "N/A")
-    ret['keywords'] = i.get(b'/Keywords', "N/A")
-    ret['creator'] = i.get(b'/Creator', "N/A")
-    ret['producer'] = i.get(b'/Producer', "N/A")
-    ret['creationdate'] = i.get(b'/CreationDate', "N/A")
-    ret['moddate'] = i.get(b'/ModDate', "N/A")
+    ret['title'] = i.get('/Title', "N/A")
+    ret['author'] = i.get('/Author', "N/A")
+    ret['subject'] = i.get('/Subject', "N/A")
+    ret['keywords'] = i.get('/Keywords', "N/A")
+    ret['creator'] = i.get('/Creator', "N/A")
+    ret['producer'] = i.get('/Producer', "N/A")
+    ret['creationdate'] = i.get('/CreationDate', "N/A")
+    ret['moddate'] = i.get('/ModDate', "N/A")
     return ret
 
 

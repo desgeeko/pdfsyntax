@@ -122,11 +122,11 @@ def decode_predictor(bdata, predictor, columns):
 
 def decode_stream(stream, stream_def):
     res = stream
-    if b'/Filter' in stream_def and stream_def[b'/Filter'] == b'/FlateDecode':
+    if '/Filter' in stream_def and stream_def['/Filter'] == '/FlateDecode':
         res = zlib.decompress(stream) #+ b'\r')
-    if b'/DecodeParms' in stream_def and b'/Predictor' in stream_def[b'/DecodeParms']:
-        predictor = int(stream_def[b'/DecodeParms'][b'/Predictor'])
-        columns = int(stream_def[b'/DecodeParms'][b'/Columns'])
+    if '/DecodeParms' in stream_def and '/Predictor' in stream_def['/DecodeParms']:
+        predictor = int(stream_def['/DecodeParms']['/Predictor'])
+        columns = int(stream_def['/DecodeParms']['/Columns'])
         res = decode_predictor(res, predictor, columns)
     return res
 
@@ -139,7 +139,7 @@ def dedicated_type(text, type):
         return True
     elif type == 'FALSE':
         return False
-    elif type == 'KEYWORD':
+    elif type == 'KEYWORD' or type == 'NAME':
         return text.decode('ascii')
     else:
         return text
@@ -198,16 +198,4 @@ def parse_obj(text, start=0):
     
     else:
         return dedicated_type(text[h1:j1], t1)
-
-
-#def beginning_next_non_empty_line(bdata, i):
-#    """ doc
-#    """
-#    while bdata[i] not in EOL:
-#        i += 1
-#    while bdata[i] in EOL:
-#        i += 1
-#    return i
-
-
 

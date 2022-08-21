@@ -67,8 +67,8 @@ def memoize_obj_in_cache(idx: list, bdata: bytes, key: int, cache=None, rev=-1) 
         text = bdata
         c_obj = parse_obj(text, i)
         cache[container] = c_obj
-        offset = int(c_obj['stream_def'][b'/First'])
-        nb_obj = int(c_obj['stream_def'][b'/N'])
+        offset = int(c_obj['stream_def']['/First'])
+        nb_obj = int(c_obj['stream_def']['/N'])
         x_array = parse_obj(b'[' + c_obj['stream_content'][:offset] + b']')
         for x in range(nb_obj):
             cache[int(x_array[2 * x])] = parse_obj(c_obj['stream_content'], offset + int(x_array[2 * x + 1]))
@@ -88,19 +88,19 @@ def get_object(doc: Doc, obj):
 def get_pages(doc: Doc, node) -> list:
     """Recursively list the pages of a node"""
     accu = []
-    if node[b'/Type'] == b'/Pages':
-        for i in node[b'/Kids']:
+    if node['/Type'] == '/Pages':
+        for i in node['/Kids']:
             kid = get_object(doc, i)
             accu = accu + get_pages(doc, kid)
         return accu
-    elif node[b'/Type'] == b'/Page':
+    elif node['/Type'] == '/Page':
         return[node]
 
 def build_page_list(doc: Doc) -> list:
     """List the pages of a document"""
     trailer = get_object(doc, {'_REF': 0})
-    catalog = get_object(doc, trailer[b'/Root'])
-    pages = get_object(doc, catalog[b'/Pages'])
+    catalog = get_object(doc, trailer['/Root'])
+    pages = get_object(doc, catalog['/Pages'])
     page_index = get_pages(doc, pages)
     return page_index
 
@@ -109,7 +109,7 @@ def build_cache(bdata: bytes, index: list) -> list:
     size = len(index[-1])
     cache = size * [None]
     memoize_obj_in_cache(index, bdata, 0, cache)
-    cat = cache[0][b'/Root']['_REF']
+    cat = cache[0]['/Root']['_REF']
     memoize_obj_in_cache(index, bdata, cat, cache)
     return cache
 
@@ -117,14 +117,14 @@ def get_fonts(doc: Doc, page_num: int) -> dict:
     """Return the dictionary of fonts used in page number page_num"""
     page_idx = build_page_list(doc)
     fonts = {}
-    resources = get_object(doc, page_idx[page_num][b'/Resources'])
-    l = get_object(doc, resources[b'/Font'])
+    resources = get_object(doc, page_idx[page_num]['/Resources'])
+    l = get_object(doc, resources['/Font'])
     for f in l:
         res = {}
         font = get_object(doc, l[f])
         for k in font:
             res[k] = font[k]
-        if res[b'/Subtype'] == b'/Type1':
+        if res['/Subtype'] == '/Type1':
             res['TRANSCO'] = dec_empty
         else:
             #toU = get_object(doc, font[b'/ToUnicode'])
@@ -136,7 +136,7 @@ def print_page(doc: Doc, page_num: int) -> None:
     """ """
     page_idx = build_page_list(doc)
     f = get_fonts(doc, page_num)
-    c = get_object(doc, page_idx[page_num][b'/Contents'])
+    c = get_object(doc, page_idx[page_num]['/Contents'])
     for j in extract_text(c['stream_content']):
         _, _, font, _, text = j
         dec_fun = f[font]['TRANSCO']
@@ -148,8 +148,8 @@ def version(doc: Doc) -> bytes:
     """Return PDF version"""
     ver = doc.bdata[5:8]
     cat = catalog(doc)
-    if b'/Version' in cat and cat[b'/Version'] > ver:
-            return cat[b'/Version']
+    if '/Version' in cat and cat['/Version'] > ver:
+            return cat['/Version']
     return ver
 
 def trailer(doc: Doc):
@@ -158,20 +158,20 @@ def trailer(doc: Doc):
 
 def catalog(doc: Doc):
     """Return doc Root/Catalog dictionary"""
-    return get_object(doc, trailer(doc)[b'/Root'])
+    return get_object(doc, trailer(doc)['/Root'])
 
 def info(doc: Doc):
     """Return doc Info dictionary if present"""
     trail = trailer(doc)
-    info = trail.get(b'/Info')
+    info = trail.get('/Info')
     if info:
         return get_object(doc, info)
 
 def pages(doc: Doc):
     """Return doc Pages dictionary"""
-    return get_object(doc, catalog(doc)[b'/Pages'])
+    return get_object(doc, catalog(doc)['/Pages'])
 
 def number_pages(doc: Doc):
     """Return doc number of pages"""
-    return pages(doc)[b'/Count']
+    return pages(doc)['/Count']
 

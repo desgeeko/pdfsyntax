@@ -173,10 +173,10 @@ def follow_obj(obj, mini_index, pos_index, depth=0):
             return ret
         ret += '<<\n'
         keys = list(obj.keys())
-        keys = move_list_item(keys, b'/Type', 0)
-        keys = move_list_item(keys, b'/Subtype', 1)
+        keys = move_list_item(keys, '/Type', 0)
+        keys = move_list_item(keys, '/Subtype', 1)
         for i in keys:
-            name = i.decode('ascii')
+            name = i #name = i.decode('ascii')
             value = follow_obj(obj[i], mini_index, pos_index, depth + 1)
             ret += ' ' * (NAME_MAX_WIDTH + 2) * depth
             if name == '/Type' or name == '/Subtype':

@@ -46,11 +46,11 @@ def parse_xref_stream(xref_stream, trailer_pos):
     """
     xref = []
     table = []
-    cols = xref_stream['stream_def'][b'/W']
+    cols = xref_stream['stream_def']['/W']
     i = 0
     obj_range = (0, 0)
-    if b'/Index' in xref_stream['stream_def']:
-        obj_range = xref_stream['stream_def'][b'/Index']
+    if '/Index' in xref_stream['stream_def']:
+        obj_range = xref_stream['stream_def']['/Index']
     start_obj, nb_obj = int(obj_range[0]), int(obj_range[1])
     obj_num = start_obj
     while i < len(xref_stream['stream_content']):
@@ -61,10 +61,8 @@ def parse_xref_stream(xref_stream, trailer_pos):
             i += int(col)
         if params[0] == 1:
             xref.append({'abs_pos': params[1], 'o_num': obj_num, 'o_gen': params[2]})
-            #table.append((line, None))
         elif params[0] == 2:
             xref.append({'env_num': params[1], 'o_num': obj_num, 'o_gen': 0, 'o_pos': params[2]})
-            #table.append((line, obj_num))
         obj_num += 1
     xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream':table})
     return xref
@@ -82,7 +80,6 @@ def build_chrono_from_xref(bdata):
         i, j, _ = next_token(bdata, j)                     # actual trailer dict
         trailer = parse_obj(bdata[i:j])
     else: # must be a /XRef stream
-        #i = beginning_next_non_empty_line(bdata, xref_pos)
         i, j, _ = next_token(bdata, xref_pos)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
@@ -90,8 +87,8 @@ def build_chrono_from_xref(bdata):
         xref = parse_obj(bdata, i)
         chrono = parse_xref_stream(xref, xref_pos)
         trailer = xref['stream_def']
-    while b'/Prev' in trailer:
-        new_xref_pos = trailer[b'/Prev']
+    while '/Prev' in trailer:
+        new_xref_pos = trailer['/Prev']
         xref_pos = int(new_xref_pos)
         if bdata[xref_pos:xref_pos+4] == XREF:
             tmp_index = parse_xref_table(bdata, xref_pos)
@@ -100,7 +97,6 @@ def build_chrono_from_xref(bdata):
             i, j, _ = next_token(bdata, j)                     # actual trailer dict
             trailer = parse_obj(bdata[i:j])
         else: # must be a /XRef stream
-            #i = beginning_next_non_empty_line(bdata, xref_pos)
             i, j, _ = next_token(bdata, xref_pos)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
