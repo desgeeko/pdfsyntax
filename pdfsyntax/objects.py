@@ -1,23 +1,14 @@
 """Module pdfsyntax.objects: Parser"""
 
+from typing import Any
 import zlib
-from collections import namedtuple
 
 EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
+DELIMITERS = b'<>[]/(){}%'
 
-def skip_chars(chars, text, i):
-    """ syntax
-    """
-    while i < len(text):
-        if text[i] not in chars: return i
-        i += 1
-    return None        
-
-
-def next_token(text, i=0):
-    """ syntax Find next token in raw string starting at some index
-    """
+def next_token(text: bytes, i=0) -> tuple:
+    """Find next token in raw string starting at some index"""
     search = "TBD"
     nested = 1
     h = i
@@ -33,7 +24,7 @@ def next_token(text, i=0):
                 search = "NAME"
             elif text[i:i+6] == b"stream":
                 search = "STREAM"
-                offset = 7 if text[i+6:i+7] == b'\n' else 8 # else is b'\r\n'
+                offset = 7 if text[i+6:i+7] == b'\n' else 8
                 i += offset
             elif single in b"+-.0123456789":
                 search = "VALUE"
@@ -54,7 +45,7 @@ def next_token(text, i=0):
             else:
                 pass
         elif search == "NAME":
-            if single in b' \n\r[]/<>(':
+            if single in (SPACE + DELIMITERS):
                 return (h, i, 'NAME')
         elif search == "TEXT":
             if double == b'\\(' or double == b'\\)' or double == b'\\<' or double == b'\\>':
@@ -63,7 +54,7 @@ def next_token(text, i=0):
                 if single in b')>':
                     return (h, i + 1, 'TEXT')
         elif search == "KEYWORD":
-            if single in b' \n\r>/]' or i == len(text) - 1:
+            if single in (SPACE + DELIMITERS): #or i == len(text) - 1:
                 if b'true' == text[h:i]:
                     return (h, i, 'TRUE')
                 elif b'false' == text[h:i]:
@@ -71,7 +62,7 @@ def next_token(text, i=0):
                 else:
                     return (h, i, 'KEYWORD')
         elif search == "VALUE":
-            if single in b' \n\r>/]' or i == len(text) - 1:
+            if single in (SPACE + DELIMITERS): #or i == len(text) - 1:
                 if b'.' in text[h:i]:
                     return (h, i, 'REAL')
                 else:
@@ -87,12 +78,10 @@ def next_token(text, i=0):
             if nested == 0:
                 return (h, i + 1, 'ARRAY')
         i += 1
-    return (h, i + 1, '')
+    return (h, i, None)
 
-
-def replace_ref(tokens):
-    """ syntax
-    """
+def replace_ref(tokens: list) -> list:
+    """Replace a sublist of X, Y, 'R' into a unique {'_REF': X} dict"""
     size = len(tokens)
     new_list = []
     i = 0
@@ -105,32 +94,9 @@ def replace_ref(tokens):
             i += 1
     return new_list
 
-def decode_predictor(bdata, predictor, columns):
-    size = len(bdata)
-    res = b''
-    columns += 1
-    prev_row = [0] * columns
-    i = 0
-    while i < size:
-        row = list(bdata[i:i+columns])
-        decoded_row = [(val + prev_row[index]) & 0xff for (index, val) in enumerate(row)]
-        prev_row = decoded_row
-        res += bytes(decoded_row[1:])
-        i += columns
-    return res
 
-
-def decode_stream(stream, stream_def):
-    res = stream
-    if '/Filter' in stream_def and stream_def['/Filter'] == '/FlateDecode':
-        res = zlib.decompress(stream) #+ b'\r')
-    if '/DecodeParms' in stream_def and '/Predictor' in stream_def['/DecodeParms']:
-        predictor = int(stream_def['/DecodeParms']['/Predictor'])
-        columns = int(stream_def['/DecodeParms']['/Columns'])
-        res = decode_predictor(res, predictor, columns)
-    return res
-
-def dedicated_type(text, type):
+def dedicated_type(text: bytes, type: str) -> Any:
+    """Transform a PDF basic type into a Python basic type"""
     if type == 'INTEGER':
         return int(text)
     elif type == 'REAL':
@@ -144,10 +110,8 @@ def dedicated_type(text, type):
     else:
         return text
 
-def parse_obj(text, start=0):
-    """ syntax
-    """
-    ref_list = []
+def parse_obj(text: bytes, start=0) -> Any:
+    """Recursively parse bytes into PDF objects"""
     h1, j1, t1 = next_token(text, start)
     obj = text[h1:j1]
     if t1 == 'DICT':
@@ -162,14 +126,13 @@ def parse_obj(text, start=0):
             return res
 
         i = start + 2
-        while i < j1:
-            h, i, ttt = next_token(text, i)
-            if i < j1 and ttt:                             # TODO ?
-                if ttt == 'DICT' or ttt == 'ARRAY':
+        while i < j1 - 1:
+            h, i, t = next_token(text, i)
+            if i < j1 and t:
+                if t == 'DICT' or t == 'ARRAY':
                     obj = parse_obj(text[h:i])
                 else:
-                    #obj = text[h:i]
-                    obj = dedicated_type(text[h:i], ttt)
+                    obj = dedicated_type(text[h:i], t)
                 res_array.append(obj)
         toggle = True
         res_array = replace_ref(res_array)
@@ -188,14 +151,41 @@ def parse_obj(text, start=0):
     elif t1 == 'ARRAY':
         res = []
         i = start + 1
-        while i < j1:
-            h, i, ttt = next_token(text, i)
-            if ttt:
-                obj = dedicated_type(text[h:i], ttt)
+        while i < j1 - 1:
+            h, i, t = next_token(text, i)
+            if t:
+                obj = dedicated_type(text[h:i], t)
                 res.append(obj)
         res = replace_ref(res)
         return res
     
     else:
         return dedicated_type(text[h1:j1], t1)
+
+
+def decode_predictor(bdata: bytes, predictor, columns):
+    """ """
+    size = len(bdata)
+    res = b''
+    columns += 1
+    prev_row = [0] * columns
+    i = 0
+    while i < size:
+        row = list(bdata[i:i+columns])
+        decoded_row = [(val + prev_row[index]) & 0xff for (index, val) in enumerate(row)]
+        prev_row = decoded_row
+        res += bytes(decoded_row[1:])
+        i += columns
+    return res
+
+def decode_stream(stream, stream_def):
+    """ """
+    res = stream
+    if '/Filter' in stream_def and stream_def['/Filter'] == '/FlateDecode':
+        res = zlib.decompress(stream)
+    if '/DecodeParms' in stream_def and '/Predictor' in stream_def['/DecodeParms']:
+        predictor = int(stream_def['/DecodeParms']['/Predictor'])
+        columns = int(stream_def['/DecodeParms']['/Columns'])
+        res = decode_predictor(res, predictor, columns)
+    return res
 

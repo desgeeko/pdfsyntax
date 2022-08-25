@@ -16,7 +16,10 @@ class Tokenization(unittest.TestCase):
     def test_integer(self):
         self.assertEqual(pdf.next_token(b'12345 '), (0, 5,'INTEGER'))
 
-    def test_integer2(self):
+    def test_integer_incomplete(self): #Number may have been truncated
+        self.assertEqual(pdf.next_token(b'12345'), (0, 5, None))
+
+    def test_integer_minus(self):
         self.assertEqual(pdf.next_token(b'-12345 '), (0, 6,'INTEGER'))
 
     def test_real(self):
@@ -28,17 +31,32 @@ class Tokenization(unittest.TestCase):
     def test_literal_string(self):
         self.assertEqual(pdf.next_token(b'(abc) '), (0, 5,'TEXT'))
 
+    def test_literal_string2(self):
+        self.assertEqual(pdf.next_token(b'(abc)'), (0, 5,'TEXT'))
+
     def test_hexadecimal_string(self):
         self.assertEqual(pdf.next_token(b'<414243> '), (0, 8,'TEXT'))
 
     def test_name(self):
         self.assertEqual(pdf.next_token(b'/abc '), (0, 4, 'NAME'))
 
+    def test_name_incomplete(self): #Name may have been truncated
+        self.assertEqual(pdf.next_token(b'/abc'), (0, 4, None))
+
+    def test_name_i(self):
+        self.assertEqual(pdf.next_token(b'/abc/def'), (0, 4, 'NAME'))
+
     def test_array(self):
         self.assertEqual(pdf.next_token(b'[12345 true /abc] '), (0, 17, 'ARRAY'))
 
     def test_dictionary(self):
         self.assertEqual(pdf.next_token(b'<< /Type /abc >> '), (0, 16, 'DICT'))
+
+    def test_dictionary2(self):
+        self.assertEqual(pdf.next_token(b'<< /Type /abc >>'), (0, 16, 'DICT'))
+
+    def test_dictionary3(self):
+        self.assertEqual(pdf.next_token(b'<</Type/abc>>'), (0, 13, 'DICT'))
 
     def test_stream(self):
         self.assertEqual(pdf.next_token(b'stream\n xyz \nendstream '), (7, 12, 'STREAM'))
