@@ -36,8 +36,9 @@ def read_pdf(filename: str, use_cache=True) -> Doc:
 def metadata(doc: Doc) -> dict:
     """ """
     ret = {}
-    ret['version'] = version(doc)
+    #ret['version'] = version(doc)
     ret['pages'] = number_pages(doc)
+    ret['updates'] = updates(doc)
     i = info(doc) or {}
     ret['title'] = i.get('/Title', "N/A")
     ret['author'] = i.get('/Author', "N/A")

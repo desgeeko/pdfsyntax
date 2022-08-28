@@ -152,6 +152,11 @@ def version(doc: Doc) -> bytes:
             return cat['/Version']
     return ver
 
+def updates(doc: Doc) -> int:
+    """Return the number of updates the document received"""
+    upd = len(doc.index) - 1
+    return upd
+
 def trailer(doc: Doc):
     """Return doc trailer dictionary"""
     return get_object(doc, {'_REF': 0})

@@ -3,7 +3,7 @@
 from .objects import *
 
 
-def parse_xref_table(bdata, start_pos):
+def parse_xref_table(bdata: bytes, start_pos: int) -> list:
     """Return a list of dicts indexing indirect objects
 
        abs_pos is the absolute position of the object
@@ -31,7 +31,7 @@ def parse_xref_table(bdata, start_pos):
     xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_table_pos':start_pos, 'xref_table':table })
     return xref
 
-def parse_xref_stream(xref_stream, trailer_pos):
+def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
     """Return a list of dicts indexing indirect objects
 
        for regular objects:
@@ -67,10 +67,12 @@ def parse_xref_stream(xref_stream, trailer_pos):
     xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream':table})
     return xref
     
-def build_chrono_from_xref(bdata):
+def build_chrono_from_xref(bdata: bytes) -> list:
     """ Return a merged list of all entries found in xref tables or xref streams """
+    EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
+    eof_pos = bdata.rfind(EOF)
     startxref_pos = bdata.rfind(STARTXREF)
     i, j, _ = next_token(bdata, startxref_pos + len(STARTXREF))
     xref_pos = int(bdata[i:j])
@@ -87,11 +89,17 @@ def build_chrono_from_xref(bdata):
         xref = parse_obj(bdata, i)
         chrono = parse_xref_stream(xref, xref_pos)
         trailer = xref['stream_def']
+    chrono[0]['startxref_pos'] = startxref_pos
+    chrono.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
     while '/Prev' in trailer:
         new_xref_pos = trailer['/Prev']
         xref_pos = int(new_xref_pos)
+        startxref_pos = bdata.find(STARTXREF, xref_pos)
+        eof_pos = bdata.find(EOF, xref_pos)
         if bdata[xref_pos:xref_pos+4] == XREF:
             tmp_index = parse_xref_table(bdata, xref_pos)
+            tmp_index[0]['startxref_pos'] = startxref_pos
+            tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
             chrono = tmp_index + chrono
             i, j, _ = next_token(bdata, chrono[0]['abs_pos'])
             i, j, _ = next_token(bdata, j)                     # actual trailer dict
@@ -101,13 +109,16 @@ def build_chrono_from_xref(bdata):
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)
-            chrono = parse_xref_stream(xref, xref_pos) + chrono
+            tmp_index = parse_xref_stream(xref, xref_pos)
+            tmp_index[0]['startxref_pos'] = startxref_pos
+            tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
+            chrono =  tmp_index + chrono
             trailer = xref['stream_def']
     return chrono
 
-def build_index_from_chrono(chrono):
+def build_index_from_chrono(chrono: list) -> list:
     """ Build a multi-dimensional array where each column represents a doc update"""
-    nb = max(chrono, key = lambda i: i['o_num']).get('o_num') + 1
+    nb = max(chrono, key = lambda i: i['o_num']).get('o_num') + 2
     m = nb * [None]
     abs_pos_array = nb * [0]
     index = []
@@ -120,6 +131,8 @@ def build_index_from_chrono(chrono):
             index.append(m)
             doc_ver += 1
             prev_pos = obj['abs_pos']
+        elif obj['o_num'] == -1:
+            pass
         if m[obj['o_num']] is None:
             if obj['o_num'] == 0:
                 obj['o_ver'] = doc_ver
