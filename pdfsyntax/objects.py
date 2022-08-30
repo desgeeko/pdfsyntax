@@ -31,7 +31,7 @@ def next_token(text: bytes, i=0) -> tuple:
             elif single in b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ":
                 search = "KEYWORD"
             elif single in b"(<":
-                search = "TEXT"
+                search = "STRING"
             h = i
         elif search == "DICT":
             if double == b'<<':
@@ -47,12 +47,12 @@ def next_token(text: bytes, i=0) -> tuple:
         elif search == "NAME":
             if single in (SPACE + DELIMITERS):
                 return (h, i, 'NAME')
-        elif search == "TEXT":
+        elif search == "STRING":
             if double == b'\\(' or double == b'\\)' or double == b'\\<' or double == b'\\>':
                 i += 1
             else:    
                 if single in b')>':
-                    return (h, i + 1, 'TEXT')
+                    return (h, i + 1, 'STRING')
         elif search == "KEYWORD":
             if single in (SPACE + DELIMITERS): #or i == len(text) - 1:
                 if b'true' == text[h:i]:

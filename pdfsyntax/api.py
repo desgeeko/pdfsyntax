@@ -2,6 +2,8 @@
 
 from .docstruct import *
 from .filestruct import *
+from .text import *
+
 
 def init_doc(bdata: bytes, use_cache=True) -> tuple:
     """ """
@@ -14,16 +16,19 @@ def init_doc(bdata: bytes, use_cache=True) -> tuple:
     doc = Doc(bdata, index, cache)
     return doc, chrono
 
+
 def load(fp, use_cache=True) -> Doc:
     """ """
     bdata = fp.read()
     doc, _ = init_doc(bdata, use_cache)
     return doc
 
+
 def loads(bdata, use_cache=True) -> Doc:
     """ """
     doc, _ = init_doc(bdata, use_cache)
     return doc
+
 
 def read_pdf(filename: str, use_cache=True) -> Doc:
     """ """
@@ -33,21 +38,21 @@ def read_pdf(filename: str, use_cache=True) -> Doc:
     doc, _ = init_doc(bdata, use_cache)
     return doc
 
+
 def metadata(doc: Doc) -> dict:
     """ """
     ret = {}
     #ret['version'] = version(doc)
-    ret['pages'] = number_pages(doc)
-    ret['updates'] = updates(doc)
+    ret['Pages'] = number_pages(doc)
+    ret['Updates'] = updates(doc)
+
     i = info(doc) or {}
-    ret['title'] = i.get('/Title', "N/A")
-    ret['author'] = i.get('/Author', "N/A")
-    ret['subject'] = i.get('/Subject', "N/A")
-    ret['keywords'] = i.get('/Keywords', "N/A")
-    ret['creator'] = i.get('/Creator', "N/A")
-    ret['producer'] = i.get('/Producer', "N/A")
-    ret['creationdate'] = i.get('/CreationDate', "N/A")
-    ret['moddate'] = i.get('/ModDate', "N/A")
+    entries = '/Title /Author /Subject /Keywords /Creator /Producer'.split()
+    for entry in entries:
+        ret[entry[1:]] = text_string(i.get(entry)) or None    
+
+    ret['CreationDate'] = text_string(i.get('/CreationDate')) or None
+    ret['ModDate'] = text_string(i.get('/ModDate')) or None
     return ret
 
 

@@ -29,13 +29,13 @@ class Tokenization(unittest.TestCase):
         self.assertEqual(pdf.next_token(b'+123.45 '), (0, 7,'REAL'))
 
     def test_literal_string(self):
-        self.assertEqual(pdf.next_token(b'(abc) '), (0, 5,'TEXT'))
+        self.assertEqual(pdf.next_token(b'(abc) '), (0, 5,'STRING'))
 
     def test_literal_string2(self):
-        self.assertEqual(pdf.next_token(b'(abc)'), (0, 5,'TEXT'))
+        self.assertEqual(pdf.next_token(b'(abc)'), (0, 5,'STRING'))
 
     def test_hexadecimal_string(self):
-        self.assertEqual(pdf.next_token(b'<414243> '), (0, 8,'TEXT'))
+        self.assertEqual(pdf.next_token(b'<414243> '), (0, 8,'STRING'))
 
     def test_name(self):
         self.assertEqual(pdf.next_token(b'/abc '), (0, 4, 'NAME'))
@@ -61,8 +61,3 @@ class Tokenization(unittest.TestCase):
     def test_stream(self):
         self.assertEqual(pdf.next_token(b'stream\n xyz \nendstream '), (7, 12, 'STREAM'))
 
-
-#class Unicode(unittest.TestCase):
-#
-#    def test_unicode(self):
-#        self.assertEqual(pdf.dec_unicode(b'\x00\x41'), 'A')

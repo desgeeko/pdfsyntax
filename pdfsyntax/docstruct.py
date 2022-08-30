@@ -5,6 +5,7 @@ from .filestruct import *
 from .text import *
 from collections import namedtuple
 
+
 Doc = namedtuple('Doc', 'bdata index cache')
 
 class Doc(Doc):
@@ -21,6 +22,7 @@ class Doc(Doc):
 
 EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
+
 
 def memoize_obj_in_cache(idx: list, bdata: bytes, key: int, cache=None, rev=-1) -> list:
     """Parse indirect object whose number is [key] and return a cache filled at index [key]
@@ -76,6 +78,7 @@ def memoize_obj_in_cache(idx: list, bdata: bytes, key: int, cache=None, rev=-1) 
             cache[0] = cache[0]['stream_def']
     return cache
 
+
 def get_object(doc: Doc, obj):
     """Return raw object or the target of an indirect reference"""
     if isinstance(obj, dict) == True and '_REF' in obj:
@@ -84,6 +87,7 @@ def get_object(doc: Doc, obj):
         return res[ref]
     else: 
         return obj
+
 
 def get_pages(doc: Doc, node) -> list:
     """Recursively list the pages of a node"""
@@ -96,6 +100,7 @@ def get_pages(doc: Doc, node) -> list:
     elif node['/Type'] == '/Page':
         return[node]
 
+
 def build_page_list(doc: Doc) -> list:
     """List the pages of a document"""
     trailer = get_object(doc, {'_REF': 0})
@@ -103,6 +108,7 @@ def build_page_list(doc: Doc) -> list:
     pages = get_object(doc, catalog['/Pages'])
     page_index = get_pages(doc, pages)
     return page_index
+
 
 def build_cache(bdata: bytes, index: list) -> list:
     """Initialize cache with trailer and Root"""
@@ -113,36 +119,6 @@ def build_cache(bdata: bytes, index: list) -> list:
     memoize_obj_in_cache(index, bdata, cat, cache)
     return cache
 
-def get_fonts(doc: Doc, page_num: int) -> dict:
-    """Return the dictionary of fonts used in page number page_num"""
-    page_idx = build_page_list(doc)
-    fonts = {}
-    resources = get_object(doc, page_idx[page_num]['/Resources'])
-    l = get_object(doc, resources['/Font'])
-    for f in l:
-        res = {}
-        font = get_object(doc, l[f])
-        for k in font:
-            res[k] = font[k]
-        if res['/Subtype'] == '/Type1':
-            res['TRANSCO'] = dec_empty
-        else:
-            #toU = get_object(doc, font[b'/ToUnicode'])
-            res['TRANSCO'] = dec_unicode
-        fonts[f] = res
-    return fonts
-
-def print_page(doc: Doc, page_num: int) -> None:
-    """ """
-    page_idx = build_page_list(doc)
-    f = get_fonts(doc, page_num)
-    c = get_object(doc, page_idx[page_num]['/Contents'])
-    for j in extract_text(c['stream_content']):
-        _, _, font, _, text = j
-        dec_fun = f[font]['TRANSCO']
-        if len(text) == 16:
-            print(dec_fun(text))
-    return None
 
 def version(doc: Doc) -> bytes:
     """Return PDF version"""
@@ -152,18 +128,22 @@ def version(doc: Doc) -> bytes:
             return cat['/Version']
     return ver
 
+
 def updates(doc: Doc) -> int:
     """Return the number of updates the document received"""
     upd = len(doc.index) - 1
     return upd
 
+
 def trailer(doc: Doc):
     """Return doc trailer dictionary"""
     return get_object(doc, {'_REF': 0})
 
+
 def catalog(doc: Doc):
     """Return doc Root/Catalog dictionary"""
     return get_object(doc, trailer(doc)['/Root'])
+
 
 def info(doc: Doc):
     """Return doc Info dictionary if present"""
@@ -172,11 +152,46 @@ def info(doc: Doc):
     if info:
         return get_object(doc, info)
 
+
 def pages(doc: Doc):
     """Return doc Pages dictionary"""
     return get_object(doc, catalog(doc)['/Pages'])
 
+
 def number_pages(doc: Doc):
     """Return doc number of pages"""
     return pages(doc)['/Count']
+
+
+#def get_fonts(doc: Doc, page_num: int) -> dict:
+#    """Return the dictionary of fonts used in page number page_num"""
+#    page_idx = build_page_list(doc)
+#    fonts = {}
+#    resources = get_object(doc, page_idx[page_num]['/Resources'])
+#    l = get_object(doc, resources['/Font'])
+#    for f in l:
+#        res = {}
+#        font = get_object(doc, l[f])
+#        for k in font:
+#            res[k] = font[k]
+#        if res['/Subtype'] == '/Type1':
+#            res['TRANSCO'] = dec_empty
+#        else:
+#            #toU = get_object(doc, font[b'/ToUnicode'])
+#            res['TRANSCO'] = dec_unicode
+#        fonts[f] = res
+#    return fonts
+
+
+#def print_page(doc: Doc, page_num: int) -> None:
+#    """ """
+#    page_idx = build_page_list(doc)
+#    f = get_fonts(doc, page_num)
+#    c = get_object(doc, page_idx[page_num]['/Contents'])
+#    for j in extract_text(c['stream_content']):
+#        _, _, font, _, text = j
+#        dec_fun = f[font]['TRANSCO']
+#        if len(text) == 16:
+#            print(dec_fun(text))
+#   return None
 
