@@ -7,6 +7,9 @@ class Unicode(unittest.TestCase):
     def test_literal_pdfdocencoded(self):
         self.assertEqual(pdf.text_string(b'(Martin D.)'), 'Martin D.')
 
+    def test_literal_pdfdocencoded2(self): # Euro sign does not exist in latin-1
+        self.assertEqual(pdf.text_string(b'(10\xa0!)'), '10€!')
+
     def test_literal_utf16be(self):
         self.assertEqual(pdf.text_string(b'(\xfe\xff\x00M\x00a\x00r\x00t\x00i\x00n\x00 \x00D\x00.)'), 'Martin D.')
 
