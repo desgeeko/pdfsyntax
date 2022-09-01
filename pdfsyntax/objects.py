@@ -1,11 +1,19 @@
 """Module pdfsyntax.objects: Parser"""
 
 from typing import Any
+from collections import namedtuple
 import zlib
 
 EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
 DELIMITERS = b'<>[]/(){}%'
+
+#R = namedtuple('R', 'num')
+
+#class R(R):
+#    def __repr__(self):
+#        return f"R({self.num})\n"
+
 
 def next_token(text: bytes, i=0) -> tuple:
     """Find next token in raw string starting at some index"""
@@ -81,13 +89,13 @@ def next_token(text: bytes, i=0) -> tuple:
     return (h, i, None)
 
 def replace_ref(tokens: list) -> list:
-    """Replace a sublist of X, Y, 'R' into a unique {'_REF': X} dict"""
+    """Replace a sublist of X, Y, 'R' into a unique R namedtuple"""
     size = len(tokens)
     new_list = []
     i = 0
     while i < size:
         if i < size - 2 and tokens[i + 2]  == 'R':
-            new_list.append({'_REF': tokens[i]})
+            new_list.append(complex(0, tokens[i]))
             i += 3
         else:
             new_list.append(tokens[i])

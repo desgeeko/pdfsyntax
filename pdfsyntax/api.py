@@ -2,6 +2,7 @@
 
 from .docstruct import *
 from .filestruct import *
+from .objects import *
 from .text import *
 
 

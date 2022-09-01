@@ -81,8 +81,8 @@ def memoize_obj_in_cache(idx: list, bdata: bytes, key: int, cache=None, rev=-1) 
 
 def get_object(doc: Doc, obj):
     """Return raw object or the target of an indirect reference"""
-    if isinstance(obj, dict) == True and '_REF' in obj:
-        ref = obj['_REF']
+    if isinstance(obj, complex) == True:
+        ref = int(obj.imag)
         res = memoize_obj_in_cache(doc.index, doc.bdata, ref, doc.cache)
         return res[ref]
     else: 
@@ -103,7 +103,7 @@ def get_pages(doc: Doc, node) -> list:
 
 def build_page_list(doc: Doc) -> list:
     """List the pages of a document"""
-    trailer = get_object(doc, {'_REF': 0})
+    trailer = get_object(doc, 0j)
     catalog = get_object(doc, trailer['/Root'])
     pages = get_object(doc, catalog['/Pages'])
     page_index = get_pages(doc, pages)
@@ -115,7 +115,7 @@ def build_cache(bdata: bytes, index: list) -> list:
     size = len(index[-1])
     cache = size * [None]
     memoize_obj_in_cache(index, bdata, 0, cache)
-    cat = cache[0]['/Root']['_REF']
+    cat = int(cache[0]['/Root'].imag)
     memoize_obj_in_cache(index, bdata, cat, cache)
     return cache
 
@@ -137,7 +137,7 @@ def updates(doc: Doc) -> int:
 
 def trailer(doc: Doc):
     """Return doc trailer dictionary"""
-    return get_object(doc, {'_REF': 0})
+    return get_object(doc, 0j)
 
 
 def catalog(doc: Doc):

@@ -11,10 +11,10 @@ class Parsing(unittest.TestCase):
         self.assertEqual(pdf.parse_obj(b'<< /abc 123 >>'), {'/abc': 123})
 
     def test_ref(self):
-        self.assertEqual(pdf.parse_obj(b'<< /abc 6 0 R >>'), {'/abc': {'_REF': 6}})
+        self.assertEqual(pdf.parse_obj(b'<< /abc 6 0 R >>'), {'/abc': 6j})
 
     def test_ref_list(self):
-        self.assertEqual(pdf.parse_obj(b'[ 2 0 R 42 0 R ]'), [{'_REF': 2}, {'_REF': 42}])
+        self.assertEqual(pdf.parse_obj(b'[ 2 0 R 42 0 R ]'), [2j, 42j])
 
     def test_array(self):
         self.assertEqual(pdf.parse_obj(b'[/abc 123]'), ['/abc', 123])
