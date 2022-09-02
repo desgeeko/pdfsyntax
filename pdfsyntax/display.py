@@ -197,7 +197,6 @@ def follow_obj(obj, mini_index: list, pos_index: dict, depth=0) -> str:
         ret += '>>'
     elif type(obj) == list:
         ret += '[ '
-        #nb_char = 0
         for i in obj:
             value = follow_obj(i, mini_index, pos_index)
             ret += f'{value} '

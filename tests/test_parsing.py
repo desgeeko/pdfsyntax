@@ -23,6 +23,9 @@ class Parsing(unittest.TestCase):
         self.assertEqual(pdf.parse_obj(b'[ /abc 123 ]'), ['/abc', 123])
 
     def test_array3(self):
+        self.assertEqual(pdf.parse_obj(b'[ /abc 123 ]\nendobj'), ['/abc', 123])
+
+    def test_array4(self):
         self.assertEqual(pdf.parse_obj(b'[/abc/def]'), ['/abc', '/def'])
 
     def test_bool_array(self):

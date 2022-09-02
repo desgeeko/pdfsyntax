@@ -24,7 +24,11 @@ def next_token(text: bytes, i=0) -> tuple:
         single = text[i:i+1]
         double = text[i:i+2]
         if search == "TBD":
-            if double == b'<<':
+            if single == b']':
+                return (h, i, None)
+            elif double == b'>>':
+                return (h, i+1, None)
+            elif double == b'<<':
                 search = "DICT"
             elif single == b'[':
                 search = "ARRAY"
