@@ -6,6 +6,9 @@ from .text import *
 from collections import namedtuple
 
 
+INHERITABLE_ATTRS = '/Resources /MediaBox /CropBox /Rotate'.split()
+
+
 Doc = namedtuple('Doc', 'bdata index cache')
 
 class Doc(Doc):
@@ -89,25 +92,18 @@ def get_object(doc: Doc, obj):
         return obj
 
 
-def get_pages(doc: Doc, node) -> list:
+def follow_pages_rec(doc: Doc, num, inherited={}) -> list:
     """Recursively list the pages of a node"""
     accu = []
+    node = get_object(doc, num)
     if node['/Type'] == '/Pages':
-        for i in node['/Kids']:
-            kid = get_object(doc, i)
-            accu = accu + get_pages(doc, kid)
+        for kid in node['/Kids']:
+            e = {k: node.get(k) for k in INHERITABLE_ATTRS if node.get(k) is not None}
+            inherited.update(e)
+            accu = accu + follow_pages_rec(doc, kid, inherited.copy())
         return accu
     elif node['/Type'] == '/Page':
-        return[node]
-
-
-def build_page_list(doc: Doc) -> list:
-    """List the pages of a document"""
-    trailer = get_object(doc, 0j)
-    catalog = get_object(doc, trailer['/Root'])
-    pages = get_object(doc, catalog['/Pages'])
-    page_index = get_pages(doc, pages)
-    return page_index
+        return[(num, inherited)]
 
 
 def build_cache(bdata: bytes, index: list) -> list:
@@ -120,13 +116,13 @@ def build_cache(bdata: bytes, index: list) -> list:
     return cache
 
 
-def version(doc: Doc) -> bytes:
+def version(doc: Doc) -> str:
     """Return PDF version"""
     ver = doc.bdata[5:8]
     cat = catalog(doc)
-    if '/Version' in cat and cat['/Version'] > ver:
-            return cat['/Version']
-    return ver
+    if '/Version' in cat and cat['/Version'] > ver.decode('ascii'):
+            return cat['/Version'].decode('ascii')
+    return ver.decode('ascii')
 
 
 def updates(doc: Doc) -> int:
@@ -153,14 +149,31 @@ def info(doc: Doc):
         return get_object(doc, info)
 
 
-def pages(doc: Doc):
-    """Return doc Pages dictionary"""
-    return get_object(doc, catalog(doc)['/Pages'])
-
-
 def number_pages(doc: Doc):
     """Return doc number of pages"""
-    return pages(doc)['/Count']
+    p = get_object(doc, catalog(doc)['/Pages'])
+    return p['/Count']
+
+
+def collect_inherited_attr_pages(doc: Doc) -> list:
+    """ """
+    p = get_object(doc, catalog(doc)['/Pages'])
+    page_index = follow_pages_rec(doc, p)
+    return page_index
+
+
+def pages(doc: Doc) -> list:
+    """ """
+    pl = []
+    for num, in_attr in collect_inherited_attr_pages(doc):
+        temp = get_object(doc, num).copy()
+        for a in in_attr:
+            if a not in temp:
+                temp[a] = in_attr[a]
+        pl.append(temp)
+    return pl
+
+
 
 
 #def get_fonts(doc: Doc, page_num: int) -> dict:

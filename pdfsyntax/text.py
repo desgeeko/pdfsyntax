@@ -39,8 +39,6 @@ def text_string(string: bytes) -> str:
             b = bytes.fromhex(string[5:-1].decode('ascii'))
             res = b.decode('utf-16be')
         else:
-            #b = bytes.fromhex(string[1:-1].decode('ascii'))
-            #res = b.decode('ascii')
             b = bytes.fromhex(decode_pdfdoc(string[1:-1]))
             res = decode_pdfdoc(b)
     return res

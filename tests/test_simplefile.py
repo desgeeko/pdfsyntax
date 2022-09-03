@@ -14,3 +14,6 @@ class SimpleFile(unittest.TestCase):
     def test_prev(self):
         self.assertEqual('/Prev' in self.doc.cache[0], False)
 
+    def test_page_list(self):
+        self.assertEqual(pdf.collect_inherited_attr_pages(self.doc), [(4j, {})])
+

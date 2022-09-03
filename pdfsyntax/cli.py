@@ -22,9 +22,15 @@ def overview(filename: str) -> None:
     bdata = bfile.read()
     bfile.close()
     doc = loads(bdata)
+    s = structure(doc)
     m = metadata(doc)
+    print('# Structure')
+    for key in s:
+        print(f"{key}: {s[key]}")
+    print('\n# Metadata')
     for key in m:
         print(f"{key}: {m[key]}")
+    return
 
 def inspect(filename: str) -> None:
     """Print html view of the file map"""
