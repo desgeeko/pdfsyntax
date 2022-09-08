@@ -4,6 +4,7 @@ from .objects import *
 from .filestruct import *
 from .text import *
 from collections import namedtuple
+from copy import deepcopy
 
 
 INHERITABLE_ATTRS = '/Resources /MediaBox /CropBox /Rotate'.split()
@@ -111,9 +112,26 @@ def build_cache(bdata: bytes, index: list) -> list:
     size = len(index[-1])
     cache = size * [None]
     memoize_obj_in_cache(index, bdata, 0, cache)
-    cat = int(cache[0]['/Root'].imag)
-    memoize_obj_in_cache(index, bdata, cat, cache)
+    #cat = int(cache[0]['/Root'].imag)
+    #memoize_obj_in_cache(index, bdata, cat, cache)
     return cache
+
+
+def changes(doc: Doc):
+    deleted, updated, added = [], [], []
+    current = doc.index[-1]
+    if len(doc.index) == 1:
+        previous = [None] * len(current)
+    else:
+        previous = doc.index[-2]
+    for i in range(1, len(current)-1):
+        if previous[i] != None and current[i] == None:
+            deleted.append(i)
+        elif previous[i] != None and current[i] != previous[i]:
+            updated.append(i)
+        elif previous[i] == None and current[i] != None:
+            added.append(i)
+    return deleted, updated, added
 
 
 def version(doc: Doc) -> str:
@@ -166,14 +184,27 @@ def pages(doc: Doc) -> list:
     """ """
     pl = []
     for num, in_attr in collect_inherited_attr_pages(doc):
-        temp = get_object(doc, num).copy()
+        temp = deepcopy(get_object(doc, num))
         for a in in_attr:
             if a not in temp:
                 temp[a] = in_attr[a]
         pl.append(temp)
     return pl
 
-
+def add_new_version(doc: Doc) -> Doc:
+    """ """
+    ver = len(doc.index)
+    current_v = doc.index[-1]
+    #new_v = len(current_v) * [None]
+    new_cache = len(current_v) * [None]
+    new_trailer = doc.cache[0].copy()
+    new_trailer['/Prev'] = current_v[0]['xref_table_pos']
+    new_cache[0] = new_trailer
+    new_index = doc.index.copy()
+    new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
+    new_v = [new_trailer] + [current_v[i] for i in range(1,len(current_v)-1)] + [None] 
+    new_index.append(new_v)
+    return Doc(doc.bdata, new_index, new_cache)
 
 
 #def get_fonts(doc: Doc, page_num: int) -> dict:
