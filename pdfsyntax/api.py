@@ -100,3 +100,7 @@ def page_layouts(doc: Doc):
     med = [(p['/MediaBox'], p.get('/Rotate')) for p in pl]
     return med
 
+Doc.metadata = metadata
+Doc.structure = structure
+Doc.page_layouts = page_layouts
+

@@ -8,13 +8,6 @@ EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
 DELIMITERS = b'<>[]/(){}%'
 
-#R = namedtuple('R', 'num')
-
-#class R(R):
-#    def __repr__(self):
-#        return f"R({self.num})\n"
-
-
 def next_token(text: bytes, i=0) -> tuple:
     """Find next token in raw string starting at some index"""
     search = "TBD"
@@ -44,6 +37,8 @@ def next_token(text: bytes, i=0) -> tuple:
                 search = "KEYWORD"
             elif single in b"(<":
                 search = "STRING"
+            elif single == b'%':
+                search = "COMMENT"
             h = i
         elif search == "DICT":
             if double == b'<<':
@@ -59,6 +54,9 @@ def next_token(text: bytes, i=0) -> tuple:
         elif search == "NAME":
             if single in (SPACE + DELIMITERS):
                 return (h, i, 'NAME')
+        elif search == "COMMENT":
+            if single in EOL:
+                return (h, i, 'COMMENT')
         elif search == "STRING":
             if double == b'\\(' or double == b'\\)' or double == b'\\<' or double == b'\\>':
                 i += 1
@@ -140,12 +138,13 @@ def parse_obj(text: bytes, start=0) -> Any:
         i = start + 2
         while i < j1 - 1:
             h, i, t = next_token(text, i)
-            if i < j1 and t:
-                if t == 'DICT' or t == 'ARRAY':
-                    obj = parse_obj(text[h:i])
-                else:
-                    obj = dedicated_type(text[h:i], t)
-                res_array.append(obj)
+            if t and t != 'COMMENT':
+                if i < j1 and t:
+                    if t == 'DICT' or t == 'ARRAY':
+                        obj = parse_obj(text[h:i])
+                    else:
+                        obj = dedicated_type(text[h:i], t)
+                    res_array.append(obj)
         toggle = True
         res_array = replace_ref(res_array)
         j = len(res_array) - 1
@@ -165,12 +164,18 @@ def parse_obj(text: bytes, start=0) -> Any:
         i = start + 1
         while i < j1 - 1:
             h, i, t = next_token(text, i)
-            if t:
-                obj = dedicated_type(text[h:i], t)
+            if t and t != 'COMMENT':
+                if t == 'DICT' or t == 'ARRAY':
+                    obj = parse_obj(text[h:i])
+                else:
+                    obj = dedicated_type(text[h:i], t)
                 res.append(obj)
         res = replace_ref(res)
         return res
     
+    elif t1 == 'COMMENT':
+        return ''
+
     else:
         return dedicated_type(text[h1:j1], t1)
 
@@ -201,3 +206,60 @@ def decode_stream(stream, stream_def):
         res = decode_predictor(res, predictor, columns)
     return res
 
+
+def to_str(obj) -> bytes:
+    """Transform a Python basic type into bytes"""
+    if type(obj) == bool:
+        if obj == True:
+            return b'true'
+        else:
+            return b'false'    
+    elif type(obj) == int:
+        return str(obj).encode('ascii')
+    elif type(obj) == float:
+        return str(obj).encode('ascii')
+    elif type(obj) == str:
+        return obj.encode('ascii')
+    elif type(obj) == complex:
+        s = f'{int(obj.imag)} {int(obj.real)} R'
+        return s.encode('ascii')
+    else:
+        return obj.encode('ascii')
+
+
+def serialize(obj, depth=0) -> bytes:
+    """Recursively construct object bytes"""
+    ret = b''
+    content = None
+    if type(obj) == dict: 
+        if 'stream_content' in obj:
+            content = obj['stream_content']
+        if 'stream_def' in obj:
+            obj = obj['stream_def']
+        ret += b'<< '
+        keys = list(obj.keys())
+        for i in keys:
+            name = i
+            value = serialize(obj[i], depth + 1)
+            ret += b' '  * depth
+            ret += to_str(name)
+            ret += b' '
+            ret += value
+            ret += b' '
+        if content:
+            ret += b'stream\n'
+            ret += content
+            ret += b'endstream\n'
+            ret += b' '     
+        ret += b' ' * depth
+        ret += b'>>'
+    elif type(obj) == list:
+        ret += b'[ '
+        for i in obj:
+            value = serialize(i)
+            ret += value
+            ret += b' '
+        ret += b']'        
+    else:
+        ret += to_str(obj)
+    return ret

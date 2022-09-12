@@ -40,3 +40,8 @@ class Parsing(unittest.TestCase):
     def test_compressed(self):
         self.assertEqual(pdf.parse_obj(b'<</abc[/def/ghi]>>'), {'/abc': ['/def', '/ghi']})
 
+    def test_simple_comment(self):
+        self.assertEqual(pdf.parse_obj(b'[/abc %inner comment\n 123]'), ['/abc', 123])
+
+    def test_multiple_comments(self):
+        self.assertEqual(pdf.parse_obj(b'[%a\n/abc %b %c \n 123%d\n]'), ['/abc', 123])

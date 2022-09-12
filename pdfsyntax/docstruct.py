@@ -14,14 +14,16 @@ Doc = namedtuple('Doc', 'bdata index cache')
 
 class Doc(Doc):
     def __repr__(self):
-        res = ""
-        res += f"bdata={self.bdata[:30]}...{self.bdata[-30:]} ({len(self.bdata)} bytes)\n"
-        res += f"index=list of list, {len(self.index)} update(s) with {len(self.index[0])} objects\n"
+        res = "<PDF Doc"
+        res += f" containing {len(self.index)} update(s)"
         if self.cache:
-            present = [i for i, obj in enumerate(self.cache) if obj is not None]
-            res += f"cache=list, {len(present)} / {len(self.cache)} objects loaded\n"
+            present = 0
+            for i in range(1, len(self.index[-1])-1):
+                if self.cache[i] is not None:
+                    present += 1 
+            res += f", cache loaded with {present} / {len(self.cache)-2} objects>\n"
         else:
-            res += f"cache=None\n"
+            res += f", cache=None>\n"
         return res
 
 EOL = b'\r\n'
@@ -112,25 +114,25 @@ def build_cache(bdata: bytes, index: list) -> list:
     size = len(index[-1])
     cache = size * [None]
     memoize_obj_in_cache(index, bdata, 0, cache)
-    #cat = int(cache[0]['/Root'].imag)
-    #memoize_obj_in_cache(index, bdata, cat, cache)
     return cache
 
 
 def changes(doc: Doc):
+    """ """
     deleted, updated, added = [], [], []
     current = doc.index[-1]
     if len(doc.index) == 1:
         previous = [None] * len(current)
     else:
         previous = doc.index[-2]
+    ver = len(doc.index)-1
     for i in range(1, len(current)-1):
-        if previous[i] != None and current[i] == None:
+        if current[i]['doc_ver'] == ver:
+            added.append(i)
+        elif previous[i] != None and current[i] == None:
             deleted.append(i)
         elif previous[i] != None and current[i] != previous[i]:
             updated.append(i)
-        elif previous[i] == None and current[i] != None:
-            added.append(i)
     return deleted, updated, added
 
 
@@ -191,11 +193,11 @@ def pages(doc: Doc) -> list:
         pl.append(temp)
     return pl
 
+
 def add_new_version(doc: Doc) -> Doc:
     """ """
     ver = len(doc.index)
     current_v = doc.index[-1]
-    #new_v = len(current_v) * [None]
     new_cache = len(current_v) * [None]
     new_trailer = doc.cache[0].copy()
     new_trailer['/Prev'] = current_v[0]['xref_table_pos']
@@ -204,6 +206,34 @@ def add_new_version(doc: Doc) -> Doc:
     new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
     new_v = [new_trailer] + [current_v[i] for i in range(1,len(current_v)-1)] + [None] 
     new_index.append(new_v)
+    return Doc(doc.bdata, new_index, new_cache)
+
+
+def update_object(doc: Doc, num: int, new_o) -> Doc:
+    """ """
+    ver = len(doc.index)
+    old_i = doc.index[-1][num]
+    new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}
+    new_index = doc.index.copy()
+    new_index[-1] = doc.index[-1].copy()
+    new_index[-1][num] = new_i
+    new_cache = doc.cache.copy()
+    new_cache[num] = new_o
+    return Doc(doc.bdata, new_index, new_cache)
+
+
+def add_object(doc: Doc, new_o) -> Doc:
+    """ """
+    ver = len(doc.index)
+    num = len(doc.index[-1])-1
+    new_i = {'o_num': num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': ver-1}
+    new_index = doc.index.copy()
+    new_index[-1] = doc.index[-1].copy()
+    new_index[-1].append(None)
+    new_index[-1][num] = new_i
+    new_cache = doc.cache.copy()
+    new_cache.append(None)
+    new_cache[num] = new_o
     return Doc(doc.bdata, new_index, new_cache)
 
 
