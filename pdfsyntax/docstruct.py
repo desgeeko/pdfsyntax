@@ -15,7 +15,10 @@ Doc = namedtuple('Doc', 'bdata index cache')
 class Doc(Doc):
     def __repr__(self):
         res = "<PDF Doc"
-        res += f" containing {len(self.index)} update(s)"
+        res += f" containing "
+        if len(self.index) > 1:
+            res += f"{len(self.index)-1} revision(s) and "
+        res += f"one current update with {len(changes(self))} modifications"
         if self.cache:
             present = 0
             for i in range(1, len(self.index[-1])-1):
@@ -119,7 +122,7 @@ def build_cache(bdata: bytes, index: list) -> list:
 
 def changes(doc: Doc):
     """ """
-    deleted, updated, added = [], [], []
+    res = []
     current = doc.index[-1]
     if len(doc.index) == 1:
         previous = [None] * len(current)
@@ -127,13 +130,13 @@ def changes(doc: Doc):
         previous = doc.index[-2]
     ver = len(doc.index)-1
     for i in range(1, len(current)-1):
-        if current[i]['doc_ver'] == ver:
-            added.append(i)
-        elif previous[i] != None and current[i] == None:
-            deleted.append(i)
+        if previous[i] != None and current[i] == None:
+            res.append((i, 'd'))
         elif previous[i] != None and current[i] != previous[i]:
-            updated.append(i)
-    return deleted, updated, added
+            res.append((i, 'u'))
+        else:
+            res.append((i, 'a'))
+    return res
 
 
 def version(doc: Doc) -> str:
@@ -194,8 +197,10 @@ def pages(doc: Doc) -> list:
     return pl
 
 
-def add_new_version(doc: Doc) -> Doc:
+def add_version(doc: Doc) -> Doc:
     """ """
+    if len(changes(doc)) == 0:
+        return doc
     ver = len(doc.index)
     current_v = doc.index[-1]
     new_cache = len(current_v) * [None]
@@ -207,6 +212,16 @@ def add_new_version(doc: Doc) -> Doc:
     new_v = [new_trailer] + [current_v[i] for i in range(1,len(current_v)-1)] + [None] 
     new_index.append(new_v)
     return Doc(doc.bdata, new_index, new_cache)
+
+
+def prepare_version(doc: Doc) -> list:
+    """ """
+    res = b''
+    chg = changes(doc)
+    fragments = build_fragments(chg, doc.index[-1], doc.cache, len(doc.bdata))
+    for f in fragments:
+        res += f
+    return res
 
 
 def update_object(doc: Doc, num: int, new_o) -> Doc:

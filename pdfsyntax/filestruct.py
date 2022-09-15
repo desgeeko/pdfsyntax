@@ -2,6 +2,8 @@
 
 from .objects import *
 
+MARGIN = b'\n'
+
 
 def parse_xref_table(bdata: bytes, start_pos: int) -> list:
     """Return a list of dicts indexing indirect objects
@@ -30,6 +32,7 @@ def parse_xref_table(bdata: bytes, start_pos: int) -> list:
             o_num += 1
     xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_table_pos':start_pos, 'xref_table':table })
     return xref
+
 
 def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
     """Return a list of dicts indexing indirect objects
@@ -67,8 +70,9 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
     xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream':table})
     return xref
     
+
 def build_chrono_from_xref(bdata: bytes) -> list:
-    """ Return a merged list of all entries found in xref tables or xref streams """
+    """Return a merged list of all entries found in xref tables or xref streams """
     EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
@@ -116,8 +120,9 @@ def build_chrono_from_xref(bdata: bytes) -> list:
             trailer = xref['stream_def']
     return chrono
 
+
 def build_index_from_chrono(chrono: list) -> list:
-    """ Build a multi-dimensional array where each column represents a doc update"""
+    """Build a multi-dimensional array where each column represents a doc update"""
     nb = max(chrono, key = lambda i: i['o_num']).get('o_num') + 2
     m = nb * [None]
     abs_pos_array = nb * [0]
@@ -154,4 +159,62 @@ def build_index_from_chrono(chrono: list) -> list:
             obj['a_'] = abs_pos_array[obj['env_num']] + (obj['o_pos'] + 1) / 1000
     return index
 
+
+def circular_deleted(changes: list) -> dict:
+    """Build lookup dict to ref of next deleted object"""
+    res = {}
+    deleted = [x for x in changes if x[1] == 'd']
+    for i, d in enumerate([(0, 'd')] + deleted):
+        if i == len(deleted):
+            res[d[0]] = 0
+        else:
+            res[d[0]] = deleted[i][0]
+    return res
+
+
+def build_xref_table(xref_table: list) -> bytes:
+    """Serialize XREF table into bytes"""
+    res = b'xref\n'
+    for x, _ in xref_table:
+        res += x
+        res += b'\n'
+    return res
+
+
+def build_fragments(changes: list, current_index: list, cache: list, starting_pos: int) -> list:
+    """List the sequence of byte blocks that make the update"""
+    fragments = []
+    xref_table = []
+    counter = starting_pos + len(MARGIN)
+    fragments.append(MARGIN)
+    next_free = circular_deleted(changes)
+    for num, action in ([(0, 'd')] + changes):
+        if action == 'd':
+            if num == 0:
+                o_gen = 65535 - 1
+            else:
+                o_gen = current_index[num]['o_gen']
+            header = str(num).encode('ascii') + b' 1'
+            xref_table.append((header, None))
+            ref = f'{next_free[num]:010} {(o_gen+1):05} f'.encode('ascii')
+            xref_table.append((ref, num))
+        else:
+            o_gen = current_index[num]['o_gen']
+            beginobj = f'{num} {o_gen}'.encode('ascii') + b' obj\n'
+            ser = serialize(cache[num]) + b'\n'
+            endobj = b'endobj\n'
+            block = beginobj + ser + endobj
+            fragments.append(block)
+            header = str(num).encode('ascii') + b' 1'
+            xref_table.append((header, None))
+            ref = f'{counter:010} {o_gen:05} n'.encode('ascii')
+            xref_table.append((ref, num))
+            counter += len(block)
+    current_index[0]['xref_table'] = xref_table
+    fragments.append(build_xref_table(xref_table))
+    ser0 = serialize(cache[0])
+    fragments.append(b'trailer\n' + ser0 + b'\n')
+    fragments.append(f'startxref\n{counter}\n'.encode('ascii'))
+    fragments.append(b'%%EOF\n')
+    return fragments
 
