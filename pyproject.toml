@@ -1,7 +1,33 @@
 [build-system]
 requires = [
-    "setuptools>=42",
-    "wheel"
+    "setuptools>=61.0"
 ]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "pdfsyntax"
+version = "0.0.3"
+authors = [ 
+    { name="Martin D.", email="desgeeko@gmail.com" } 
+]
+description = "Tool to generate a static HTML file that represents the internal structure of a PDF file"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Utilities"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/desgeeko/pdfsyntax"
+"Bug Tracker" = "https://github.com/desgeeko/pdfsyntax/issues"
+
+[tool.setuptools]
+packages = ["pdfsyntax"]
