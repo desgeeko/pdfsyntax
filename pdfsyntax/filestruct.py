@@ -5,6 +5,24 @@ from .objects import *
 MARGIN = b'\n'
 
 
+def bdata_provider(filename: str, mode: str = "SINGLE"):
+    if mode == "SINGLE":
+        bfile = open(filename, 'rb')
+        bdata = bfile.read()
+        bfile.close()
+        def single_load(i: int, n: int) -> tuple:
+            return (bdata, i)
+        return single_load
+    else:
+        def continuous_load(i: int, n: int) -> tuple:
+            bfile = open(filename, 'rb')
+            bfile.seek(i, 0)
+            bdata = bfile.read(n)
+            bfile.close()
+            return (bdata, 0)
+        return continuous_load
+
+
 def parse_xref_table(bdata: bytes, start_pos: int) -> list:
     """Return a list of dicts indexing indirect objects
 
@@ -18,14 +36,23 @@ def parse_xref_table(bdata: bytes, start_pos: int) -> list:
     lines = bdata[start_pos:trailer_pos].splitlines()
     for line in lines:
         line_a = line.strip(b'\n\r ').split()
-        if len(line_a) == 2:
+        #line_a = []
+        #i, n, begin_i = 0, len(line), 0
+        #while i < n:
+        #    if line[i] in b' ':
+        #        line_a.append(line[begin_i:i])
+        #        begin_i = i + 1
+        #    i += 1
+        #line_a.append(line[begin_i:i])
+        l = len(line_a)
+        if  l == 2:
             o_num = int(line_a[0])
             table.append((line, None))
-        elif len(line_a) == 3:
+        elif l == 3:
             offset = int(line_a[0])
             o_ver = int(line_a[1])
-            o_start = bdata.find(b'obj', offset) + len(b'obj') + 1
-            if bdata[o_start] in b'\r\n ': o_start += 1
+            #o_start = bdata.find(b'obj', offset) + len(b'obj') + 1
+            #if bdata[o_start] in b'\r\n ': o_start += 1
             if o_num != 0:
                 xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_ver})
             table.append((line, o_num))
@@ -118,6 +145,17 @@ def build_chrono_from_xref(bdata: bytes) -> list:
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
             chrono =  tmp_index + chrono
             trailer = xref['stream_def']
+    seq = [i['abs_pos'] for i in chrono]
+    seq.sort()
+    idx = {}
+    i = 0
+    l = len(seq)
+    while i <  l - 1:
+        idx[seq[i]] = seq[i+1]
+        i += 1
+    idx[seq[i]] = None
+    for i in chrono:
+        i['abs_next'] = idx[i['abs_pos']]
     return chrono
 
 

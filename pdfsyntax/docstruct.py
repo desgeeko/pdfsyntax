@@ -159,6 +159,16 @@ def trailer(doc: Doc):
     return get_object(doc, 0j)
 
 
+def encrypted(doc: Doc):
+    """ """
+    trail = trailer(doc)
+    encrypt = trail.get('/Encrypt')
+    if encrypt:
+        return True
+    else:
+        return False
+
+
 def catalog(doc: Doc):
     """Return doc Root/Catalog dictionary"""
     return get_object(doc, trailer(doc)['/Root'])

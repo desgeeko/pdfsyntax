@@ -91,6 +91,7 @@ def structure(doc: Doc) -> dict:
     ret['Version'] = version(doc)
     ret['Pages'] = number_pages(doc)
     ret['Updates'] = updates(doc)
+    ret['Encrypted'] = encrypted(doc)
     ret['Paper'] = paper(page_layouts(doc)[0][0])
     return ret
 

@@ -1,7 +1,7 @@
 PDFSyntax
 =========
 
-*A Python tool to generate a static HTML file that represents the internal structure of a PDF file*
+*A Python PDF parsing library and tool built on top to browse the internal structure of a PDF file*
 
 At some point the low-level functions developed for this CLI will be exposed as an API for programmatic use.
 
@@ -20,7 +20,7 @@ The generated HTML looks like the raw PDF file with the following additions:
 * Display offset of an object
 
 ### Screenshot
-![PDFSyntax screenshot](screenshot.png)
+![PDFSyntax screenshot](https://raw.githubusercontent.com/desgeeko/pdfsyntax/main/screenshot.png)
 
 ### Usage
 Generate the HTML file and open it in your browser:

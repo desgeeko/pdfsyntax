@@ -29,7 +29,10 @@ def overview(filename: str) -> None:
         print(f"{key}: {s[key]}")
     print('\n# Metadata')
     for key in m:
-        print(f"{key}: {m[key]}")
+        if m[key] and s['Encrypted']:
+            print(f"{key}: #Encrypted#")
+        else:
+            print(f"{key}: {m[key]}")
     return
 
 def inspect(filename: str) -> None:
