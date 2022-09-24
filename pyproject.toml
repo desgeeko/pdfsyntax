@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pdfsyntax"
-version = "0.0.3"
+version = "0.0.4"
 authors = [ 
     { name="Martin D.", email="desgeeko@gmail.com" } 
 ]
