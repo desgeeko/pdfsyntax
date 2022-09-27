@@ -1,5 +1,6 @@
 """Module pdfsyntax.docstruct: how objects represent a document"""
 
+from typing import Callable
 from .objects import *
 from .filestruct import *
 from .text import *
@@ -33,7 +34,7 @@ EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
 
 
-def memoize_obj_in_cache(idx: list, bdata: bytes, key: int, cache=None, rev=-1) -> list:
+def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-1) -> list:
     """Parse indirect object whose number is [key] and return a cache filled at index [key]
     cache argument may be:
     - a list that is updated,
@@ -51,7 +52,9 @@ def memoize_obj_in_cache(idx: list, bdata: bytes, key: int, cache=None, rev=-1) 
             indexes = index
         obj = {}
         for index in indexes:
-            i, j, _ = next_token(bdata, index['abs_pos'])
+            #i, j, _ = next_token(bdata, index['abs_pos'])
+            bdata, a0, _ = fdata(index['abs_pos'], index['abs_next'] - index['abs_pos'])
+            i, j, _ = next_token(bdata, a0)
             i, j, _ = next_token(bdata, j)
             text = bdata
             i_obj = parse_obj(text, i)
@@ -60,7 +63,9 @@ def memoize_obj_in_cache(idx: list, bdata: bytes, key: int, cache=None, rev=-1) 
             obj.update(i_obj)
         cache[key] = obj    
     elif 'env_num' not in idx[rev][key]:
-        i, j, _ = next_token(bdata, idx[rev][key]['abs_pos'])
+        #i, j, _ = next_token(bdata, idx[rev][key]['abs_pos'])
+        bdata, a0, _ = fdata(idx[rev][key]['abs_pos'], idx[rev][key]['abs_next'] - idx[rev][key]['abs_pos'])
+        i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
@@ -71,7 +76,9 @@ def memoize_obj_in_cache(idx: list, bdata: bytes, key: int, cache=None, rev=-1) 
         cache[key] = obj    
     else:
         container = idx[rev][key]['env_num']
-        i, j, _ = next_token(bdata, idx[rev][container]['abs_pos'])
+        #i, j, _ = next_token(bdata, idx[rev][container]['abs_pos'])
+        bdata, a0, _ = fdata(idx[rev][container]['abs_pos'], idx[rev][container]['abs_next'] - idx[rev][container]['abs_pos'])
+        i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
@@ -112,7 +119,7 @@ def follow_pages_rec(doc: Doc, num, inherited={}) -> list:
         return[(num, inherited)]
 
 
-def build_cache(bdata: bytes, index: list) -> list:
+def build_cache(bdata: Callable, index: list) -> list:
     """Initialize cache with trailer and Root"""
     size = len(index[-1])
     cache = size * [None]
@@ -130,7 +137,9 @@ def changes(doc: Doc):
         previous = doc.index[-2]
     ver = len(doc.index)-1
     for i in range(1, len(current)-1):
-        if previous[i] != None and current[i] == None:
+        if i < len(previous) - 1 and previous[i] == current[i]:
+            continue
+        elif previous[i] != None and current[i] == None:
             res.append((i, 'd'))
         elif previous[i] != None and current[i] != previous[i]:
             res.append((i, 'u'))
@@ -141,7 +150,8 @@ def changes(doc: Doc):
 
 def version(doc: Doc) -> str:
     """Return PDF version"""
-    ver = doc.bdata[5:8]
+    bdata, a0, _ = doc.bdata(5, 3)
+    ver = bdata[a0:a0+3]
     cat = catalog(doc)
     if '/Version' in cat and cat['/Version'] > ver.decode('ascii'):
             return cat['/Version'].decode('ascii')
@@ -228,7 +238,7 @@ def prepare_version(doc: Doc) -> list:
     """ """
     res = b''
     chg = changes(doc)
-    fragments = build_fragments(chg, doc.index[-1], doc.cache, len(doc.bdata))
+    fragments = build_fragments(chg, doc.index[-1], doc.cache, len(doc.bdata(0, -1)[0]))
     for f in fragments:
         res += f
     return res

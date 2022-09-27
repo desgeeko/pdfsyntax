@@ -246,13 +246,13 @@ def serialize(obj, depth=0) -> bytes:
             ret += b' '
             ret += value
             ret += b' '
-        if content:
-            ret += b'stream\n'
-            ret += content
-            ret += b'endstream\n'
-            ret += b' '     
         ret += b' ' * depth
         ret += b'>>'
+        if content:
+            ret += b'\nstream\n'
+            ret += content
+            ret += b'\nendstream'
+            #ret += b' '
     elif type(obj) == list:
         ret += b'[ '
         for i in obj:

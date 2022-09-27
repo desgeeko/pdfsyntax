@@ -77,11 +77,8 @@ TRUNCATED = '<em> ...(truncated) </em>'
 
 def build_html(articles: list, pos_index: dict, nb_ver: int, filename: str, version: bytes) -> str:
     """Compose the page layout"""
+    print(articles)
     page = HEADER
-    #startxref = 0
-    #for i in pos_index.keys():
-    #    if pos_index[i] == '-2.-2.0':
-    #        startxref = i
     page += build_header(filename, nb_ver, version)
     for article in articles:
         obj_attr = (article['o_num'], article['o_gen'], article['o_ver'])
@@ -96,6 +93,7 @@ def build_html(articles: list, pos_index: dict, nb_ver: int, filename: str, vers
         mini_index = article['mini_index']
         if 'xref_table' in article:
             page += build_xref_table(article['xref_table'], mini_index)
+            page += "\ntrailer\n"
         page += follow_obj(obj, mini_index, pos_index)
         page += build_obj_trailer()
     page += TRAILER
@@ -110,7 +108,7 @@ def build_header(filename: str, nb_ver: int, version: bytes) -> str:
     ret += f'<a class="header-link" href="https://github.com/desgeeko/pdfsyntax">pdfsyntax</a></pre>'
     ret += f'</div>\n'
     ret += f'<div class="content">\n'
-    ret += f'<pre>{version.decode("ascii")}</pre>\n'
+    ret += f'<pre>{version[:8].decode("ascii")}</pre>\n'
     return ret
 
 def add_startxref(article: dict, pos_index: dict) -> str:

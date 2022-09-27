@@ -6,7 +6,7 @@ class Updating(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.doc = pdf.read_pdf('./samples/add_text_annotation.pdf')
+        cls.doc = pdf.read('./samples/add_text_annotation.pdf')
 
     def test_index_length(self):
         self.assertEqual(len(self.doc.index), 3)

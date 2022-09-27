@@ -37,13 +37,14 @@ def overview(filename: str) -> None:
 
 def inspect(filename: str) -> None:
     """Print html view of the file map"""
-    bfile = open(filename, 'rb')
-    bdata = bfile.read()
-    bfile.close()
-    file_seq, pos_index, nb_ver = file_map(bdata)
-    print(build_html(file_seq, pos_index, nb_ver, filename, bdata[:8]))
+    #bfile = open(filename, 'rb')
+    #bdata = bfile.read()
+    #bfile.close()
+    fdata = bdata_provider(filename)
+    file_seq, pos_index, nb_ver = file_map(fdata)
+    print(build_html(file_seq, pos_index, nb_ver, filename, fdata(0, 8)[0]))
 
-def file_map(bdata: bytes) -> tuple:
+def file_map(bdata: Callable) -> tuple:
     """Build file sequence and sort it by absolute position"""
     file_seq = build_chrono_from_xref(bdata)
     file_index = build_index_from_chrono(file_seq)    

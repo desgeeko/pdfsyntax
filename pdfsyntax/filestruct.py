@@ -1,6 +1,8 @@
 """Module pdfsyntax.filestruct: how objects are stored in a PDF file"""
 
+from typing import Callable
 from .objects import *
+import os
 
 MARGIN = b'\n'
 
@@ -11,15 +13,21 @@ def bdata_provider(filename: str, mode: str = "SINGLE"):
         bdata = bfile.read()
         bfile.close()
         def single_load(i: int, n: int) -> tuple:
-            return (bdata, i)
+            if i == -1:
+                i = len(bdata) - n
+            return (bdata, i, 0)
         return single_load
     else:
         def continuous_load(i: int, n: int) -> tuple:
+            if n == -1:
+                n = os.stat(filename).st_size - i
+            elif i == -1:
+                i = os.stat(filename).st_size - n
             bfile = open(filename, 'rb')
             bfile.seek(i, 0)
             bdata = bfile.read(n)
             bfile.close()
-            return (bdata, 0)
+            return (bdata, 0, i)
         return continuous_load
 
 
@@ -98,22 +106,32 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
     return xref
     
 
-def build_chrono_from_xref(bdata: bytes) -> list:
+def build_chrono_from_xref(fdata: Callable) -> list:
     """Return a merged list of all entries found in xref tables or xref streams """
     EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
-    eof_pos = bdata.rfind(EOF)
-    startxref_pos = bdata.rfind(STARTXREF)
+    #print(f"i=-1 n=100 - 100 last")
+    bdata, a0, o0 = fdata(-1, 100)
+    #eof_pos = bdata.rfind(EOF)
+    #startxref_pos = bdata.rfind(STARTXREF)
+    eof_pos = o0 + bdata.rfind(EOF, a0)
+    startxref_pos = o0 + bdata.rfind(STARTXREF, a0)
     i, j, _ = next_token(bdata, startxref_pos + len(STARTXREF))
     xref_pos = int(bdata[i:j])
-    if bdata[xref_pos:xref_pos+4] == XREF:
-        chrono = parse_xref_table(bdata, xref_pos)
+    #print(f"i={xref_pos} n={startxref_pos - xref_pos} - xref_pos")
+    bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
+    #if bdata[xref_pos:xref_pos+4] == XREF:
+    if bdata[a0:a0+4] == XREF:
+        #chrono = parse_xref_table(bdata, xref_pos)
+        chrono = parse_xref_table(bdata, a0)
         i, j, _ = next_token(bdata, chrono[0]['abs_pos'])  # b'trailer'
-        i, j, _ = next_token(bdata, j)                     # actual trailer dict
+        i, j, _ = next_token(bdata, j)
         trailer = parse_obj(bdata[i:j])
     else: # must be a /XRef stream
-        i, j, _ = next_token(bdata, xref_pos)
+        #i, j, _ = next_token(bdata, xref_pos)
+        bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
+        i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
@@ -122,13 +140,20 @@ def build_chrono_from_xref(bdata: bytes) -> list:
         trailer = xref['stream_def']
     chrono[0]['startxref_pos'] = startxref_pos
     chrono.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
+    prev_eof = eof_pos
     while '/Prev' in trailer:
         new_xref_pos = trailer['/Prev']
         xref_pos = int(new_xref_pos)
-        startxref_pos = bdata.find(STARTXREF, xref_pos)
-        eof_pos = bdata.find(EOF, xref_pos)
-        if bdata[xref_pos:xref_pos+4] == XREF:
-            tmp_index = parse_xref_table(bdata, xref_pos)
+        #startxref_pos = bdata.find(STARTXREF, xref_pos)
+        bdata, a0, o0 = fdata(xref_pos, prev_eof - xref_pos)
+        startxref_pos = o0 + bdata.find(STARTXREF, a0)
+        #eof_pos = bdata.find(EOF, xref_pos)
+        eof_pos = o0 + bdata.find(EOF, a0)
+        prev_eof = eof_pos
+        #if bdata[xref_pos:xref_pos+4] == XREF:
+        if bdata[a0:a0+4] == XREF:
+            #tmp_index = parse_xref_table(bdata, xref_pos)
+            tmp_index = parse_xref_table(bdata, a0)
             tmp_index[0]['startxref_pos'] = startxref_pos
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
             chrono = tmp_index + chrono
@@ -136,7 +161,9 @@ def build_chrono_from_xref(bdata: bytes) -> list:
             i, j, _ = next_token(bdata, j)                     # actual trailer dict
             trailer = parse_obj(bdata[i:j])
         else: # must be a /XRef stream
-            i, j, _ = next_token(bdata, xref_pos)
+            #i, j, _ = next_token(bdata, xref_pos)
+            bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
+            i, j, _ = next_token(bdata, a0)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)

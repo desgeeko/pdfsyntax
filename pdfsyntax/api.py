@@ -35,15 +35,15 @@ PAPER_SIZES = {
     }
 
 
-def init_doc(bdata: bytes, use_cache=True) -> tuple:
+def init_doc(fdata: Callable, use_cache=True) -> tuple:
     """ """
-    chrono = build_chrono_from_xref(bdata)
+    chrono = build_chrono_from_xref(fdata)
     index = build_index_from_chrono(chrono)
     if use_cache == False:
         cache = None
     else:
-        cache = build_cache(bdata, index)
-    doc = Doc(bdata, index, cache)
+        cache = build_cache(fdata, index)
+    doc = Doc(fdata, index, cache)
     return doc, chrono
 
 
@@ -62,23 +62,24 @@ def loads(bdata, use_cache=True) -> Doc:
     return doc
 
 
-def read_pdf(filename: str, use_cache=True) -> Doc:
+def read(filename: str, use_cache=True) -> Doc:
     """ """
-    bfile = open(filename, 'rb')
-    bdata = bfile.read()
-    bfile.close()
-    doc, _ = init_doc(bdata, use_cache)
+    #bfile = open(filename, 'rb')
+    #bdata = bfile.read()
+    #bfile.close()
+    fdata = bdata_provider(filename)
+    doc, _ = init_doc(fdata, use_cache)
     doc = add_version(doc)
     return doc
 
 
-def write_pdf(doc: Doc, filename: str, use_cache=True) -> Doc:
+def write(doc: Doc, filename: str) -> Doc:
     """ """
     x = prepare_version(doc)
     if doc.cache[-1]:
         new_bdata = x
     else:
-        new_bdata = doc.bdata + x
+        new_bdata = doc.bdata(0, -1)[0] + x
     bfile = open(filename, 'wb')
     bfile.write(new_bdata)
     bfile.close()
@@ -90,7 +91,7 @@ def structure(doc: Doc) -> dict:
     ret = {}
     ret['Version'] = version(doc)
     ret['Pages'] = number_pages(doc)
-    ret['Updates'] = updates(doc)
+    ret['Revisions'] = updates(doc)
     ret['Encrypted'] = encrypted(doc)
     ret['Paper'] = paper(page_layouts(doc)[0][0])
     return ret
