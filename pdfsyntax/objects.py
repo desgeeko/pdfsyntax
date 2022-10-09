@@ -195,6 +195,7 @@ def decode_predictor(bdata: bytes, predictor, columns):
         i += columns
     return res
 
+
 def decode_stream(stream, stream_def):
     """ """
     res = stream
@@ -205,6 +206,12 @@ def decode_stream(stream, stream_def):
         columns = int(stream_def['/DecodeParms']['/Columns'])
         res = decode_predictor(res, predictor, columns)
     return res
+
+
+def encode_stream(stream, stream_def):
+    if '/Filter' in stream_def and stream_def['/Filter'] == '/FlateDecode':
+        return zlib.compress(stream)
+    return stream
 
 
 def to_str(obj) -> bytes:
@@ -250,7 +257,7 @@ def serialize(obj, depth=0) -> bytes:
         ret += b'>>'
         if content:
             ret += b'\nstream\n'
-            ret += content
+            ret += encode_stream(content, obj)
             ret += b'\nendstream'
             #ret += b' '
     elif type(obj) == list:

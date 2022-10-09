@@ -16,10 +16,15 @@ Doc = namedtuple('Doc', 'bdata index cache')
 class Doc(Doc):
     def __repr__(self):
         res = "<PDF Doc"
-        res += f" containing "
-        if len(self.index) > 1:
-            res += f"{len(self.index)-1} revision(s) and "
-        res += f"one current update with {len(changes(self))} modifications"
+        res += f" with "
+        i = len(self.index)
+        if not changes(self):
+            i -= 1
+        res += f"{i} revisions(s)"
+        if not changes(self):
+            res += f", ready to start update/revision {len(self.index)}"
+        else:
+            res += f", current update/revision containing {len(changes(self))} modifications"
         if self.cache:
             present = 0
             for i in range(1, len(self.index[-1])-1):
@@ -244,8 +249,22 @@ def prepare_version(doc: Doc) -> list:
     return res
 
 
+def rewind(doc: Doc) -> Doc:
+    if len(doc.index) == 1:
+        return doc
+    new_index = doc.index.copy()
+    new_index.pop()
+    new_current = new_index[-1].copy()
+    new_current[-1] = None
+    new_index[-1] = new_current
+    new_cache = build_cache(doc.bdata, new_index)
+    return Doc(doc.bdata, new_index, new_cache)
+
+
 def update_object(doc: Doc, num: int, new_o) -> Doc:
     """ """
+    if doc.index[-1][-1]:
+        doc = add_version(doc)
     ver = len(doc.index)
     old_i = doc.index[-1][num]
     new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}
@@ -259,6 +278,8 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
 
 def add_object(doc: Doc, new_o) -> Doc:
     """ """
+    if doc.index[-1][-1]:
+        doc = add_version(doc)
     ver = len(doc.index)
     num = len(doc.index[-1])-1
     new_i = {'o_num': num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': ver-1}

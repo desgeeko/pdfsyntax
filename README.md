@@ -3,9 +3,18 @@ PDFSyntax
 
 *A Python PDF parsing library and tool built on top to browse the internal structure of a PDF file*
 
-At some point the low-level functions developed for this CLI will be exposed as an API for programmatic use.
+## Introduction
+
+The project is focused on chapter 7 ("Syntax") of the Portable Document Format (PDF) Specification.
+
+PDFSyntax is lightweight (no dependencies) and written from scratch in pure Python. 
+
+It is mostly made of simple functions working on built-in types and named tuples. Shallow copying of the Doc object structure performed by pure functions offers some kind of - *experimental* - immutability.
+
+PDFSyntax favors non-destructive edits allowed by the PDF Specification: by default incremental updates are added at the end of the original file.
 
 WORK IN PROGRESS!
+
 
 ## CLI
 
@@ -28,5 +37,34 @@ Generate the HTML file and open it in your browser:
     python3 -m pdfsyntax inspect file.pdf > inspection.html
 
 ## API
-(TODO)
+
+### Usage
+
+Most functions are pure and are exposed both as basic functions and as instance methods of a Doc object: in the function signatures found in the following sections, a `doc` first argument can read as `self`.
+For example both samples are equivalent:
+
+```Python
+#Function pattern
+m = metadata(doc)
+```
+
+```Python
+#Method pattern
+m = doc.metadata()
+```
+
+### I/O Functions
+
+| Function | Description |
+| --- | --- |
+| `read(filename: str) -> Doc` | Loads a PDF from the filesystem into a Doc object |
+
+### Inspection Functions
+
+| Function | Description |
+| --- | --- |
+| `metadata(doc: Doc) -> Dict` | Returns the document metadata (title, author, ...) |
+| `structure(doc: Doc) -> Dict` | Returns the document structure (PDF version, nb of pages, nb of revisions, encryption, paper format) |
+
+
 

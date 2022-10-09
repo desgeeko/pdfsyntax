@@ -111,25 +111,18 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
-    #print(f"i=-1 n=100 - 100 last")
     bdata, a0, o0 = fdata(-1, 100)
-    #eof_pos = bdata.rfind(EOF)
-    #startxref_pos = bdata.rfind(STARTXREF)
     eof_pos = o0 + bdata.rfind(EOF, a0)
     startxref_pos = o0 + bdata.rfind(STARTXREF, a0)
     i, j, _ = next_token(bdata, startxref_pos + len(STARTXREF))
     xref_pos = int(bdata[i:j])
-    #print(f"i={xref_pos} n={startxref_pos - xref_pos} - xref_pos")
     bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
-    #if bdata[xref_pos:xref_pos+4] == XREF:
     if bdata[a0:a0+4] == XREF:
-        #chrono = parse_xref_table(bdata, xref_pos)
         chrono = parse_xref_table(bdata, a0)
         i, j, _ = next_token(bdata, chrono[0]['abs_pos'])  # b'trailer'
         i, j, _ = next_token(bdata, j)
         trailer = parse_obj(bdata[i:j])
     else: # must be a /XRef stream
-        #i, j, _ = next_token(bdata, xref_pos)
         bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
@@ -144,15 +137,11 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     while '/Prev' in trailer:
         new_xref_pos = trailer['/Prev']
         xref_pos = int(new_xref_pos)
-        #startxref_pos = bdata.find(STARTXREF, xref_pos)
         bdata, a0, o0 = fdata(xref_pos, prev_eof - xref_pos)
         startxref_pos = o0 + bdata.find(STARTXREF, a0)
-        #eof_pos = bdata.find(EOF, xref_pos)
         eof_pos = o0 + bdata.find(EOF, a0)
         prev_eof = eof_pos
-        #if bdata[xref_pos:xref_pos+4] == XREF:
         if bdata[a0:a0+4] == XREF:
-            #tmp_index = parse_xref_table(bdata, xref_pos)
             tmp_index = parse_xref_table(bdata, a0)
             tmp_index[0]['startxref_pos'] = startxref_pos
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
@@ -161,7 +150,6 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             i, j, _ = next_token(bdata, j)                     # actual trailer dict
             trailer = parse_obj(bdata[i:j])
         else: # must be a /XRef stream
-            #i, j, _ = next_token(bdata, xref_pos)
             bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
             i, j, _ = next_token(bdata, a0)
             i, j, _ = next_token(bdata, j)

@@ -35,40 +35,37 @@ PAPER_SIZES = {
     }
 
 
-def init_doc(fdata: Callable, use_cache=True) -> tuple:
+def init_doc(fdata: Callable) -> tuple:
     """ """
     chrono = build_chrono_from_xref(fdata)
     index = build_index_from_chrono(chrono)
-    if use_cache == False:
-        cache = None
-    else:
-        cache = build_cache(fdata, index)
+    cache = build_cache(fdata, index)
     doc = Doc(fdata, index, cache)
     return doc, chrono
 
 
-def load(fp, use_cache=True) -> Doc:
+def load(fp) -> Doc:
     """ """
     bdata = fp.read()
-    doc, _ = init_doc(bdata, use_cache)
+    doc, _ = init_doc(bdata)
     doc = add_version(doc)
     return doc
 
 
-def loads(bdata, use_cache=True) -> Doc:
+def loads(bdata) -> Doc:
     """ """
-    doc, _ = init_doc(bdata, use_cache)
+    doc, _ = init_doc(bdata)
     doc = add_version(doc)
     return doc
 
 
-def read(filename: str, use_cache=True) -> Doc:
+def read(filename: str) -> Doc:
     """ """
     #bfile = open(filename, 'rb')
     #bdata = bfile.read()
     #bfile.close()
     fdata = bdata_provider(filename)
-    doc, _ = init_doc(fdata, use_cache)
+    doc, _ = init_doc(fdata)
     doc = add_version(doc)
     return doc
 
@@ -76,7 +73,7 @@ def read(filename: str, use_cache=True) -> Doc:
 def write(doc: Doc, filename: str) -> Doc:
     """ """
     x = prepare_version(doc)
-    if doc.cache[-1]:
+    if not doc.index[-1][-1]:
         new_bdata = x
     else:
         new_bdata = doc.bdata(0, -1)[0] + x
@@ -142,5 +139,7 @@ def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
 
 Doc.metadata = metadata
 Doc.structure = structure
+Doc.rewind = rewind
+Doc.rotate = rotate
 Doc.page_layouts = page_layouts
 
