@@ -72,13 +72,21 @@ def read(filename: str) -> Doc:
 
 def write(doc: Doc, filename: str) -> Doc:
     """ """
-    x = prepare_version(doc)
-    if not doc.index[-1][-1]:
-        new_bdata = x
-    else:
-        new_bdata = doc.bdata(0, -1)[0] + x
+    bdata = b''
+    nb_rev = len(doc.index)
+    eof_rev = -1
+    for i in range(nb_rev):
+        if doc.index[i][-1]:
+            eof_rev = i
+        else:
+            break
+    if eof_rev >= 0:
+        eof_pos = doc.index[eof_rev][-1]['abs_pos']
+        bdata += doc.bdata(0, eof_pos+4)[0]
+    for i in range(eof_rev+1, nb_rev):
+        bdata += prepare_version(doc, i)
     bfile = open(filename, 'wb')
-    bfile.write(new_bdata)
+    bfile.write(bdata)
     bfile.close()
     return doc
 

@@ -132,14 +132,14 @@ def build_cache(bdata: Callable, index: list) -> list:
     return cache
 
 
-def changes(doc: Doc):
+def changes(doc: Doc, rev: int=-1):
     """ """
     res = []
-    current = doc.index[-1]
+    current = doc.index[rev]
     if len(doc.index) == 1:
         previous = [None] * len(current)
     else:
-        previous = doc.index[-2]
+        previous = doc.index[rev-1]
     ver = len(doc.index)-1
     for i in range(1, len(current)-1):
         if i < len(previous) - 1 and previous[i] == current[i]:
@@ -239,11 +239,13 @@ def add_version(doc: Doc) -> Doc:
     return Doc(doc.bdata, new_index, new_cache)
 
 
-def prepare_version(doc: Doc) -> list:
+def prepare_version(doc: Doc, rev:int = -1) -> list:
     """ """
     res = b''
-    chg = changes(doc)
-    fragments = build_fragments(chg, doc.index[-1], doc.cache, len(doc.bdata(0, -1)[0]))
+    chg = changes(doc, rev)
+    if doc.index[rev][-1] or not chg:
+        return res
+    fragments = build_fragments(chg, doc.index[rev], doc.cache, len(doc.bdata(0, -1)[0]))
     for f in fragments:
         res += f
     return res
