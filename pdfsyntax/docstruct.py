@@ -239,13 +239,16 @@ def add_version(doc: Doc) -> Doc:
     return Doc(doc.bdata, new_index, new_cache)
 
 
-def prepare_version(doc: Doc, rev:int = -1) -> list:
+def prepare_version(doc: Doc, rev:int = -1, idx:int = 0) -> list:
     """ """
     res = b''
     chg = changes(doc, rev)
     if doc.index[rev][-1] or not chg:
         return res
-    fragments = build_fragments(chg, doc.index[rev], doc.cache, len(doc.bdata(0, -1)[0]))
+    for num, _ in chg:
+        memoize_obj_in_cache(doc.index, doc.bdata, num, doc.cache, rev=-1)
+    #fragments = build_fragments(chg, doc.index[rev], doc.cache, len(doc.bdata(0, -1)[0]))
+    fragments = build_fragments(chg, doc.index[rev], doc.cache, idx)
     for f in fragments:
         res += f
     return res
@@ -265,8 +268,8 @@ def rewind(doc: Doc) -> Doc:
 
 def update_object(doc: Doc, num: int, new_o) -> Doc:
     """ """
-    if doc.index[-1][-1]:
-        doc = add_version(doc)
+    #if doc.index[-1][-1]:
+    #    doc = add_version(doc)
     ver = len(doc.index)
     old_i = doc.index[-1][num]
     new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}

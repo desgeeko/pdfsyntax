@@ -73,6 +73,7 @@ def read(filename: str) -> Doc:
 def write(doc: Doc, filename: str) -> Doc:
     """ """
     bdata = b''
+    idx = 0
     nb_rev = len(doc.index)
     eof_rev = -1
     for i in range(nb_rev):
@@ -83,8 +84,15 @@ def write(doc: Doc, filename: str) -> Doc:
     if eof_rev >= 0:
         eof_pos = doc.index[eof_rev][-1]['abs_pos']
         bdata += doc.bdata(0, eof_pos+4)[0]
+        idx += len(bdata)
+    else:
+        FILE_HEADER = b'%PDF-1.4\n'
+        bdata += FILE_HEADER
+        idx += len(FILE_HEADER)
     for i in range(eof_rev+1, nb_rev):
-        bdata += prepare_version(doc, i)
+        prep = prepare_version(doc, i, idx)
+        bdata += prep
+        idx += len(prep)
     bfile = open(filename, 'wb')
     bfile.write(bdata)
     bfile.close()
