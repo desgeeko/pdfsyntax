@@ -57,18 +57,16 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
             indexes = index
         obj = {}
         for index in indexes:
-            #i, j, _ = next_token(bdata, index['abs_pos'])
             bdata, a0, _ = fdata(index['abs_pos'], index['abs_next'] - index['abs_pos'])
             i, j, _ = next_token(bdata, a0)
             i, j, _ = next_token(bdata, j)
             text = bdata
             i_obj = parse_obj(text, i)
-            if 'stream_def' in i_obj:
-                i_obj = i_obj['stream_def']
+            if type(i_obj) == Stream:
+                i_obj = i_obj['entries']
             obj.update(i_obj)
         cache[key] = obj    
     elif 'env_num' not in idx[rev][key]:
-        #i, j, _ = next_token(bdata, idx[rev][key]['abs_pos'])
         bdata, a0, _ = fdata(idx[rev][key]['abs_pos'], idx[rev][key]['abs_next'] - idx[rev][key]['abs_pos'])
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
@@ -76,12 +74,11 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
         i, j, _ = next_token(bdata, j)
         text = bdata
         obj = parse_obj(text, i)
-        if key == 0 and 'stream_def' in obj:
-            obj = obj['stream_def']
+        if key == 0 and type(obj) == Stream:
+            obj = obj['entries']
         cache[key] = obj    
     else:
         container = idx[rev][key]['env_num']
-        #i, j, _ = next_token(bdata, idx[rev][container]['abs_pos'])
         bdata, a0, _ = fdata(idx[rev][container]['abs_pos'], idx[rev][container]['abs_next'] - idx[rev][container]['abs_pos'])
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
@@ -90,13 +87,13 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
         text = bdata
         c_obj = parse_obj(text, i)
         cache[container] = c_obj
-        offset = int(c_obj['stream_def']['/First'])
-        nb_obj = int(c_obj['stream_def']['/N'])
-        x_array = parse_obj(b'[' + c_obj['stream_content'][:offset] + b']')
+        offset = int(c_obj['entries']['/First'])
+        nb_obj = int(c_obj['entries']['/N'])
+        x_array = parse_obj(b'[' + c_obj['stream'][:offset] + b']')
         for x in range(nb_obj):
-            cache[int(x_array[2 * x])] = parse_obj(c_obj['stream_content'], offset + int(x_array[2 * x + 1]))
-        if key == 0 and 'stream_def' in cache[0]:
-            cache[0] = cache[0]['stream_def']
+            cache[int(x_array[2 * x])] = parse_obj(c_obj['stream'], offset + int(x_array[2 * x + 1]))
+        if key == 0 and type(cache[0]) == Stream:
+            cache[0] = cache[0]['entries']
     return cache
 
 
@@ -260,7 +257,7 @@ def rewind(doc: Doc) -> Doc:
     new_index = doc.index.copy()
     new_index.pop()
     new_current = new_index[-1].copy()
-    new_current[-1] = None
+    #new_current[-1] = None
     new_index[-1] = new_current
     new_cache = build_cache(doc.bdata, new_index)
     return Doc(doc.bdata, new_index, new_cache)
@@ -275,6 +272,7 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
     new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}
     new_index = doc.index.copy()
     new_index[-1] = doc.index[-1].copy()
+    new_index[-1][-1] = None
     new_index[-1][num] = new_i
     new_cache = doc.cache.copy()
     new_cache[num] = new_o
@@ -291,6 +289,7 @@ def add_object(doc: Doc, new_o) -> Doc:
     new_index = doc.index.copy()
     new_index[-1] = doc.index[-1].copy()
     new_index[-1].append(None)
+    new_index[-1][-1] = None
     new_index[-1][num] = new_i
     new_cache = doc.cache.copy()
     new_cache.append(None)

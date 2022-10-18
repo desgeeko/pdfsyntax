@@ -1,7 +1,7 @@
 """Module pdfsyntax.display: pretty print the PDF file structure as HTML"""
 
 import html
-#from .objects import R
+from .objects import Stream
 
 NAME_MAX_WIDTH = 20
 VALUE_MAX_WIDTH = 40
@@ -168,11 +168,10 @@ def follow_obj(obj, mini_index: list, pos_index: dict, depth=0) -> str:
         ret += f'<span class="obj-link">{o_num} {o_gen} R</span>'
         ret += '</a>'
         return ret
-    if type(obj) == dict: 
-        if 'stream_content' in obj:
-            content = obj['stream_content']
-        if 'stream_def' in obj:
-            obj = obj['stream_def']
+    if type(obj) == dict or type(obj) == Stream: 
+        if type(obj) == Stream:
+            content = obj['stream']
+            obj = obj['entries']
         ret += '<<\n'
         keys = list(obj.keys())
         keys = move_list_item(keys, '/Type', 0)

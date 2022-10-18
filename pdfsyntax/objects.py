@@ -3,10 +3,20 @@
 from typing import Any
 from collections import namedtuple
 import zlib
+from dataclasses import dataclass
 
 EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
 DELIMITERS = b'<>[]/(){}%'
+
+
+@dataclass
+class Stream:
+    entries: dict
+    stream: bytes
+    def __getitem__(self, item):
+        return getattr(self, item)
+
 
 def next_token(text: bytes, i=0) -> tuple:
     """Find next token in raw string starting at some index"""
@@ -90,6 +100,7 @@ def next_token(text: bytes, i=0) -> tuple:
         i += 1
     return (h, i, None)
 
+
 def replace_ref(tokens: list) -> list:
     """Replace a sublist of X, Y, 'R' into a unique R namedtuple"""
     size = len(tokens)
@@ -132,7 +143,7 @@ def parse_obj(text: bytes, start=0) -> Any:
         if t2 == 'STREAM': 
             stream_def =  parse_obj(obj)
             stream_content = decode_stream(following_obj, stream_def)
-            res = { 'stream_def': stream_def, 'stream_content': stream_content }
+            res = Stream(stream_def, stream_content)
             return res
 
         i = start + 2
@@ -209,6 +220,7 @@ def decode_stream(stream, stream_def):
 
 
 def encode_stream(stream, stream_def):
+    """ """
     if '/Filter' in stream_def and stream_def['/Filter'] == '/FlateDecode':
         return zlib.compress(stream)
     return stream
@@ -230,6 +242,8 @@ def to_str(obj) -> bytes:
     elif type(obj) == complex:
         s = f'{int(obj.imag)} {int(obj.real)} R'
         return s.encode('ascii')
+    elif type(obj) == bytes:
+        return obj
     else:
         return obj.encode('ascii')
 
@@ -238,11 +252,10 @@ def serialize(obj, depth=0) -> bytes:
     """Recursively construct object bytes"""
     ret = b''
     content = None
-    if type(obj) == dict: 
-        if 'stream_content' in obj:
-            content = obj['stream_content']
-        if 'stream_def' in obj:
-            obj = obj['stream_def']
+    if type(obj) == dict or type(obj) == Stream:
+        if type(obj) == Stream:
+            content = obj['stream']
+            obj = obj['entries']
         ret += b'<< '
         keys = list(obj.keys())
         for i in keys:
@@ -259,7 +272,6 @@ def serialize(obj, depth=0) -> bytes:
             ret += b'\nstream\n'
             ret += encode_stream(content, obj)
             ret += b'\nendstream'
-            #ret += b' '
     elif type(obj) == list:
         ret += b'[ '
         for i in obj:

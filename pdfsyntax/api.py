@@ -83,7 +83,9 @@ def write(doc: Doc, filename: str) -> Doc:
             break
     if eof_rev >= 0:
         eof_pos = doc.index[eof_rev][-1]['abs_pos']
-        bdata += doc.bdata(0, eof_pos+4)[0]
+        prov = doc.bdata(0, eof_pos+4)
+        bdata += prov[0][prov[1]:eof_pos+5]
+        bdata += b'\n'
         idx += len(bdata)
     else:
         FILE_HEADER = b'%PDF-1.4\n'

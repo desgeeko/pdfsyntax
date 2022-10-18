@@ -8,6 +8,7 @@ MARGIN = b'\n'
 
 
 def bdata_provider(filename: str, mode: str = "SINGLE"):
+    """ """
     if mode == "SINGLE":
         bfile = open(filename, 'rb')
         bdata = bfile.read()
@@ -84,18 +85,18 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
     """
     xref = []
     table = []
-    cols = xref_stream['stream_def']['/W']
+    cols = xref_stream['entries']['/W']
     i = 0
     obj_range = (0, 0)
-    if '/Index' in xref_stream['stream_def']:
-        obj_range = xref_stream['stream_def']['/Index']
+    if '/Index' in xref_stream['entries']:
+        obj_range = xref_stream['entries']['/Index']
     start_obj, nb_obj = int(obj_range[0]), int(obj_range[1])
     obj_num = start_obj
-    while i < len(xref_stream['stream_content']):
+    while i < len(xref_stream['stream']):
         line = ''
         params = []
         for col in cols:
-            params.append(int.from_bytes(xref_stream['stream_content'][i:i+int(col)], byteorder='big')) # struct.unpack cannot work with 3-byte words
+            params.append(int.from_bytes(xref_stream['stream'][i:i+int(col)], byteorder='big')) # struct.unpack cannot work with 3-byte words
             i += int(col)
         if params[0] == 1:
             xref.append({'abs_pos': params[1], 'o_num': obj_num, 'o_gen': params[2]})
@@ -130,7 +131,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         i, j, _ = next_token(bdata, j)
         xref = parse_obj(bdata, i)
         chrono = parse_xref_stream(xref, xref_pos)
-        trailer = xref['stream_def']
+        trailer = xref['entries']
     chrono[0]['startxref_pos'] = startxref_pos
     chrono.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
     prev_eof = eof_pos
@@ -159,7 +160,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             tmp_index[0]['startxref_pos'] = startxref_pos
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
             chrono =  tmp_index + chrono
-            trailer = xref['stream_def']
+            trailer = xref['entries']
     seq = [i['abs_pos'] for i in chrono]
     seq.sort()
     idx = {}
@@ -234,6 +235,25 @@ def build_xref_table(xref_table: list) -> bytes:
     return res
 
 
+def add_subsections(xref_table: list) -> list:
+    """ """
+    i = len(xref_table) - 1
+    num = xref_table[i][1]
+    nb = 1
+    while i >= 1:
+        i -= 1
+        if xref_table[i][1] + 1 == num: #contiguous
+            nb += 1
+        else:
+            header = str(num).encode('ascii') + b' ' + str(nb).encode('ascii')
+            xref_table.insert(i+1, (header, None))
+            nb = 0
+        num = xref_table[i][1]
+    header = str(num).encode('ascii') + b' ' + str(nb).encode('ascii')
+    xref_table.insert(0, (header, None))
+    return xref_table
+
+
 def build_fragments(changes: list, current_index: list, cache: list, starting_pos: int) -> list:
     """List the sequence of byte blocks that make the update"""
     fragments = []
@@ -247,8 +267,6 @@ def build_fragments(changes: list, current_index: list, cache: list, starting_po
                 o_gen = 65535 - 1
             else:
                 o_gen = current_index[num]['o_gen']
-            header = str(num).encode('ascii') + b' 1'
-            xref_table.append((header, None))
             ref = f'{next_free[num]:010} {(o_gen+1):05} f'.encode('ascii')
             xref_table.append((ref, num))
         else:
@@ -258,11 +276,10 @@ def build_fragments(changes: list, current_index: list, cache: list, starting_po
             endobj = b'endobj\n'
             block = beginobj + ser + endobj
             fragments.append(block)
-            header = str(num).encode('ascii') + b' 1'
-            xref_table.append((header, None))
             ref = f'{counter:010} {o_gen:05} n'.encode('ascii')
             xref_table.append((ref, num))
             counter += len(block)
+    xref_table = add_subsections(xref_table)
     current_index[0]['xref_table'] = xref_table
     fragments.append(build_xref_table(xref_table))
     ser0 = serialize(cache[0])

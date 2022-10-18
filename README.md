@@ -58,6 +58,13 @@ m = doc.metadata()
 | Function | Description |
 | --- | --- |
 | `read(filename: str) -> Doc` | Loads a PDF from the filesystem into a Doc object |
+| `write(doc: Doc, filename: str) -> None` | Writes a Doc object to the filesystem into a PDF file |
+
+### Versioning Functions
+
+| Function | Description |
+| --- | --- |
+| `rewind(doc: Doc) -> Doc` | Cancels current changes and go back to previous revision |
 
 ### Inspection Functions
 
