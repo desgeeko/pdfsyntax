@@ -84,7 +84,6 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
            o_pos is the position of the object within the stream
     """
     xref = []
-    table = []
     cols = xref_stream['entries']['/W']
     i = 0
     obj_range = (0, 0)
@@ -103,7 +102,7 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
         elif params[0] == 2:
             xref.append({'env_num': params[1], 'o_num': obj_num, 'o_gen': 0, 'o_pos': params[2]})
         obj_num += 1
-    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream':table})
+    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream_pos': trailer_pos ,'xref_stream': []})
     return xref
     
 
@@ -161,7 +160,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
             chrono =  tmp_index + chrono
             trailer = xref['entries']
-    seq = [i['abs_pos'] for i in chrono]
+    seq = [i.get('abs_pos') for i in chrono if i.get('abs_pos')]
     seq.sort()
     idx = {}
     i = 0
@@ -171,7 +170,8 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         i += 1
     idx[seq[i]] = None
     for i in chrono:
-        i['abs_next'] = idx[i['abs_pos']]
+        if i.get('abs_pos'):
+            i['abs_next'] = idx[i.get('abs_pos')]
     return chrono
 
 
@@ -226,16 +226,7 @@ def circular_deleted(changes: list) -> dict:
     return res
 
 
-def build_xref_table(xref_table: list) -> bytes:
-    """Serialize XREF table into bytes"""
-    res = b'xref\n'
-    for x, _ in xref_table:
-        res += x
-        res += b'\n'
-    return res
-
-
-def add_subsections(xref_table: list) -> list:
+def add_xref_table_subsections(xref_table: list) -> list:
     """ """
     i = len(xref_table) - 1
     num = xref_table[i][1]
@@ -254,7 +245,7 @@ def add_subsections(xref_table: list) -> list:
     return xref_table
 
 
-def build_fragments(changes: list, current_index: list, cache: list, starting_pos: int) -> list:
+def build_fragments_xref_table(changes: list, current_index: list, cache: list, starting_pos: int) -> list:
     """List the sequence of byte blocks that make the update"""
     fragments = []
     xref_table = []
@@ -279,9 +270,13 @@ def build_fragments(changes: list, current_index: list, cache: list, starting_po
             ref = f'{counter:010} {o_gen:05} n'.encode('ascii')
             xref_table.append((ref, num))
             counter += len(block)
-    xref_table = add_subsections(xref_table)
+    xref_table = add_xref_table_subsections(xref_table)
     current_index[0]['xref_table'] = xref_table
-    fragments.append(build_xref_table(xref_table))
+    build_xref_table = b'xref\n'
+    for x, _ in xref_table:
+        build_xref_table += x
+        build_xref_table += b'\n'
+    fragments.append(build_xref_table)
     ser0 = serialize(cache[0])
     fragments.append(b'trailer\n' + ser0 + b'\n')
     fragments.append(f'startxref\n{counter}\n'.encode('ascii'))

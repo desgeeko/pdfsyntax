@@ -60,6 +60,9 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
             bdata, a0, _ = fdata(index['abs_pos'], index['abs_next'] - index['abs_pos'])
             i, j, _ = next_token(bdata, a0)
             i, j, _ = next_token(bdata, j)
+            if 'xref_stream' in index:
+                i, j, _ = next_token(bdata, j)
+                i, j, _ = next_token(bdata, j)
             text = bdata
             i_obj = parse_obj(text, i)
             if type(i_obj) == Stream:
@@ -227,7 +230,8 @@ def add_version(doc: Doc) -> Doc:
     current_v = doc.index[-1]
     new_cache = len(current_v) * [None]
     new_trailer = doc.cache[0].copy()
-    new_trailer['/Prev'] = current_v[0]['xref_table_pos']
+    #new_trailer['/Prev'] = current_v[0]['xref_table_pos']
+    new_trailer['/Prev'] = current_v[0].get('xref_table_pos') or current_v[0].get('xref_stream_pos')
     new_cache[0] = new_trailer
     new_index = doc.index.copy()
     new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
@@ -245,7 +249,7 @@ def prepare_version(doc: Doc, rev:int = -1, idx:int = 0) -> list:
     for num, _ in chg:
         memoize_obj_in_cache(doc.index, doc.bdata, num, doc.cache, rev=-1)
     #fragments = build_fragments(chg, doc.index[rev], doc.cache, len(doc.bdata(0, -1)[0]))
-    fragments = build_fragments(chg, doc.index[rev], doc.cache, idx)
+    fragments = build_fragments_xref_table(chg, doc.index[rev], doc.cache, idx)
     for f in fragments:
         res += f
     return res
