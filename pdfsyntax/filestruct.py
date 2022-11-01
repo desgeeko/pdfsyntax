@@ -226,8 +226,17 @@ def circular_deleted(changes: list) -> dict:
     return res
 
 
-def add_xref_table_subsections(xref_table: list) -> list:
+def format_xref_table(elems: list, trailer: dict, next_free: dict) -> bytes:
     """ """
+    xref_table = []
+    for use, num, o_gen, counter in elems:
+        if use == 'f':
+            ref = f'{next_free[num]:010} {(o_gen+1):05} f'.encode('ascii')
+            xref_table.append((ref, num))
+        else:
+            ref = f'{counter:010} {o_gen:05} n'.encode('ascii')
+            xref_table.append((ref, num))
+    # add_xref_table_subsections
     i = len(xref_table) - 1
     num = xref_table[i][1]
     nb = 1
@@ -240,12 +249,62 @@ def add_xref_table_subsections(xref_table: list) -> list:
             xref_table.insert(i+1, (header, None))
             nb = 0
         num = xref_table[i][1]
-    header = str(num).encode('ascii') + b' ' + str(nb).encode('ascii')
+    header = str(num).encode('ascii') + b' ' + str(nb+1).encode('ascii')
     xref_table.insert(0, (header, None))
-    return xref_table
+    build_xref_table = b'xref\n'
+    for x, _ in xref_table:
+        build_xref_table += x
+        build_xref_table += b'\n'
+    ser0 = serialize(trailer)
+    build_xref_table += b'trailer\n'
+    build_xref_table += ser0 
+    build_xref_table += b'\n'
+    return build_xref_table
 
 
-def build_fragments_xref_table(changes: list, current_index: list, cache: list, starting_pos: int) -> list:
+def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
+    """ """
+    xref_stream = []
+    index = []
+    o_num = trailer['/Size'] - 1
+    trailer['/Type'] = '/XRef'
+    trailer['/Filter'] = '/ASCIIHexDecode'
+    trailer['/W'] = [1, 2, 2]
+    for use, num, o_gen, counter in elems:
+        if use == 'f':
+            ref = b'\x00' + (next_free[num]).to_bytes(2, "big") + (o_gen+1).to_bytes(2, "big")
+            xref_stream.append((ref, num))
+        else:
+            ref = b'\x01' + (counter).to_bytes(2, "big") + (o_gen).to_bytes(2, "big")
+            xref_stream.append((ref, num))
+    # Index 
+    i = len(xref_stream) - 1
+    num = xref_stream[i][1]
+    nb = 1
+    while i >= 1:
+        i -= 1
+        if xref_stream[i][1] + 1 == num: #contiguous
+            nb += 1
+        else:
+            index = [num, nb] + index
+            nb = 0
+        num = xref_stream[i][1]
+    index = [num, nb+1] + index
+    trailer['/Index'] = index
+    st = b''
+    for x, _ in xref_stream:
+        st += x
+    ser0 = serialize(Stream(trailer, st))
+    build_xref_stream = b''
+    build_xref_stream += f'{o_num}'.encode('ascii')
+    build_xref_stream += b' 0 obj\n'
+    build_xref_stream += ser0 
+    build_xref_stream += b'\n'
+    build_xref_stream += b'endobj\n'
+    return build_xref_stream
+
+
+def build_fragments_and_xref(changes: list, current_index: list, cache: list, starting_pos: int, version: str) -> list:
     """List the sequence of byte blocks that make the update"""
     fragments = []
     xref_table = []
@@ -258,8 +317,7 @@ def build_fragments_xref_table(changes: list, current_index: list, cache: list, 
                 o_gen = 65535 - 1
             else:
                 o_gen = current_index[num]['o_gen']
-            ref = f'{next_free[num]:010} {(o_gen+1):05} f'.encode('ascii')
-            xref_table.append((ref, num))
+            xref_table.append(('f', num, o_gen, None))
         else:
             o_gen = current_index[num]['o_gen']
             beginobj = f'{num} {o_gen}'.encode('ascii') + b' obj\n'
@@ -267,18 +325,14 @@ def build_fragments_xref_table(changes: list, current_index: list, cache: list, 
             endobj = b'endobj\n'
             block = beginobj + ser + endobj
             fragments.append(block)
-            ref = f'{counter:010} {o_gen:05} n'.encode('ascii')
-            xref_table.append((ref, num))
+            xref_table.append(('n', num, o_gen, counter))
             counter += len(block)
-    xref_table = add_xref_table_subsections(xref_table)
-    current_index[0]['xref_table'] = xref_table
-    build_xref_table = b'xref\n'
-    for x, _ in xref_table:
-        build_xref_table += x
-        build_xref_table += b'\n'
-    fragments.append(build_xref_table)
-    ser0 = serialize(cache[0])
-    fragments.append(b'trailer\n' + ser0 + b'\n')
+    if version < '1.5':
+        built_xref = format_xref_table(xref_table, cache[0], next_free)
+    else:
+        built_xref = format_xref_stream(xref_table, cache[0], next_free)
+    #current_index[0]['xref_table'] = xref_table
+    fragments.append(built_xref)
     fragments.append(f'startxref\n{counter}\n'.encode('ascii'))
     fragments.append(b'%%EOF\n')
     return fragments

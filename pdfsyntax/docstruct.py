@@ -240,7 +240,7 @@ def add_version(doc: Doc) -> Doc:
     return Doc(doc.bdata, new_index, new_cache)
 
 
-def prepare_version(doc: Doc, rev:int = -1, idx:int = 0) -> list:
+def prepare_version(doc: Doc, rev:int = -1, idx:int = 0) -> bytes:
     """ """
     res = b''
     chg = changes(doc, rev)
@@ -248,8 +248,7 @@ def prepare_version(doc: Doc, rev:int = -1, idx:int = 0) -> list:
         return res
     for num, _ in chg:
         memoize_obj_in_cache(doc.index, doc.bdata, num, doc.cache, rev=-1)
-    #fragments = build_fragments(chg, doc.index[rev], doc.cache, len(doc.bdata(0, -1)[0]))
-    fragments = build_fragments_xref_table(chg, doc.index[rev], doc.cache, idx)
+    fragments = build_fragments_and_xref(chg, doc.index[rev], doc.cache, idx, '1.4')
     for f in fragments:
         res += f
     return res
