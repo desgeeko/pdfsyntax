@@ -153,6 +153,22 @@ def changes(doc: Doc, rev: int=-1):
     return res
 
 
+def group_obj_into_stream(doc: Doc):
+    """ """
+    doc2 = add_object(doc, b'')
+    current = doc2.index[-1]
+    o_num = current[-2]['o_num']
+    chgs = changes(doc)
+    for i, _ in chgs:
+        if i == o_num:
+            print("continue")
+            continue
+        current[i]['env_num'] = o_num
+    d = {'/Type': '/ObjStm', '/Length': 0, '/N': 0, '/First': 0, '/FirstLine': []}
+    doc2.cache[o_num] = Stream(d, b'')
+    return doc2
+
+
 def version(doc: Doc) -> str:
     """Return PDF version"""
     bdata, a0, _ = doc.bdata(5, 3)
