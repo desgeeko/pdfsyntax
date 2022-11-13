@@ -45,11 +45,15 @@ For example both samples are equivalent:
 
 ```Python
 #Function pattern
+from pdfsyntax import read, metadata
+doc = read("samples/simple_text_string.pdf")
 m = metadata(doc)
 ```
 
 ```Python
 #Method pattern
+import pdfsyntax as pdf
+doc = pdf.read("samples/simple_text_string.pdf")
 m = doc.metadata()
 ```
 

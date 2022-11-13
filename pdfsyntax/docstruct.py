@@ -133,7 +133,7 @@ def build_cache(bdata: Callable, index: list) -> list:
 
 
 def changes(doc: Doc, rev: int=-1):
-    """ """
+    """List deleted/updated/added objects"""
     res = []
     current = doc.index[rev]
     if len(doc.index) == 1:
@@ -154,7 +154,7 @@ def changes(doc: Doc, rev: int=-1):
 
 
 def group_obj_into_stream(doc: Doc):
-    """ """
+    """Provision a ObjStm object and tag all changes to target this envelope"""
     doc2 = add_object(doc, b'')
     current = doc2.index[-1]
     o_num = current[-2]['o_num']
@@ -190,8 +190,8 @@ def trailer(doc: Doc):
     return get_object(doc, 0j)
 
 
-def encrypted(doc: Doc):
-    """ """
+def encrypted(doc: Doc) -> bool:
+    """Detect if doc is encrypted"""
     trail = trailer(doc)
     encrypt = trail.get('/Encrypt')
     if encrypt:
@@ -220,7 +220,7 @@ def number_pages(doc: Doc):
 
 
 def collect_inherited_attr_pages(doc: Doc) -> list:
-    """ """
+    """List pages with applied inherited attributes"""
     p = get_object(doc, catalog(doc)['/Pages'])
     page_index = follow_pages_rec(doc, p)
     return page_index
@@ -238,15 +238,14 @@ def pages(doc: Doc) -> list:
     return pl
 
 
-def add_version(doc: Doc) -> Doc:
-    """ """
+def add_revision(doc: Doc) -> Doc:
+    """Add new index for incremental update"""
     if len(changes(doc)) == 0:
         return doc
     ver = len(doc.index)
     current_v = doc.index[-1]
     new_cache = len(current_v) * [None]
     new_trailer = doc.cache[0].copy()
-    #new_trailer['/Prev'] = current_v[0]['xref_table_pos']
     new_trailer['/Prev'] = current_v[0].get('xref_table_pos') or current_v[0].get('xref_stream_pos')
     new_cache[0] = new_trailer
     new_index = doc.index.copy()
@@ -256,21 +255,22 @@ def add_version(doc: Doc) -> Doc:
     return Doc(doc.bdata, new_index, new_cache)
 
 
-def prepare_version(doc: Doc, rev:int = -1, idx:int = 0) -> bytes:
-    """ """
+def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> bytes:
+    """Build bytes representing incremental update"""
     res = b''
     chg = changes(doc, rev)
     if doc.index[rev][-1] or not chg:
         return res
     for num, _ in chg:
         memoize_obj_in_cache(doc.index, doc.bdata, num, doc.cache, rev=-1)
-    fragments = build_fragments_and_xref(chg, doc.index[rev], doc.cache, idx, '1.4')
+    fragments = build_fragments_and_xref(chg, doc.index[rev], doc.cache, idx, version(doc))
     for f in fragments:
         res += f
     return res
 
 
 def rewind(doc: Doc) -> Doc:
+    """Go back to previous revision"""
     if len(doc.index) == 1:
         return doc
     new_index = doc.index.copy()
@@ -283,7 +283,7 @@ def rewind(doc: Doc) -> Doc:
 
 
 def update_object(doc: Doc, num: int, new_o) -> Doc:
-    """ """
+    """Update object in the current revision"""
     #if doc.index[-1][-1]:
     #    doc = add_version(doc)
     ver = len(doc.index)
@@ -299,9 +299,9 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
 
 
 def add_object(doc: Doc, new_o) -> Doc:
-    """ """
+    """Add new object at the end of current index"""
     if doc.index[-1][-1]:
-        doc = add_version(doc)
+        doc = add_revision(doc)
     ver = len(doc.index)
     num = len(doc.index[-1])-1
     new_i = {'o_num': num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': ver-1}

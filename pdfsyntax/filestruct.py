@@ -154,6 +154,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             i, j, _ = next_token(bdata, a0)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
+            i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)
             tmp_index = parse_xref_stream(xref, xref_pos)
             tmp_index[0]['startxref_pos'] = startxref_pos
@@ -227,7 +228,7 @@ def circular_deleted(changes: list) -> dict:
 
 
 def format_xref_table(elems: list, trailer: dict, next_free: dict) -> bytes:
-    """ """
+    """Build XREF table"""
     xref_table = []
     for use, num, o_gen, counter, _ in elems:
         if use == 'f':
@@ -247,9 +248,9 @@ def format_xref_table(elems: list, trailer: dict, next_free: dict) -> bytes:
         else:
             header = str(num).encode('ascii') + b' ' + str(nb).encode('ascii')
             xref_table.insert(i+1, (header, None))
-            nb = 0
+            nb = 1
         num = xref_table[i][1]
-    header = str(num).encode('ascii') + b' ' + str(nb+1).encode('ascii')
+    header = str(num).encode('ascii') + b' ' + str(nb).encode('ascii')
     xref_table.insert(0, (header, None))
     build_xref_table = b'xref\n'
     for x, _ in xref_table:
@@ -263,20 +264,24 @@ def format_xref_table(elems: list, trailer: dict, next_free: dict) -> bytes:
 
 
 def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
-    """ """
+    """Build XREF stream object"""
     xref_stream = []
     index = []
     o_num = trailer['/Size'] - 1
     trailer['/Type'] = '/XRef'
     trailer['/Filter'] = '/ASCIIHexDecode'
     trailer['/W'] = [1, 2, 2]
-    for use, num, o_gen, counter, _ in elems:
+    for use, num, o_gen, counter, env_num in elems:
         if use == 'f':
             ref = b'\x00' + (next_free[num]).to_bytes(2, "big") + (o_gen+1).to_bytes(2, "big")
             xref_stream.append((ref, num))
         else:
-            ref = b'\x01' + (counter).to_bytes(2, "big") + (o_gen).to_bytes(2, "big")
-            xref_stream.append((ref, num))
+            if env_num:
+                ref = b'\x02' + (env_num).to_bytes(2, "big") + (counter).to_bytes(2, "big")
+                xref_stream.append((ref, num))
+            else:
+                ref = b'\x01' + (counter).to_bytes(2, "big") + (o_gen).to_bytes(2, "big")
+                xref_stream.append((ref, num))
     # Index 
     i = len(xref_stream) - 1
     num = xref_stream[i][1]
@@ -287,9 +292,9 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
             nb += 1
         else:
             index = [num, nb] + index
-            nb = 0
+            nb = 1
         num = xref_stream[i][1]
-    index = [num, nb+1] + index
+    index = [num, nb] + index
     trailer['/Index'] = index
     st = b''
     for x, _ in xref_stream:
@@ -305,7 +310,7 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
 
 
 def serialize_fragment(num, o_gen, obj):
-    """ """
+    """Build ascii block representing indirect object in file"""
     beginobj = f'{num} {o_gen}'.encode('ascii') + b' obj\n'
     ser = serialize(obj) + b'\n'
     endobj = b'endobj\n'
@@ -314,7 +319,7 @@ def serialize_fragment(num, o_gen, obj):
 
 
 def append_to_stream_fragment(num, obj, envelope):
-    """ """
+    """Concatenate object at the end of stream"""
     ser = serialize(obj) + b'\n'
     entries = envelope['entries'].copy()
     entries['/FirstLine'].append(num)
@@ -324,8 +329,15 @@ def append_to_stream_fragment(num, obj, envelope):
     return envelope
 
 
+def get_pos_in_stream(envelope):
+    """Calculate current object position in the stream"""
+    entries = envelope['entries']
+    pos = len(entries['/FirstLine']) // 2
+    return pos
+
+
 def finalize_stream(envelope):
-    """ """
+    """Add index at the beginning of stream and count objects"""
     header = b''
     entries = envelope['entries'].copy()
     tokens = entries['/FirstLine']
@@ -362,21 +374,19 @@ def build_fragments_and_xref(changes: list, current_index: list, cache: list, st
                 new_env = append_to_stream_fragment(num, cache[num], cache[env_num])
                 cache[env_num] = new_env
                 block = b''
+                xref_table.append(('n', num, o_gen, get_pos_in_stream(new_env), env_num))
             else:
                 obj = cache[num]
-                if type(obj) == Stream and obj['entries']['/Type'] == '/ObjStm':
+                if type(obj) == Stream and obj['entries'].get('/Type') == '/ObjStm':
                     obj = finalize_stream(obj)
                 block = serialize_fragment(num, o_gen, obj)
                 fragments.append(block)
-            xref_table.append(('n', num, o_gen, counter, env_num))
+                xref_table.append(('n', num, o_gen, counter, env_num))
             counter += len(block)
     if version < '1.5':
-        print(xref_table)
         built_xref = format_xref_table(xref_table, cache[0], next_free)
     else:
-        print(xref_table)
         built_xref = format_xref_stream(xref_table, cache[0], next_free)
-    #current_index[0]['xref_table'] = xref_table
     fragments.append(built_xref)
     fragments.append(f'startxref\n{counter}\n'.encode('ascii'))
     fragments.append(b'%%EOF\n')

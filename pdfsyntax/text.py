@@ -20,7 +20,7 @@ def prepare_pdfdoc_charset():
 PDFDOC_CHARSET = prepare_pdfdoc_charset()
 
 def decode_pdfdoc(string: bytes) -> str:
-    """ """
+    """Decode a PDFDocEncoded string"""
     chars = [chr(PDFDOC_CHARSET[x]) for x in string]
     return ''.join(chars)
 

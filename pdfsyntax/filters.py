@@ -4,7 +4,7 @@ import zlib
 import binascii
 
 
-def decode_predictor(bdata: bytes, predictor, columns):
+def decode_predictor(bdata: bytes, predictor, columns): #TODO handle more PNG predictors
     """ """
     size = len(bdata)
     res = b''
@@ -13,6 +13,7 @@ def decode_predictor(bdata: bytes, predictor, columns):
     i = 0
     while i < size:
         row = list(bdata[i:i+columns])
+        # Predictor 12, PNG Up
         decoded_row = [(val + prev_row[index]) & 0xff for (index, val) in enumerate(row)]
         prev_row = decoded_row
         res += bytes(decoded_row[1:])
@@ -45,6 +46,5 @@ def encode_stream(stream, stream_def):
 
 def asciihex(stream):
     """ """
-    #return (binascii.hexlify(stream, b'\n', 5)).upper()
     return (binascii.hexlify(stream)).upper()
 
