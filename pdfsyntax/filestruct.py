@@ -322,6 +322,8 @@ def append_to_stream_fragment(num, obj, envelope):
     """Concatenate object at the end of stream"""
     ser = serialize(obj) + b'\n'
     entries = envelope['entries'].copy()
+    if '/FirstLine' not in entries:
+        entries['/FirstLine'] = []
     entries['/FirstLine'].append(num)
     entries['/FirstLine'].append(len(envelope['stream']))
     new_ser = envelope['stream'] + ser

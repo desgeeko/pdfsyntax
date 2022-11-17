@@ -9,12 +9,16 @@ The project is focused on chapter 7 ("Syntax") of the Portable Document Format (
 
 PDFSyntax is lightweight (no dependencies) and written from scratch in pure Python. 
 
+1. CLI: It started as a command-line interface to inspect the internal structure of a PDF file: the PDF source is pretty-printed and augmented with hyperlinks in a static HTML file.
+2. API: Now the internal functions are being exposed as a tooklit for PDF read/write operations.
+
 It is mostly made of simple functions working on built-in types and named tuples. Shallow copying of the Doc object structure performed by pure functions offers some kind of - *experimental* - immutability.
 
 PDFSyntax favors non-destructive edits allowed by the PDF Specification: by default incremental updates are added at the end of the original file.
 
-WORK IN PROGRESS!
+## Project status
 
+WORK IN PROGRESS! This is ALPHA quality software.
 
 ## CLI
 
@@ -44,38 +48,97 @@ Most functions are pure and are exposed both as basic functions and as instance 
 For example both samples are equivalent:
 
 ```Python
-#Function pattern
-from pdfsyntax import read, metadata
-doc = read("samples/simple_text_string.pdf")
-m = metadata(doc)
+>>> #Function pattern
+>>> from pdfsyntax import read, metadata
+>>> doc = read("samples/simple_text_string.pdf")
+>>> m = metadata(doc)
 ```
 
 ```Python
-#Method pattern
-import pdfsyntax as pdf
-doc = pdf.read("samples/simple_text_string.pdf")
-m = doc.metadata()
+>>> #Method pattern
+>>> import pdfsyntax as pdf
+>>> doc = pdf.read("samples/simple_text_string.pdf")
+>>> m = doc.metadata()
 ```
 
-### I/O Functions
+### File information
 
-| Function | Description |
-| --- | --- |
-| `read(filename: str) -> Doc` | Loads a PDF from the filesystem into a Doc object |
-| `write(doc: Doc, filename: str) -> None` | Writes a Doc object to the filesystem into a PDF file |
+`structure` and `metadata` are functions showing general information about the document.
 
-### Versioning Functions
+```Python
+>>> #File structure
+>>> structure(doc)
+{'Version': '1.4', 'Pages': 1, 'Revisions': 1, 'Encrypted': False, 'Paper': '215x279mm or 8.5x11.0in (US Letter)'}
 
-| Function | Description |
-| --- | --- |
-| `rewind(doc: Doc) -> Doc` | Cancels current changes and go back to previous revision |
+>>> #File structure
+>>> metadata(doc)
+{'Title': None, 'Author': None, 'Subject': None, 'Keywords': None, 'Creator': None, 'Producer': None, 'CreationDate': None, 'ModDate': None}
+```
 
-### Inspection Functions
+### Low-level access to object tree
 
-| Function | Description |
-| --- | --- |
-| `metadata(doc: Doc) -> Dict` | Returns the document metadata (title, author, ...) |
-| `structure(doc: Doc) -> Dict` | Returns the document structure (PDF version, nb of pages, nb of revisions, encryption, paper format) |
+`trailer` and `catalog` give access to the starting point of the object tree. 
 
+```Python
+>>> #Access to document trailer
+>>> doc.trailer()
+{'/Root': 1j, '/Size': 8, '/Prev': 603}
 
+>>> #Access to document catalog as specified in the /Root entry of the trailer
+>>> doc.catalog()
+{'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
+```
+
+`1j` is a complex number (!) representing indirect reference `1 0 R`. Why? Because the approach is to map PDF object types to Python basic built-in types as much as possible, and it is a concise way to show both the object number (as the imaginary part) and the generation number (as the real part). Moreover the generation is very often equal to zero, so the real part is not shown.
+You may think of the `j` as a "jump" to another object :)
+
+`get_object` gives direct access to indirect objects.
+
+```Python
+>>> #Access to document catalog, given that the trailer redirects to 1j for root
+>>> #(equivalent to catalog fonction)
+>>> doc.get_object(1j)
+{'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
+```
+
+### Incremental updates
+
+PDFSyntax tracks document incremental updates made possible by appending new or updated objects at the end of an original PDF file (and the matching XREF section). The `Revisions` entry of the `structure` function result, if greater than 1, indicates that incremental updates have been appended. By default, a newly opened document by PDFSyntax is ready to write modifications in the next revision. The `rewind` function rolls back to the previous revision. 
+
+```Python
+>>> import pdfsyntax as pdf
+>>> doc = pdf.read("samples/add_text_annotation.pdf")
+>>> doc.structure()
+{'Version': '1.4', 'Pages': 1, 'Revisions': 2, 'Encrypted': False, 'Paper': '215x279mm or 8.5x11.0in (US Letter)'}
+
+>>> #This file contains 2 revisions and PDFSyntax has initialized the doc object for a future revision 3
+
+>>> doc.get_object(4j)
+{'/Annots': 8j, '/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j}, '/Contents': 5j, '/MediaBox': [0, 0, 612, 792], '/Parent': 3j, '/Type': '/Page'}
+
+>>> #In its current state, the page (object 4) contains an annotation
+>>> #Let's rewind to revision 1
+
+>>> doc = doc.rewind() # to revision 2
+>>> doc = doc.rewind() # to revision 1
+
+>>> doc.get_object(4j)
+{'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j}, '/Contents': 5j, '/MediaBox': [0, 0, 612, 792], '/Parent': 3j, '/Type': '/Page'}
+
+>>> #The annotation was not present in the initial revision of the file
+```
+
+### Transformation
+
+`rotate` turns pages relatively to their current position by multiples of 90 degrees clockwise. NB: It takes into account the inherited attributes from the page hierarchy.
+
+```Python
+>>> #Default rotation applies 90 degrees to all pages
+>>> doc90 = rotate(doc)
+
+>>> #Apply 180 degrees to first two page
+>>> doc180 = doc.rotate(180, [1, 2])
+```
+
+> TO BE CONTINUED
 
