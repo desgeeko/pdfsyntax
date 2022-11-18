@@ -6,11 +6,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pdfsyntax"
-version = "0.0.4"
+version = "0.0.5"
 authors = [ 
     { name="Martin D.", email="desgeeko@gmail.com" } 
 ]
-description = "Tool to generate a static HTML file that represents the internal structure of a PDF file"
+description = "A Python PDF parsing library and tool built on top to browse the internal structure of a PDF file"
 readme = "README.md"
 license = { file="LICENSE" }
 requires-python = ">=3.8"
