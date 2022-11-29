@@ -146,7 +146,7 @@ def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
     else:
         work_pages = list(range(len(pl)))
     a = [(i ,x[1]) for i, x in enumerate(pl) if i in work_pages]
-    c = collect_inherited_attr_pages(doc)
+    c = flatten_page_tree(doc)
     for nb, old_degrees in a:
         old_degrees = old_degrees or 0
         iref = c[nb][0]

@@ -70,7 +70,7 @@ For example both samples are equivalent:
 >>> structure(doc)
 {'Version': '1.4', 'Pages': 1, 'Revisions': 1, 'Encrypted': False, 'Paper': '215x279mm or 8.5x11.0in (US Letter)'}
 
->>> #File structure
+>>> #File metadata
 >>> metadata(doc)
 {'Title': None, 'Author': None, 'Subject': None, 'Keywords': None, 'Creator': None, 'Producer': None, 'CreationDate': None, 'ModDate': None}
 ```
@@ -99,6 +99,30 @@ You may think of the `j` as a "jump" to another object :)
 >>> #(equivalent to catalog fonction)
 >>> doc.get_object(1j)
 {'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
+```
+
+### Pages
+
+Page index is a tree structure where attributes can be inherited from parent nodes. For convenience `flatten_page_tree` returns an ordered list of document pages and specifies inherited attributes that should apply to each page.
+
+```Python
+>>> #Each item of the list is a tuple with the page object reference and its inherited attributes
+>>> doc = pdf.read("samples/simple_text_string.pdf")
+>>> pdf.flatten_page_tree(doc)
+[(4j, {})]
+>>> #(In this example, nothing is inherited from upper nodes)
+```
+
+The `page` function goes further by merging inherited attributes with local attributes of each page and giving the result in a list.
+
+```Python
+>>> #Equivalent list with computed page attribues
+>>> pdf.pages(doc)
+[{'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j},
+  '/Contents': 5j,
+  '/MediaBox': [0, 0, 612, 792],
+  '/Parent': 3j,
+  '/Type': '/Page'}]
 ```
 
 ### Incremental updates

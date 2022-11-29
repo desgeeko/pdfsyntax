@@ -110,15 +110,18 @@ def get_object(doc: Doc, obj):
         return obj
 
 
-def follow_pages_rec(doc: Doc, num, inherited={}) -> list:
+def flatten_page_tree(doc: Doc, num=None, inherited={}) -> list:
     """Recursively list the pages of a node"""
     accu = []
-    node = get_object(doc, num)
+    if num:
+        node = get_object(doc, num)
+    else:
+        node = get_object(doc, catalog(doc)['/Pages'])
     if node['/Type'] == '/Pages':
         for kid in node['/Kids']:
             e = {k: node.get(k) for k in INHERITABLE_ATTRS if node.get(k) is not None}
             inherited.update(e)
-            accu = accu + follow_pages_rec(doc, kid, inherited.copy())
+            accu = accu + flatten_page_tree(doc, kid, inherited.copy())
         return accu
     elif node['/Type'] == '/Page':
         return[(num, inherited)]
@@ -219,17 +222,10 @@ def number_pages(doc: Doc):
     return p['/Count']
 
 
-def collect_inherited_attr_pages(doc: Doc) -> list:
-    """List pages with applied inherited attributes"""
-    p = get_object(doc, catalog(doc)['/Pages'])
-    page_index = follow_pages_rec(doc, p)
-    return page_index
-
-
 def pages(doc: Doc) -> list:
     """ """
     pl = []
-    for num, in_attr in collect_inherited_attr_pages(doc):
+    for num, in_attr in flatten_page_tree(doc):
         temp = deepcopy(get_object(doc, num))
         for a in in_attr:
             if a not in temp:
