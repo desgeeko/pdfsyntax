@@ -15,8 +15,17 @@ DELIMITERS = b'<>[]/(){}%'
 class Stream:
     entries: dict
     stream: bytes
+
     def __getitem__(self, item):
         return getattr(self, item)
+
+    def __repr__(self):
+        res = f"Stream dataclass with entries: {self.entries}"
+        if len(self.stream) > 60:
+            res += f"\nand stream: {self.stream[:20]} (...truncated...) {self.stream[-20:]}\n"
+        else:
+            res += f"\nand stream: {self.stream}\n"
+        return res
 
 
 def next_token(text: bytes, i=0) -> tuple:
