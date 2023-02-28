@@ -164,4 +164,6 @@ Doc.get_object = get_object
 Doc.rewind = rewind
 Doc.rotate = rotate
 Doc.page_layouts = page_layouts
+Doc.flatten_page_tree = flatten_page_tree
+Doc.pages = pages
 
