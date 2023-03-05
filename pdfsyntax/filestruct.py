@@ -385,6 +385,7 @@ def build_fragments_and_xref(changes: list, current_index: list, cache: list, st
                 fragments.append(block)
                 xref_table.append(('n', num, o_gen, counter, env_num))
             counter += len(block)
+    cache[0]['/Size'] = len(current_index) - 1
     if version < '1.5':
         built_xref = format_xref_table(xref_table, cache[0], next_free)
     else:

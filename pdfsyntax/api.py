@@ -79,6 +79,7 @@ def write(doc: Doc, filename: str) -> Doc:
     for i in range(nb_rev):
         if doc.index[i][-1]:
             eof_rev = i
+            #print(f"EOF={eof_rev}")
         else:
             break
     if eof_rev >= 0:
@@ -153,6 +154,25 @@ def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
         obj = deepcopy(get_object(doc, iref))
         obj['/Rotate'] = (old_degrees + degrees) % 360
         doc = update_object(doc, int(iref.imag), obj)
+    return doc
+
+
+def single_text_annotation(doc: Doc, page_num: int, text: str) -> Doc:
+    """Add simple text annotation"""
+    annot = {
+        '/Type': '/Annot',
+        '/Subtype': '/Text',
+        '/Rect': [50, 50, 150, 150],
+        '/Contents': f"({text})",
+        '/Open': False,
+    }
+    doc, a_iref = add_object(doc, annot)
+    annot_array = [a_iref]
+    doc, aa_iref = add_object(doc, annot_array)
+    page_ref, _ = flatten_page_tree(doc)[page_num]
+    new_page = deepcopy(get_object(doc, page_ref))
+    new_page['/Annots'] = aa_iref
+    doc = update_object(doc, int(page_ref.imag), new_page)
     return doc
 
 

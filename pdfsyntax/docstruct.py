@@ -143,10 +143,11 @@ def changes(doc: Doc, rev: int=-1):
         previous = [None] * len(current)
     else:
         previous = doc.index[rev-1]
-    ver = len(doc.index)-1
     for i in range(1, len(current)-1):
-        if i < len(previous) - 1 and previous[i] == current[i]:
-            continue
+        if i > len(previous)-2:
+            res.append((i, 'a'))
+        elif i < len(previous) - 1 and previous[i] == current[i]:
+            pass
         elif previous[i] != None and current[i] == None:
             res.append((i, 'd'))
         elif previous[i] != None and current[i] != previous[i]:
@@ -158,7 +159,7 @@ def changes(doc: Doc, rev: int=-1):
 
 def group_obj_into_stream(doc: Doc):
     """Provision a ObjStm object and tag all changes to target this envelope"""
-    doc2 = add_object(doc, b'')
+    doc2, _ = add_object(doc, b'')
     current = doc2.index[-1]
     o_num = current[-2]['o_num']
     chgs = changes(doc)
@@ -294,7 +295,7 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
     return Doc(doc.bdata, new_index, new_cache)
 
 
-def add_object(doc: Doc, new_o) -> Doc:
+def add_object(doc: Doc, new_o) -> tuple:
     """Add new object at the end of current index"""
     if doc.index[-1][-1]:
         doc = add_revision(doc)
@@ -309,7 +310,7 @@ def add_object(doc: Doc, new_o) -> Doc:
     new_cache = doc.cache.copy()
     new_cache.append(None)
     new_cache[num] = new_o
-    return Doc(doc.bdata, new_index, new_cache)
+    return Doc(doc.bdata, new_index, new_cache), complex(0, num)
 
 
 #def get_fonts(doc: Doc, page_num: int) -> dict:
