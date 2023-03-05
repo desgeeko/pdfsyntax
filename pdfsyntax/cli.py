@@ -18,10 +18,12 @@ def main():
 
 def overview(filename: str) -> None:
     """ """
-    bfile = open(filename, 'rb')
-    bdata = bfile.read()
-    bfile.close()
-    doc = loads(bdata)
+    #bfile = open(filename, 'rb')
+    #bdata = bfile.read()
+    #bfile.close()
+    #doc = loads(bdata)
+    fdata = bdata_provider(filename)
+    doc, _ = init_doc(fdata)
     s = structure(doc)
     m = metadata(doc)
     print('# Structure')
