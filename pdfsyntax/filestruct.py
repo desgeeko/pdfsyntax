@@ -8,36 +8,67 @@ MARGIN = b'\n'
 
 
 def bdata_provider(filename: str, mode: str = "SINGLE"):
-    """ """
+    """Higher order function that offer an interface to binary data, either:
+    - from a buffer loaded at init,
+    - or directly from disk. 
+    A starting position equal to -1 means access to the last <length> bytes.
+    Return a tuple containing:
+    - the buffer to read,
+    - the index into the buffer,
+    - the offset from the beginning of the file to the buffer,
+    - the number of readable bytes.
+    """
     if mode == "SINGLE":
         bfile = open(filename, 'rb')
         bdata = bfile.read()
         bfile.close()
-        def single_load(i: int, n: int) -> tuple:
-            if i == -1:
-                i = len(bdata) - n
-            return (bdata, i, 0)
+        def single_load(start_pos: int, length: int) -> tuple:
+            if start_pos == -1 and length == 0:
+                return (None, None, None, len(bdata))
+            if length == -1:
+                length = len(bdata) - start_pos
+            if start_pos == -1:
+                i = len(bdata) - length
+            else:
+                i = start_pos
+            return (bdata, i, 0, min(len(bdata) - start_pos, length))
         return single_load
     else:
-        def continuous_load(i: int, n: int) -> tuple:
-            if n == -1:
-                n = os.stat(filename).st_size - i
-            elif i == -1:
-                i = os.stat(filename).st_size - n
+        def continuous_load(start_pos: int, length: int) -> tuple:
+            if start_pos == -1 and length == 0:
+                return (None, None, None, os.stat(filename).st_size)
+            if length == -1:
+                length = os.stat(filename).st_size - start_pos
+            if start_pos == -1:
+                i = os.stat(filename).st_size - length
+            else:
+                i = start_pos
             bfile = open(filename, 'rb')
             bfile.seek(i, 0)
-            bdata = bfile.read(n)
+            bdata = bfile.read(length)
             bfile.close()
-            return (bdata, 0, i)
+            return (bdata, 0, i, min(os.stat(filename).st_size - start_pos, length))
         return continuous_load
+
+
+def bdata_length(bdata: Callable) -> int:
+    """Direct access to data length without reading it"""
+    _, _, _, i = bdata(-1, 0)
+    return i
+
+
+def bdata_all(bdata: Callable) -> bytes:
+    """Return full bdata content as bytes"""
+    bdata, _, _, _ = bdata(0, -1)
+    return bdata
 
 
 def parse_xref_table(bdata: bytes, start_pos: int) -> list:
     """Return a list of dicts indexing indirect objects
 
-       abs_pos is the absolute position of the object
-       o_num is the object number
-       o_gen is the object generation number
+    abs_pos is the absolute position of the object
+    o_num is the object number
+    o_gen is the object generation number
     """
     xref = []
     table = []
@@ -73,15 +104,15 @@ def parse_xref_table(bdata: bytes, start_pos: int) -> list:
 def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
     """Return a list of dicts indexing indirect objects
 
-       for regular objects:
-           abs_pos is the absolute position of the object
-           o_num is the object number
-           o_gen is the object generation number
-       for objects embedded in object streams:
-           env_num is the number of the envelope object
-           o_num is the object number
-           o_gen is the object generation number
-           o_pos is the position of the object within the stream
+    for regular objects:
+        abs_pos is the absolute position of the object
+        o_num is the object number
+        o_gen is the object generation number
+    for objects embedded in object streams:
+        env_num is the number of the envelope object
+        o_num is the object number
+        o_gen is the object generation number
+        o_pos is the position of the object within the stream
     """
     xref = []
     cols = xref_stream['entries']['/W']
@@ -111,19 +142,19 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
-    bdata, a0, o0 = fdata(-1, 100)
+    bdata, a0, o0, _ = fdata(-1, 100)
     eof_pos = o0 + bdata.rfind(EOF, a0)
     startxref_pos = o0 + bdata.rfind(STARTXREF, a0)
     i, j, _ = next_token(bdata, startxref_pos + len(STARTXREF))
     xref_pos = int(bdata[i:j])
-    bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
+    bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
     if bdata[a0:a0+4] == XREF:
         chrono = parse_xref_table(bdata, a0)
         i, j, _ = next_token(bdata, chrono[0]['abs_pos'])  # b'trailer'
         i, j, _ = next_token(bdata, j)
         trailer = parse_obj(bdata[i:j])
     else: # must be a /XRef stream
-        bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
+        bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
@@ -137,7 +168,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     while '/Prev' in trailer:
         new_xref_pos = trailer['/Prev']
         xref_pos = int(new_xref_pos)
-        bdata, a0, o0 = fdata(xref_pos, prev_eof - xref_pos)
+        bdata, a0, o0, _ = fdata(xref_pos, prev_eof - xref_pos)
         startxref_pos = o0 + bdata.find(STARTXREF, a0)
         eof_pos = o0 + bdata.find(EOF, a0)
         prev_eof = eof_pos
@@ -150,7 +181,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             i, j, _ = next_token(bdata, j)                     # actual trailer dict
             trailer = parse_obj(bdata[i:j])
         else: # must be a /XRef stream
-            bdata, a0, o0 = fdata(xref_pos, startxref_pos - xref_pos)
+            bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
             i, j, _ = next_token(bdata, a0)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)

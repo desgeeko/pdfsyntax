@@ -57,7 +57,7 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
             indexes = index
         obj = {}
         for index in indexes:
-            bdata, a0, _ = fdata(index['abs_pos'], index['abs_next'] - index['abs_pos'])
+            bdata, a0, _, _ = fdata(index['abs_pos'], index['abs_next'] - index['abs_pos'])
             i, j, _ = next_token(bdata, a0)
             i, j, _ = next_token(bdata, j)
             if 'xref_stream' in index:
@@ -70,7 +70,7 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
             obj.update(i_obj)
         cache[key] = obj    
     elif 'env_num' not in idx[rev][key]:
-        bdata, a0, _ = fdata(idx[rev][key]['abs_pos'], idx[rev][key]['abs_next'] - idx[rev][key]['abs_pos'])
+        bdata, a0, _, _ = fdata(idx[rev][key]['abs_pos'], idx[rev][key]['abs_next'] - idx[rev][key]['abs_pos'])
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
@@ -82,7 +82,7 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
         cache[key] = obj    
     else:
         container = idx[rev][key]['env_num']
-        bdata, a0, _ = fdata(idx[rev][container]['abs_pos'], idx[rev][container]['abs_next'] - idx[rev][container]['abs_pos'])
+        bdata, a0, _, _ = fdata(idx[rev][container]['abs_pos'], idx[rev][container]['abs_next'] - idx[rev][container]['abs_pos'])
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
