@@ -105,7 +105,7 @@ def get_object(doc: Doc, obj):
     if isinstance(obj, complex) == True:
         ref = int(obj.imag)
         res = memoize_obj_in_cache(doc.index, doc.data[0]['fdata'], ref, doc.cache)
-        return res[ref]
+        return deepcopy(res[ref])
     else: 
         return obj
 
