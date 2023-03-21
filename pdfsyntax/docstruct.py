@@ -11,7 +11,7 @@ from copy import deepcopy
 INHERITABLE_ATTRS = '/Resources /MediaBox /CropBox /Rotate'.split()
 
 
-Doc = namedtuple('Doc', 'bdata index cache')
+Doc = namedtuple('Doc', 'index cache data')
 
 class Doc(Doc):
     def __repr__(self):
@@ -104,7 +104,7 @@ def get_object(doc: Doc, obj):
     """Return raw object or the target of an indirect reference"""
     if isinstance(obj, complex) == True:
         ref = int(obj.imag)
-        res = memoize_obj_in_cache(doc.index, doc.bdata, ref, doc.cache)
+        res = memoize_obj_in_cache(doc.index, doc.data[0]['fdata'], ref, doc.cache)
         return res[ref]
     else: 
         return obj
@@ -175,7 +175,8 @@ def group_obj_into_stream(doc: Doc):
 
 def version(doc: Doc) -> str:
     """Return PDF version"""
-    bdata, a0, _ = doc.bdata(5, 3)
+    fdata = doc.data[0]['fdata']
+    bdata, a0, _, _ = fdata(5, 3)
     ver = bdata[a0:a0+3]
     cat = catalog(doc)
     if '/Version' in cat and cat['/Version'] > ver.decode('ascii'):
@@ -249,7 +250,12 @@ def add_revision(doc: Doc) -> Doc:
     new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
     new_v = [new_trailer] + [current_v[i] for i in range(1,len(current_v)-1)] + [None] 
     new_index.append(new_v)
-    return Doc(doc.bdata, new_index, new_cache)
+    new_data = doc.data.copy()
+    new_bdata = prepare_revision(doc)
+    if new_bdata:
+        new_data[-1]['bdata'] = new_bdata
+    new_data.append({})
+    return Doc(new_index, new_cache, new_data)
 
 
 def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> bytes:
@@ -259,7 +265,7 @@ def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> bytes:
     if doc.index[rev][-1] or not chg:
         return res
     for num, _ in chg:
-        memoize_obj_in_cache(doc.index, doc.bdata, num, doc.cache, rev=-1)
+        memoize_obj_in_cache(doc.index, doc.data[0]['fdata'], num, doc.cache, rev=-1)
     fragments = build_fragments_and_xref(chg, doc.index[rev], doc.cache, idx, version(doc))
     for f in fragments:
         res += f
@@ -275,8 +281,9 @@ def rewind(doc: Doc) -> Doc:
     new_current = new_index[-1].copy()
     #new_current[-1] = None
     new_index[-1] = new_current
-    new_cache = build_cache(doc.bdata, new_index)
-    return Doc(doc.bdata, new_index, new_cache)
+    new_cache = build_cache(doc.data[0]['fdata'], new_index)
+    new_data = doc.data[0:-1]
+    return Doc(new_index, new_cache, new_data)
 
 
 def update_object(doc: Doc, num: int, new_o) -> Doc:
@@ -292,7 +299,7 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
     new_index[-1][num] = new_i
     new_cache = doc.cache.copy()
     new_cache[num] = new_o
-    return Doc(doc.bdata, new_index, new_cache)
+    return Doc(new_index, new_cache, doc.data)
 
 
 def add_object(doc: Doc, new_o) -> tuple:
@@ -310,7 +317,7 @@ def add_object(doc: Doc, new_o) -> tuple:
     new_cache = doc.cache.copy()
     new_cache.append(None)
     new_cache[num] = new_o
-    return Doc(doc.bdata, new_index, new_cache), complex(0, num)
+    return Doc(new_index, new_cache, doc.data), complex(0, num)
 
 
 #def get_fonts(doc: Doc, page_num: int) -> dict:

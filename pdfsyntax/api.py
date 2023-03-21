@@ -40,7 +40,8 @@ def init_doc(fdata: Callable) -> tuple:
     chrono = build_chrono_from_xref(fdata)
     index = build_index_from_chrono(chrono)
     cache = build_cache(fdata, index)
-    doc = Doc(fdata, index, cache)
+    data = len(index) * [{'fdata': fdata}]
+    doc = Doc(index, cache, data)
     return doc, chrono
 
 
@@ -84,7 +85,7 @@ def write(doc: Doc, filename: str) -> Doc:
             break
     if eof_rev >= 0:
         eof_pos = doc.index[eof_rev][-1]['abs_pos']
-        prov = doc.bdata(0, eof_pos+4)
+        prov = doc.data[0]['fdata'](0, eof_pos+4)
         bdata += prov[0][prov[1]:eof_pos+5]
         bdata += b'\n'
         idx += len(bdata)

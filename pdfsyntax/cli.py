@@ -46,9 +46,9 @@ def inspect(filename: str) -> None:
     file_seq, pos_index, nb_ver = file_map(fdata)
     print(build_html(file_seq, pos_index, nb_ver, filename, fdata(0, 8)[0]))
 
-def file_map(bdata: Callable) -> tuple:
+def file_map(fdata: Callable) -> tuple:
     """Build file sequence and sort it by absolute position"""
-    file_seq = build_chrono_from_xref(bdata)
+    file_seq = build_chrono_from_xref(fdata)
     file_index = build_index_from_chrono(file_seq)    
     pos_index = {}
     mini_indexes = []
@@ -60,7 +60,7 @@ def file_map(bdata: Callable) -> tuple:
  
     for obj in file_seq:
         if obj['o_num'] >= 0:
-            obj['content'] = memoize_obj_in_cache(file_index, bdata, obj['o_num'], rev=obj['doc_ver'])[-1]
+            obj['content'] = memoize_obj_in_cache(file_index, fdata, obj['o_num'], rev=obj['doc_ver'])[-1]
             if obj['o_num'] == 0:
                 temp_2.append({'o_num': -2, 'o_gen': -2, 'o_ver': obj['o_ver'], 'content': obj['xref_table_pos'], 'abs_pos': obj['startxref_pos']})
                 pos_index[obj['startxref_pos']] = f"-2.-2.{obj['o_ver']}"
