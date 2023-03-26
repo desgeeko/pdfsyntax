@@ -39,8 +39,10 @@ def init_doc(fdata: Callable) -> tuple:
     """Initialize doc object representing PDF file"""
     chrono = build_chrono_from_xref(fdata)
     index = build_index_from_chrono(chrono)
+    data = build_data_from_cache(index, fdata)
+    for i in index:
+        del i[-1]
     cache = build_cache(fdata, index)
-    data = len(index) * [{'fdata': fdata}]
     doc = Doc(index, cache, data)
     return doc, chrono
 
@@ -78,13 +80,12 @@ def write(doc: Doc, filename: str) -> Doc:
     nb_rev = len(doc.index)
     eof_rev = -1
     for i in range(nb_rev):
-        if doc.index[i][-1]:
+        if 'fdata' in doc.data[i]:
             eof_rev = i
-            #print(f"EOF={eof_rev}")
         else:
             break
     if eof_rev >= 0:
-        eof_pos = doc.index[eof_rev][-1]['abs_pos']
+        eof_pos = doc.data[eof_rev]['eof_pos']
         prov = doc.data[0]['fdata'](0, eof_pos+4)
         bdata += prov[0][prov[1]:eof_pos+5]
         bdata += b'\n'

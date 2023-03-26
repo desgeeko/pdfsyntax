@@ -246,6 +246,13 @@ def build_index_from_chrono(chrono: list) -> list:
     return index
 
 
+def build_data_from_cache(index: list, fdata: Callable) -> list:
+    """ """
+    #data = [{'eof_pos': i[-1]['abs_pos'], 'abs_next': i[-1]['abs_next'], 'fdata': fdata} for i in index if i[-1]]
+    data = [{'eof_pos': i[-1]['abs_pos'], 'fdata': fdata} for i in index if i[-1]]
+    return data
+
+
 def circular_deleted(changes: list) -> dict:
     """Build lookup dict to ref of next deleted object"""
     res = {}
