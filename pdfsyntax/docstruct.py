@@ -165,7 +165,7 @@ def group_obj_into_stream(doc: Doc):
     chgs = changes(doc)
     for i, _ in chgs:
         if i == o_num:
-            print("continue")
+            #print("continue")
             continue
         current[i]['env_num'] = o_num
     d = {'/Type': '/ObjStm', '/Length': 0, '/N': 0, '/First': 0, '/FirstLine': []}
@@ -236,6 +236,19 @@ def pages(doc: Doc) -> list:
     return pl
 
 
+def revision_index(doc: Doc, rev=-1) -> int:
+    index = 0
+    if rev == -1:
+        rev = len(doc.data)-1
+    for i in range(rev):
+        data = doc.data[i]
+        if 'eof_cut' in data:
+            index = data['eof_cut']
+        else:
+            index += len(data['bdata'])
+    return index
+
+
 def add_revision(doc: Doc) -> Doc:
     """Add new index for incremental update"""
     if len(changes(doc)) == 0:
@@ -248,30 +261,27 @@ def add_revision(doc: Doc) -> Doc:
     new_cache[0] = new_trailer
     new_index = doc.index.copy()
     new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
-    new_v = [new_trailer] + [current_v[i] for i in range(1,len(current_v))] 
-    new_index.append(new_v)
     new_data = doc.data.copy()
     if 'fdata' not in new_data[-1]:
-        new_bdata = prepare_revision(doc)
+        new_bdata, new_i = prepare_revision(doc, idx=revision_index(doc))
         if new_bdata:
             new_data[-1]['bdata'] = new_bdata
+        new_index[-1] = new_i
     new_data.append({})
+    new_v = [new_trailer] + [new_index[-1][i] for i in range(1,len(new_index[-1]))] 
+    new_index.append(new_v)
     return Doc(new_index, new_cache, new_data)
 
 
-def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> bytes:
+def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
     """Build bytes representing incremental update"""
-    res = b''
     chg = changes(doc, rev)
-    #if doc.index[rev][-1] or not chg:
     if not chg:
-        return res
+        return b''
     for num, _ in chg:
         memoize_obj_in_cache(doc.index, doc.data[0]['fdata'], num, doc.cache, rev=-1)
-    fragments = build_fragments_and_xref(chg, doc.index[rev], doc.cache, idx, version(doc))
-    for f in fragments:
-        res += f
-    return res
+    fragments, new_index = build_fragment_and_xref(chg, doc.index[rev], doc.cache, idx, version(doc))
+    return fragments, new_index
 
 
 def rewind(doc: Doc) -> Doc:

@@ -77,6 +77,7 @@ def write(doc: Doc, filename: str) -> Doc:
     """Write doc into file"""
     bdata = b''
     idx = 0
+    doc = add_revision(doc)
     nb_rev = len(doc.index)
     eof_rev = -1
     for i in range(nb_rev):
@@ -85,19 +86,19 @@ def write(doc: Doc, filename: str) -> Doc:
         else:
             break
     if eof_rev >= 0:
-        eof_pos = doc.data[eof_rev]['eof_pos']
-        prov = doc.data[0]['fdata'](0, eof_pos+4)
-        bdata += prov[0][prov[1]:eof_pos+5]
-        bdata += b'\n'
+        eof_cut = doc.data[eof_rev]['eof_cut']
+        prov = doc.data[0]['fdata'](0, eof_cut)
+        bdata += prov[0][prov[1]:eof_cut]
+        #bdata += b'\n'
         idx += len(bdata)
     else:
         FILE_HEADER = b'%PDF-' + version(doc).encode('ascii') + b'\n'
         bdata += FILE_HEADER
         idx += len(FILE_HEADER)
-    for i in range(eof_rev+1, nb_rev):
-        prep = prepare_revision(doc, i, idx)
-        bdata += prep
-        idx += len(prep)
+    for i in range(eof_rev+1, nb_rev-1):
+        fragment = doc.data[i]['bdata']
+        bdata += fragment
+        idx += len(fragment)
     bfile = open(filename, 'wb')
     bfile.write(bdata)
     bfile.close()

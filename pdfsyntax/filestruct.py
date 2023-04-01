@@ -3,6 +3,7 @@
 from typing import Callable
 from .objects import *
 import os
+from copy import deepcopy
 
 MARGIN = b'\n'
 
@@ -246,10 +247,20 @@ def build_index_from_chrono(chrono: list) -> list:
     return index
 
 
+def eof_cut(eof_index: int, fdata: Callable) -> int:
+    """ """
+    bdata, start, _, n = fdata(eof_index, bdata_length(fdata) - eof_index)
+    i = start + len('%%EOF')
+    while i < start + n:
+        if bdata[i] not in EOL:
+            break
+        i += 1
+    return i
+
+
 def build_data_from_cache(index: list, fdata: Callable) -> list:
     """ """
-    #data = [{'eof_pos': i[-1]['abs_pos'], 'abs_next': i[-1]['abs_next'], 'fdata': fdata} for i in index if i[-1]]
-    data = [{'eof_pos': i[-1]['abs_pos'], 'fdata': fdata} for i in index if i[-1]]
+    data = [{'eof_cut': eof_cut(i[-1]['abs_pos'], fdata), 'fdata': fdata} for i in index if i[-1]]
     return data
 
 
@@ -392,10 +403,12 @@ def finalize_stream(envelope):
     return envelope
 
 
-def build_fragments_and_xref(changes: list, current_index: list, cache: list, starting_pos: int, version: str) -> list:
+def build_fragment_and_xref(changes: list, current_index: list, cache: list, starting_pos: int, version: str) -> tuple:
     """List the sequence of byte blocks that make the update"""
     fragments = []
     xref_table = []
+    res = b''
+    new_index = deepcopy(current_index)
     counter = starting_pos + len(MARGIN)
     fragments.append(MARGIN)
     next_free = circular_deleted(changes)
@@ -422,6 +435,8 @@ def build_fragments_and_xref(changes: list, current_index: list, cache: list, st
                 block = serialize_fragment(num, o_gen, obj)
                 fragments.append(block)
                 xref_table.append(('n', num, o_gen, counter, env_num))
+                new_index[num]['abs_pos'] = counter
+                new_index[num]['abs_next'] = counter + len(block)
             counter += len(block)
     cache[0]['/Size'] = len(current_index) - 1
     if version < '1.5':
@@ -431,5 +446,7 @@ def build_fragments_and_xref(changes: list, current_index: list, cache: list, st
     fragments.append(built_xref)
     fragments.append(f'startxref\n{counter}\n'.encode('ascii'))
     fragments.append(b'%%EOF\n')
-    return fragments
+    for i in fragments:
+        res += i
+    return res, new_index
 
