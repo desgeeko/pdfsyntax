@@ -438,7 +438,7 @@ def build_fragment_and_xref(changes: list, current_index: list, cache: list, sta
                 new_index[num]['abs_pos'] = counter
                 new_index[num]['abs_next'] = counter + len(block)
             counter += len(block)
-    cache[0]['/Size'] = len(current_index) - 1
+    cache[0]['/Size'] = len(current_index)
     if version < '1.5':
         built_xref = format_xref_table(xref_table, cache[0], next_free)
     else:

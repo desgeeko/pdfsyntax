@@ -81,7 +81,7 @@ def write(doc: Doc, filename: str) -> Doc:
     nb_rev = len(doc.index)
     eof_rev = -1
     for i in range(nb_rev):
-        if 'fdata' in doc.data[i]:
+        if 'bdata' not in doc.data[i]:
             eof_rev = i
         else:
             break

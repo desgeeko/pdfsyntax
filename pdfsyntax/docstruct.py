@@ -104,7 +104,7 @@ def get_object(doc: Doc, obj):
     """Return raw object or the target of an indirect reference"""
     if isinstance(obj, complex) == True:
         ref = int(obj.imag)
-        res = memoize_obj_in_cache(doc.index, doc.data[0]['fdata'], ref, doc.cache)
+        res = memoize_obj_in_cache(doc.index, doc.data[-1]['fdata'], ref, doc.cache)
         return deepcopy(res[ref])
     else: 
         return obj
@@ -127,11 +127,11 @@ def flatten_page_tree(doc: Doc, num=None, inherited={}) -> list:
         return[(num, inherited)]
 
 
-def build_cache(bdata: Callable, index: list) -> list:
+def build_cache(fdata: Callable, index: list) -> list:
     """Initialize cache with trailer and Root"""
     size = len(index[-1])
     cache = size * [None]
-    memoize_obj_in_cache(index, bdata, 0, cache)
+    memoize_obj_in_cache(index, fdata, 0, cache)
     return cache
 
 
@@ -249,6 +249,24 @@ def revision_index(doc: Doc, rev=-1) -> int:
     return index
 
 
+def gen_fdata(fdata: Callable, index: int, bdata: bytes):
+    def new_fdata(start_pos: int, length: int) -> tuple:
+        if start_pos > index:
+            start_pos = start_pos - index
+            if start_pos == -1 and length == 0:
+                return (None, None, None, len(bdata))
+            if length == -1:
+                length = len(bdata) - start_pos
+            if start_pos == -1:
+                i = len(bdata) - length
+            else:
+                i = start_pos
+            return (bdata, i, 0, min(len(bdata) - start_pos, length))
+        else:
+            return fdata(start_pos, length)
+    return new_fdata
+
+
 def add_revision(doc: Doc) -> Doc:
     """Add new index for incremental update"""
     if len(changes(doc)) == 0:
@@ -262,12 +280,14 @@ def add_revision(doc: Doc) -> Doc:
     new_index = doc.index.copy()
     new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
     new_data = doc.data.copy()
-    if 'fdata' not in new_data[-1]:
-        new_bdata, new_i = prepare_revision(doc, idx=revision_index(doc))
+    if 'eof_cut' not in new_data[-1]:
+        idx = revision_index(doc)
+        new_bdata, new_i = prepare_revision(doc, idx=idx)
         if new_bdata:
             new_data[-1]['bdata'] = new_bdata
+            new_data[-1]['fdata'] = gen_fdata(new_data[-1]['fdata'], idx, new_bdata)
         new_index[-1] = new_i
-    new_data.append({})
+    new_data.append({'fdata': new_data[-1]['fdata']})
     new_v = [new_trailer] + [new_index[-1][i] for i in range(1,len(new_index[-1]))] 
     new_index.append(new_v)
     return Doc(new_index, new_cache, new_data)
@@ -279,8 +299,10 @@ def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
     if not chg:
         return b''
     for num, _ in chg:
-        memoize_obj_in_cache(doc.index, doc.data[0]['fdata'], num, doc.cache, rev=-1)
+        memoize_obj_in_cache(doc.index, doc.data[rev]['fdata'], num, doc.cache, rev=-1)
     fragments, new_index = build_fragment_and_xref(chg, doc.index[rev], doc.cache, idx, version(doc))
+    new_index[0]['abs_pos'] = idx + fragments.rfind(b'trailer') #TODO Handle xref streams
+    new_index[0]['abs_next'] = idx + len(fragments)
     return fragments, new_index
 
 
@@ -293,8 +315,9 @@ def rewind(doc: Doc) -> Doc:
     new_current = new_index[-1].copy()
     #new_current[-1] = None
     new_index[-1] = new_current
-    new_cache = build_cache(doc.data[0]['fdata'], new_index)
+    new_cache = build_cache(doc.data[-2]['fdata'], new_index)
     new_data = doc.data[0:-1]
+    #new_data[-1] = {}
     return Doc(new_index, new_cache, new_data)
 
 
