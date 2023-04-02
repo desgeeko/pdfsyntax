@@ -62,12 +62,12 @@ def init_doc(fdata: Callable) -> tuple:
 #    return doc
 
 
-def read(filename: str) -> Doc:
+def read(filename: str, mode: str = "SINGLE") -> Doc:
     """Read file and initialize doc"""
     #bfile = open(filename, 'rb')
     #bdata = bfile.read()
     #bfile.close()
-    fdata = bdata_provider(filename)
+    fdata = bdata_provider(filename, mode)
     doc, _ = init_doc(fdata)
     doc = add_revision(doc)
     return doc

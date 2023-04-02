@@ -64,7 +64,7 @@ def bdata_all(bdata: Callable) -> bytes:
     return bdata
 
 
-def parse_xref_table(bdata: bytes, start_pos: int) -> list:
+def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
     """Return a list of dicts indexing indirect objects
 
     abs_pos is the absolute position of the object
@@ -98,7 +98,7 @@ def parse_xref_table(bdata: bytes, start_pos: int) -> list:
                 xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_ver})
             table.append((line, o_num))
             o_num += 1
-    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_table_pos':start_pos, 'xref_table':table })
+    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': general_offset + trailer_pos, 'xref_table_pos':general_offset + start_pos, 'xref_table':table })
     return xref
 
 
@@ -146,12 +146,12 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     bdata, a0, o0, _ = fdata(-1, 100)
     eof_pos = o0 + bdata.rfind(EOF, a0)
     startxref_pos = o0 + bdata.rfind(STARTXREF, a0)
-    i, j, _ = next_token(bdata, startxref_pos + len(STARTXREF))
+    i, j, _ = next_token(bdata, startxref_pos + len(STARTXREF) - o0)
     xref_pos = int(bdata[i:j])
     bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
     if bdata[a0:a0+4] == XREF:
-        chrono = parse_xref_table(bdata, a0)
-        i, j, _ = next_token(bdata, chrono[0]['abs_pos'])  # b'trailer'
+        chrono = parse_xref_table(bdata, a0, o0)
+        i, j, _ = next_token(bdata, chrono[0]['abs_pos'] - o0)  # b'trailer'
         i, j, _ = next_token(bdata, j)
         trailer = parse_obj(bdata[i:j])
     else: # must be a /XRef stream
@@ -174,16 +174,16 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         eof_pos = o0 + bdata.find(EOF, a0)
         prev_eof = eof_pos
         if bdata[a0:a0+4] == XREF:
-            tmp_index = parse_xref_table(bdata, a0)
+            tmp_index = parse_xref_table(bdata, a0, o0)
             tmp_index[0]['startxref_pos'] = startxref_pos
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
             chrono = tmp_index + chrono
-            i, j, _ = next_token(bdata, chrono[0]['abs_pos'])
+            i, j, _ = next_token(bdata, chrono[0]['abs_pos'] - o0)
             i, j, _ = next_token(bdata, j)                     # actual trailer dict
             trailer = parse_obj(bdata[i:j])
         else: # must be a /XRef stream
             bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
-            i, j, _ = next_token(bdata, a0)
+            i, j, _ = next_token(bdata, a0 - o0)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
