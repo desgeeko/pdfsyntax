@@ -144,6 +144,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
+    xref_stm = False
     bdata, a0, o0, _ = fdata(-1, 100)
     eof_pos = o0 + bdata.rfind(EOF, a0)
     startxref_pos = o0 + bdata.rfind(STARTXREF, a0)
@@ -155,6 +156,19 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         i, j, _ = next_token(bdata, chrono[0]['abs_pos'] - o0)  # b'trailer'
         i, j, _ = next_token(bdata, j)
         trailer = parse_obj(bdata[i:j])
+        if '/XRefStm' in trailer:
+            xref_stm = True
+            xref_stm_trailer = trailer
+            new_xref_pos = trailer['/XRefStm']
+            xref_pos = int(new_xref_pos)
+            bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
+            i, j, _ = next_token(bdata, a0)
+            i, j, _ = next_token(bdata, j)
+            i, j, _ = next_token(bdata, j)
+            i, j, _ = next_token(bdata, j)
+            xref = parse_obj(bdata, i)
+            chrono = parse_xref_stream(xref, xref_pos)
+            trailer = xref['entries']
     else: # must be a /XRef stream
         bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
         i, j, _ = next_token(bdata, a0)
@@ -165,6 +179,11 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         chrono = parse_xref_stream(xref, xref_pos)
         trailer = xref['entries']
     chrono[0]['startxref_pos'] = startxref_pos
+    if xref_stm:
+        chrono[0]['xref_stm'] = True
+        trailer = xref_stm_trailer
+    else:
+        chrono[0]['xref_stm'] = False
     chrono.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
     prev_eof = eof_pos
     while '/Prev' in trailer:
@@ -218,7 +237,7 @@ def build_index_from_chrono(chrono: list) -> list:
     doc_ver = -1
     prev_pos = 0
     for obj in chrono:
-        if obj['o_num'] == 0 and obj['abs_pos'] > prev_pos:
+        if obj['o_num'] == 0 and (obj['abs_pos'] > prev_pos or obj['xref_stm']):
             m = m[:]
             m[0] = None
             index.append(m)

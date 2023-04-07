@@ -205,6 +205,14 @@ def encrypted(doc: Doc) -> bool:
         return False
 
 
+def hybrid(doc: Doc) -> bool:
+    """Detect if doc is hybrid"""
+    if len(doc.index) >= 2 and doc.index[1][0].get('xref_stm'):
+        return True
+    else:
+        return False
+
+
 def catalog(doc: Doc):
     """Return doc Root/Catalog dictionary"""
     return get_object(doc, trailer(doc)['/Root'])

@@ -112,6 +112,7 @@ def structure(doc: Doc) -> dict:
     ret['Pages'] = number_pages(doc)
     ret['Revisions'] = updates(doc)
     ret['Encrypted'] = encrypted(doc)
+    ret['Hybrid'] = hybrid(doc)
     ret['Paper'] = paper(page_layouts(doc)[0][0]) #TODO handle hybrid docs
     return ret
 
