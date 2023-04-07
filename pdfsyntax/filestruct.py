@@ -92,9 +92,10 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
         elif l == 3:
             offset = int(line_a[0])
             o_ver = int(line_a[1])
+            keyword = line_a[2]
             #o_start = bdata.find(b'obj', offset) + len(b'obj') + 1
             #if bdata[o_start] in b'\r\n ': o_start += 1
-            if o_num != 0:
+            if keyword != b'f' and o_num != 0:
                 xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_ver})
             table.append((line, o_num))
             o_num += 1
