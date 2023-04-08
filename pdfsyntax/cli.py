@@ -7,6 +7,7 @@ from .api import *
 from .display import build_html
 
 def main():
+    """ """
     parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax', description='Navigate through the structure of a PDF file')
     parser.add_argument('command', type=str, choices=['inspect', 'overview'], help='Command')
     parser.add_argument('filename', type=str, help='PDF file name')
@@ -17,13 +18,10 @@ def main():
         overview(args.filename)
 
 def overview(filename: str) -> None:
-    """ """
-    #bfile = open(filename, 'rb')
-    #bdata = bfile.read()
-    #bfile.close()
-    #doc = loads(bdata)
+    """Print both structure and metadata of a file"""
     fdata = bdata_provider(filename)
     doc, _ = init_doc(fdata)
+    doc = add_revision(doc)
     s = structure(doc)
     m = metadata(doc)
     print('# Structure')
@@ -39,9 +37,6 @@ def overview(filename: str) -> None:
 
 def inspect(filename: str) -> None:
     """Print html view of the file map"""
-    #bfile = open(filename, 'rb')
-    #bdata = bfile.read()
-    #bfile.close()
     fdata = bdata_provider(filename)
     file_seq, pos_index, nb_ver = file_map(fdata)
     print(build_html(file_seq, pos_index, nb_ver, filename, fdata(0, 8)[0]))
