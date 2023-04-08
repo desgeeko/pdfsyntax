@@ -283,7 +283,10 @@ def add_revision(doc: Doc) -> Doc:
     current_v = doc.index[-1]
     new_cache = len(current_v) * [None]
     new_trailer = doc.cache[0].copy()
-    new_trailer['/Prev'] = current_v[0].get('xref_table_pos') or current_v[0].get('xref_stream_pos')
+    if type(current_v[0]) == list: #Linearized
+        new_trailer['/Prev'] = current_v[0][1].get('xref_table_pos') or current_v[0][1].get('xref_stream_pos')
+    else:
+        new_trailer['/Prev'] = current_v[0].get('xref_table_pos') or current_v[0].get('xref_stream_pos')
     new_cache[0] = new_trailer
     new_index = doc.index.copy()
     new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}

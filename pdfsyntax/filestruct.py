@@ -470,3 +470,20 @@ def build_fragment_and_xref(changes: list, current_index: list, cache: list, sta
         res += i
     return res, new_index
 
+
+def linearized(fdata: Callable) -> dict:
+    """ """
+    HEADER = b'%PDF-X.Y'
+    bdata, a0, o0, _ = fdata(len(HEADER), 1024 - len(HEADER))
+    i, j, _ = next_token(bdata, a0) #comment
+    i, j, _ = next_token(bdata, j)  #o_num
+    i, j, _ = next_token(bdata, j)  #gen_num
+    i, j, _ = next_token(bdata, j)  #obj keyword
+    i, _, t = next_token(bdata, j)  #dict ?
+    if t == 'DICT':
+        first_obj = parse_obj(bdata, i)
+        if type(first_obj) == dict and '/Linearized' in first_obj:
+            return first_obj
+    return None
+
+

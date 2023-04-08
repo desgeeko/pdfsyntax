@@ -113,6 +113,10 @@ def structure(doc: Doc) -> dict:
     ret['Revisions'] = updates(doc)
     ret['Encrypted'] = encrypted(doc)
     ret['Hybrid'] = hybrid(doc)
+    if linearized(doc.data[0]['fdata']):
+        ret['Linearized'] = True
+    else:
+        ret['Linearized'] = False
     ret['Paper'] = paper(page_layouts(doc)[0][0]) #TODO handle hybrid docs
     return ret
 
