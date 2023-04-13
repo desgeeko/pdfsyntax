@@ -336,7 +336,10 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
     """Update object in the current revision"""
     ver = len(doc.index)
     old_i = doc.index[-1][num]
-    new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}
+    if new_o is None:
+        new_i = None
+    else:
+        new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}
     new_index = doc.index.copy()
     new_index[-1] = doc.index[-1].copy()
     new_index[-1][num] = new_i
@@ -360,6 +363,41 @@ def add_object(doc: Doc, new_o) -> tuple:
     new_cache.append(None)
     new_cache[num] = new_o
     return Doc(new_index, new_cache, doc.data), complex(0, num)
+
+
+def dependencies(doc: Doc, obj: Any) -> set:
+    """Recursively list indirect references found inside object""" 
+    if type(obj) == dict:
+        res = set()
+        for k, v in obj.items():
+            if k == '/Parent':
+                continue
+            res = res | dependencies(doc, v)
+        return res
+    elif type(obj) == list:
+        res = set()
+        for i in obj:
+            res = res | dependencies(doc, i)
+        return res
+    elif type(obj) == complex:
+        res = {obj}
+        res = res | dependencies(doc, get_object(doc, obj))
+        return res
+    else:   
+        return set()
+
+
+#def delete_pages(doc: Doc, del_pages) -> Doc:
+#    """ """
+#    if type(del_pages) != list:
+#        del_pages = [del_pages]
+#
+#    pages = flatten_page_tree(doc)
+#    obj, _ = pages[page]
+#    res = {obj}
+#    obj = get_object(doc, obj)
+#
+#    return res
 
 
 #def get_fonts(doc: Doc, page_num: int) -> dict:

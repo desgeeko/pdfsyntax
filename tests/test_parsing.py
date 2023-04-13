@@ -45,3 +45,12 @@ class Parsing(unittest.TestCase):
 
     def test_multiple_comments(self):
         self.assertEqual(pdf.parse_obj(b'[%a\n/abc %b %c \n 123%d\n]'), ['/abc', 123])
+
+    def test_stream_dict(self):
+        self.assertEqual(pdf.parse_obj(b'<< /a 1 >>stream\ncontent\rendstream').entries, {'/a': 1})
+
+    def test_n_stream(self):
+        self.assertEqual(pdf.parse_obj(b'<< /a 1 >>stream\ncontent\rendstream').stream, b'content')
+    
+    def test_rn_stream(self):
+        self.assertEqual(pdf.parse_obj(b'<< /a 1 >>stream\r\ncontent\rendstream').stream, b'content')

@@ -20,11 +20,11 @@ class Stream:
         return getattr(self, item)
 
     def __repr__(self):
-        res = f"Stream dataclass with entries: {self.entries}"
-        if len(self.stream) > 60:
-            res += f"\nand stream: {self.stream[:20]} (...truncated...) {self.stream[-20:]}\n"
+        res = "<PDF Stream," + f" entries: {self.entries},"
+        if len(self.stream) > 40:
+            res += f" stream: '{self.stream[:10].decode('ascii')} (...truncated...) {self.stream[-10:].decode('ascii')}>'\n"
         else:
-            res += f"\nand stream: {self.stream}\n"
+            res += f" stream: '{self.stream}>'\n"
         return res
 
 
@@ -49,7 +49,11 @@ def next_token(text: bytes, i=0) -> tuple:
                 search = "NAME"
             elif text[i:i+6] == b"stream":
                 search = "STREAM"
-                offset = 7 if text[i+6:i+7] == b'\n' else 8
+                #offset = 7 if text[i+6:i+7] == b'\n' else 8
+                if text[i+6:i+8] == b'\r\n':
+                    offset = 8
+                else:
+                    offset = 7
                 i += offset
             elif single in b"+-.0123456789":
                 search = "VALUE"
@@ -98,7 +102,7 @@ def next_token(text: bytes, i=0) -> tuple:
                 else:
                     return (h, i, 'INTEGER')
         elif search == "STREAM":
-            if text[i:i+11] == b'\r\nendstream' or text[i:i+10] == b'\nendstream':
+            if text[i:i+11] == b'\r\nendstream' or text[i:i+10] == b'\nendstream' or text[i:i+10] == b'\rendstream':
                 return (h, i, 'STREAM')
         elif search == "ARRAY":
             if single == b'[':
@@ -232,7 +236,7 @@ def serialize(obj, depth=0) -> bytes:
             content = obj['stream']
             obj = obj['entries']
             encoded_content = encode_stream(content, obj)
-            obj['/Length'] = len(encoded_content) + 1
+            obj['/Length'] = len(encoded_content) + 1 #TODO Handle case when Length is an indirect object
         ret += b'<< '
         keys = list(obj.keys())
         for i in keys:
