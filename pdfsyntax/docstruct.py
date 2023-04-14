@@ -47,6 +47,8 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
     """
     if cache is None:
         cache = (key + 1) * [None]
+    if 'DELETED' in idx[rev][key]:
+        return cache
     if  cache[key] != None:
         return cache
     if key == 0:
@@ -148,7 +150,7 @@ def changes(doc: Doc, rev: int=-1):
             res.append((i, 'a'))
         elif i < len(previous) and previous[i] == current[i]:
             pass
-        elif previous[i] != None and current[i] == None:
+        elif previous[i] != None and 'DELETED' in current[i]: #elif previous[i] != None and current[i] == None:
             res.append((i, 'd'))
         elif previous[i] != None and current[i] != previous[i]:
             res.append((i, 'u'))
@@ -323,13 +325,18 @@ def rewind(doc: Doc) -> Doc:
         return doc
     new_index = doc.index.copy()
     new_index.pop()
-    new_current = new_index[-1].copy()
-    #new_current[-1] = None
-    new_index[-1] = new_current
+    new_index[-1] = new_index[-1].copy()
     new_cache = build_cache(doc.data[-2]['fdata'], new_index)
     new_data = doc.data[0:-1]
-    #new_data[-1] = {}
     return Doc(new_index, new_cache, new_data)
+
+
+def copy_doc(doc: Doc) -> Doc:
+    """ """
+    new_index = doc.index.copy()
+    new_index[-1] = doc.index[-1].copy()
+    new_cache = doc.cache.copy()
+    return Doc(new_index, new_cache, doc.data)
 
 
 def update_object(doc: Doc, num: int, new_o) -> Doc:
@@ -337,15 +344,13 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
     ver = len(doc.index)
     old_i = doc.index[-1][num]
     if new_o is None:
-        new_i = None
+        new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1, 'DELETED': True}
     else:
         new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}
-    new_index = doc.index.copy()
-    new_index[-1] = doc.index[-1].copy()
-    new_index[-1][num] = new_i
-    new_cache = doc.cache.copy()
-    new_cache[num] = new_o
-    return Doc(new_index, new_cache, doc.data)
+    new_doc = copy_doc(doc)
+    new_doc.index[-1][num] = new_i
+    new_doc.cache[num] = new_o
+    return new_doc
 
 
 def add_object(doc: Doc, new_o) -> tuple:
@@ -355,14 +360,12 @@ def add_object(doc: Doc, new_o) -> tuple:
     ver = len(doc.index)
     num = len(doc.index[-1])
     new_i = {'o_num': num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': ver-1}
-    new_index = doc.index.copy()
-    new_index[-1] = doc.index[-1].copy()
-    new_index[-1].append(None)
-    new_index[-1][num] = new_i
-    new_cache = doc.cache.copy()
-    new_cache.append(None)
-    new_cache[num] = new_o
-    return Doc(new_index, new_cache, doc.data), complex(0, num)
+    new_doc = copy_doc(doc)
+    new_doc.index[-1].append(None)
+    new_doc.index[-1][num] = new_i
+    new_doc.cache.append(None)
+    new_doc.cache[num] = new_o
+    return new_doc, complex(0, num)
 
 
 def dependencies(doc: Doc, obj: Any) -> set:
@@ -370,7 +373,7 @@ def dependencies(doc: Doc, obj: Any) -> set:
     if type(obj) == dict:
         res = set()
         for k, v in obj.items():
-            if k == '/Parent':
+            if k == '/Parent' or k == '/P':
                 continue
             res = res | dependencies(doc, v)
         return res
@@ -387,17 +390,34 @@ def dependencies(doc: Doc, obj: Any) -> set:
         return set()
 
 
-#def delete_pages(doc: Doc, del_pages) -> Doc:
-#    """ """
-#    if type(del_pages) != list:
-#        del_pages = [del_pages]
-#
-#    pages = flatten_page_tree(doc)
-#    obj, _ = pages[page]
-#    res = {obj}
-#    obj = get_object(doc, obj)
-#
-#    return res
+def delete_pages(doc: Doc, del_pages) -> Doc:
+    """Delete one (an int) or more (an array of int) pages"""
+    if type(del_pages) != list:
+        del_pages = [del_pages]
+    pages = flatten_page_tree(doc)
+    del_ref = {pages[p][0] for p in del_pages}
+    keep_ref = {p[0] for p in pages} - del_ref
+    del_dep = set()
+    keep_dep = set()
+    for i in del_ref:
+        del_dep = del_dep | dependencies(doc, i)
+    for i in keep_ref:
+        keep_dep = keep_dep | dependencies(doc, i)
+    for ref in del_ref:
+        parent = get_object(doc, ref)['/Parent']
+        new_parent = get_object(doc, parent)
+        kids = new_parent['/Kids']
+        kids.remove(ref)
+        new_parent['/Count'] = new_parent['/Count'] - 1
+        doc = update_object(doc, int(parent.imag), new_parent)
+        while '/Parent' in new_parent:
+            p = new_parent['/Parent']
+            new_parent = get_object(doc, p)
+            new_parent['/Count'] = new_parent['/Count'] - 1
+            doc = update_object(doc, int(p.imag), new_parent)
+    for ref in del_dep - keep_dep:
+        doc = update_object(doc, int(ref.imag), None)
+    return doc
 
 
 #def get_fonts(doc: Doc, page_num: int) -> dict:

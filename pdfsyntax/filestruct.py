@@ -339,17 +339,17 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
     o_num = trailer['/Size'] - 1
     trailer['/Type'] = '/XRef'
     trailer['/Filter'] = '/ASCIIHexDecode'
-    trailer['/W'] = [1, 2, 2]
+    trailer['/W'] = [1, 3, 3]
     for use, num, o_gen, counter, env_num in elems:
         if use == 'f':
-            ref = b'\x00' + (next_free[num]).to_bytes(2, "big") + (o_gen+1).to_bytes(2, "big")
+            ref = b'\x00' + (next_free[num]).to_bytes(3, "big") + (o_gen+1).to_bytes(3, "big")
             xref_stream.append((ref, num))
         else:
             if env_num:
-                ref = b'\x02' + (env_num).to_bytes(2, "big") + (counter).to_bytes(2, "big")
+                ref = b'\x02' + (env_num).to_bytes(3, "big") + (counter).to_bytes(3, "big")
                 xref_stream.append((ref, num))
             else:
-                ref = b'\x01' + (counter).to_bytes(2, "big") + (o_gen).to_bytes(2, "big")
+                ref = b'\x01' + (counter).to_bytes(3, "big") + (o_gen).to_bytes(3, "big")
                 xref_stream.append((ref, num))
     # Index 
     i = len(xref_stream) - 1
