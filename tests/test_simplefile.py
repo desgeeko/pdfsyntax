@@ -15,5 +15,5 @@ class SimpleFile(unittest.TestCase):
         self.assertEqual('/Prev' in self.doc.cache[0], True)
 
     def test_page_list(self):
-        self.assertEqual(pdf.flatten_page_tree(self.doc), [(4j, {})])
+        self.assertEqual(pdf.flat_page_tree(self.doc), [(4j, {})])
 

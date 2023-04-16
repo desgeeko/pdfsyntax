@@ -52,6 +52,21 @@ def bdata_provider(filename: str, mode: str = "SINGLE"):
         return continuous_load
 
 
+def bdata_dummy(bdata: bytes):
+    """ """
+    def dummy_load(start_pos: int, length: int) -> tuple:
+        if start_pos == -1 and length == 0:
+            return (None, None, None, len(bdata))
+        if length == -1:
+            length = len(bdata) - start_pos
+        if start_pos == -1:
+            i = len(bdata) - length
+        else:
+            i = start_pos
+        return (bdata, i, 0, min(len(bdata) - start_pos, length))
+    return dummy_load
+
+
 def bdata_length(bdata: Callable) -> int:
     """Direct access to data length without reading it"""
     _, _, _, i = bdata(-1, 0)
@@ -77,14 +92,6 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
     lines = bdata[start_pos:trailer_pos].splitlines()
     for line in lines:
         line_a = line.strip(b'\n\r ').split()
-        #line_a = []
-        #i, n, begin_i = 0, len(line), 0
-        #while i < n:
-        #    if line[i] in b' ':
-        #        line_a.append(line[begin_i:i])
-        #        begin_i = i + 1
-        #    i += 1
-        #line_a.append(line[begin_i:i])
         l = len(line_a)
         if  l == 2:
             o_num = int(line_a[0])
@@ -93,8 +100,6 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
             offset = int(line_a[0])
             o_ver = int(line_a[1])
             keyword = line_a[2]
-            #o_start = bdata.find(b'obj', offset) + len(b'obj') + 1
-            #if bdata[o_start] in b'\r\n ': o_start += 1
             if keyword != b'f' and o_num != 0:
                 xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_ver})
             table.append((line, o_num))
@@ -423,7 +428,7 @@ def finalize_stream(envelope):
     return envelope
 
 
-def build_fragment_and_xref(changes: list, current_index: list, cache: list, starting_pos: int, version: str) -> tuple:
+def build_fragment_and_xref(changes: list, current_index: list, cache: list, starting_pos: int, use_xref_stream: bool) -> tuple:
     """List the sequence of byte blocks that make the update"""
     fragments = []
     xref_table = []
@@ -459,10 +464,16 @@ def build_fragment_and_xref(changes: list, current_index: list, cache: list, sta
                 new_index[num]['abs_next'] = counter + len(block)
             counter += len(block)
     cache[0]['/Size'] = len(current_index)
-    if version < '1.5':
+    if not use_xref_stream:
         built_xref = format_xref_table(xref_table, cache[0], next_free)
+        new_index[0] = {}
+        new_index[0]['abs_pos'] = starting_pos + built_xref.rfind(b'trailer')
+        new_index[0]['abs_next'] = starting_pos + len(built_xref)
     else:
         built_xref = format_xref_stream(xref_table, cache[0], next_free)
+        new_index[0] = {}
+        new_index[0]['abs_pos'] = starting_pos
+        new_index[0]['abs_next'] = starting_pos + len(built_xref)
     fragments.append(built_xref)
     fragments.append(f'startxref\n{counter}\n'.encode('ascii'))
     fragments.append(b'%%EOF\n')

@@ -109,10 +109,10 @@ def get_object(doc: Doc, obj):
         res = memoize_obj_in_cache(doc.index, doc.data[-1]['fdata'], ref, doc.cache)
         return deepcopy(res[ref])
     else: 
-        return obj
+        return deepcopy(obj)
 
 
-def flatten_page_tree(doc: Doc, num=None, inherited={}) -> list:
+def flat_page_tree(doc: Doc, num=None, inherited={}) -> list:
     """Recursively list the pages of a node"""
     accu = []
     if num:
@@ -123,14 +123,14 @@ def flatten_page_tree(doc: Doc, num=None, inherited={}) -> list:
         for kid in node['/Kids']:
             e = {k: node.get(k) for k in INHERITABLE_ATTRS if node.get(k) is not None}
             inherited.update(e)
-            accu = accu + flatten_page_tree(doc, kid, inherited.copy())
+            accu = accu + flat_page_tree(doc, kid, inherited.copy())
         return accu
     elif node['/Type'] == '/Page':
         return[(num, inherited)]
 
 
 def build_cache(fdata: Callable, index: list) -> list:
-    """Initialize cache with trailer and Root"""
+    """Initialize cache with trailer"""
     size = len(index[-1])
     cache = size * [None]
     memoize_obj_in_cache(index, fdata, 0, cache)
@@ -150,7 +150,7 @@ def changes(doc: Doc, rev: int=-1):
             res.append((i, 'a'))
         elif i < len(previous) and previous[i] == current[i]:
             pass
-        elif previous[i] != None and 'DELETED' in current[i]: #elif previous[i] != None and current[i] == None:
+        elif previous[i] != None and 'DELETED' not in previous[i] and 'DELETED' in current[i]:
             res.append((i, 'd'))
         elif previous[i] != None and current[i] != previous[i]:
             res.append((i, 'u'))
@@ -237,7 +237,7 @@ def number_pages(doc: Doc):
 def pages(doc: Doc) -> list:
     """ """
     pl = []
-    for num, in_attr in flatten_page_tree(doc):
+    for num, in_attr in flat_page_tree(doc):
         temp = deepcopy(get_object(doc, num))
         for a in in_attr:
             if a not in temp:
@@ -313,9 +313,11 @@ def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
         return b''
     for num, _ in chg:
         memoize_obj_in_cache(doc.index, doc.data[rev]['fdata'], num, doc.cache, rev=-1)
-    fragments, new_index = build_fragment_and_xref(chg, doc.index[rev], doc.cache, idx, version(doc))
-    new_index[0]['abs_pos'] = idx + fragments.rfind(b'trailer') #TODO Handle xref streams
-    new_index[0]['abs_next'] = idx + len(fragments)
+    if version(doc) < '1.5':
+        use_xref_stream = False
+    else:
+        use_xref_stream = True
+    fragments, new_index = build_fragment_and_xref(chg, doc.index[rev], doc.cache, idx, use_xref_stream)
     return fragments, new_index
 
 
@@ -394,7 +396,7 @@ def delete_pages(doc: Doc, del_pages) -> Doc:
     """Delete one (an int) or more (an array of int) pages"""
     if type(del_pages) != list:
         del_pages = [del_pages]
-    pages = flatten_page_tree(doc)
+    pages = flat_page_tree(doc)
     del_ref = {pages[p][0] for p in del_pages}
     keep_ref = {p[0] for p in pages} - del_ref
     del_dep = set()
@@ -418,6 +420,57 @@ def delete_pages(doc: Doc, del_pages) -> Doc:
     for ref in del_dep - keep_dep:
         doc = update_object(doc, int(ref.imag), None)
     return doc
+
+
+def defragment_map(current_index: list) -> tuple:
+    """Build new index without empty slots (ie deleted objects)"""
+    new_index = [None]
+    mapping = {}
+    nb = 0
+    for i, o in enumerate(current_index):
+        if i == 0: #trailer
+            continue
+        if 'DELETED' in o:
+            continue
+        else:
+            nb += 1
+            old_ref = complex(o['o_gen'], o['o_num']) 
+            new_index.append({'o_num': nb, 'o_gen': 0, 'doc_ver': 0, 'OLD_REF': old_ref})
+            new_ref = complex(0, nb) 
+            if old_ref != new_ref:
+                mapping[old_ref] = new_ref
+    return new_index, mapping
+
+
+def flatten(doc: Doc) -> Doc:
+    """ """
+    new_index, mapping = defragment_map(doc.index[-1])
+    new_cache = len(new_index) * [None]
+    new_data = [doc.data[0]]
+    new_cache[0] = trailer(doc)
+    for i in range(1, len(new_index)):
+        old_ref = new_index[i]['OLD_REF']
+        obj = get_object(doc, old_ref)
+        obj = rename_ref(obj, mapping)
+        new_cache[i] = obj
+    new_doc = Doc([new_index], new_cache, new_data)
+    chg = changes(new_doc)
+    if not chg:
+        return b''
+    v = version(doc)
+    if v < '1.5':
+        use_xref_stream = False
+    else:
+        use_xref_stream = True
+    del new_doc.cache[0]['/Prev']
+    header = f"%PDF-{v}".encode('ascii')
+    new_bdata, new_i = build_fragment_and_xref(chg, new_doc.index[0], new_doc.cache, len(header), use_xref_stream)
+    #new_data[-1]['bdata'] = new_bdata
+    new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
+    new_data[-1]['eof_cut'] = len(header + new_bdata)
+    new_doc.index[0] = new_i
+    return new_doc
+
 
 
 #def get_fonts(doc: Doc, page_num: int) -> dict:

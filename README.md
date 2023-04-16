@@ -103,12 +103,12 @@ You may think of the `j` as a "jump" to another object :)
 
 ### Pages
 
-Page index is a tree structure where attributes can be inherited from parent nodes. For convenience `flatten_page_tree` returns an ordered list of document pages and specifies inherited attributes that should apply to each page.
+Page index is a tree structure where attributes can be inherited from parent nodes. For convenience `flat_page_tree` returns an ordered list of document pages and specifies inherited attributes that should apply to each page.
 
 ```Python
 >>> #Each item of the list is a tuple with the page object reference and its inherited attributes
 >>> doc = pdf.read("samples/simple_text_string.pdf")
->>> pdf.flatten_page_tree(doc)
+>>> pdf.flat_page_tree(doc)
 [(4j, {})]
 >>> #(In this example, nothing is inherited from upper nodes)
 ```

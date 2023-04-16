@@ -263,3 +263,18 @@ def serialize(obj, depth=0) -> bytes:
     else:
         ret += to_str(obj)
     return ret
+
+
+def rename_ref(obj: Any, mapping: dict) -> Any:
+    """Recursively replace an indirect reference in object tree""" 
+    if type(obj) == complex:
+        if obj in mapping:
+            return mapping[obj]
+    elif type(obj) == dict:
+        for k in obj:
+            obj[k] = rename_ref(obj[k], mapping)
+    elif type(obj) == list:
+        for k in range(len(obj)):
+            obj[k] = rename_ref(obj[k], mapping)
+    return obj
+

@@ -81,7 +81,7 @@ def write(doc: Doc, filename: str) -> Doc:
     nb_rev = len(doc.index)
     eof_rev = -1
     for i in range(nb_rev):
-        if 'bdata' not in doc.data[i]:
+        if 'eof_cut' in doc.data[i]:
             eof_rev = i
         else:
             break
@@ -89,7 +89,6 @@ def write(doc: Doc, filename: str) -> Doc:
         eof_cut = doc.data[eof_rev]['eof_cut']
         prov = doc.data[0]['fdata'](0, eof_cut)
         bdata += prov[0][prov[1]:eof_cut]
-        #bdata += b'\n'
         idx += len(bdata)
     else:
         FILE_HEADER = b'%PDF-' + version(doc).encode('ascii') + b'\n'
@@ -155,7 +154,7 @@ def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
     else:
         work_pages = list(range(len(pl)))
     a = [(i ,x[1]) for i, x in enumerate(pl) if i in work_pages]
-    c = flatten_page_tree(doc)
+    c = flat_page_tree(doc)
     for nb, old_degrees in a:
         old_degrees = old_degrees or 0
         iref = c[nb][0]
@@ -177,7 +176,7 @@ def single_text_annotation(doc: Doc, page_num: int, text: str) -> Doc:
     doc, a_iref = add_object(doc, annot)
     annot_array = [a_iref]
     doc, aa_iref = add_object(doc, annot_array)
-    page_ref, _ = flatten_page_tree(doc)[page_num]
+    page_ref, _ = flat_page_tree(doc)[page_num]
     new_page = deepcopy(get_object(doc, page_ref))
     new_page['/Annots'] = aa_iref
     doc = update_object(doc, int(page_ref.imag), new_page)
@@ -192,6 +191,6 @@ Doc.get_object = get_object
 Doc.rewind = rewind
 Doc.rotate = rotate
 Doc.page_layouts = page_layouts
-Doc.flatten_page_tree = flatten_page_tree
+Doc.flat_page_tree = flat_page_tree
 Doc.pages = pages
 
