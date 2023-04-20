@@ -116,7 +116,7 @@ def structure(doc: Doc) -> dict:
         ret['Linearized'] = True
     else:
         ret['Linearized'] = False
-    ret['Paper'] = paper(page_layouts(doc)[0][0]) #TODO handle hybrid docs
+    ret['Paper of 1st page'] = paper(page_layouts(doc, 1)[0][0])
     return ret
 
 
@@ -139,9 +139,9 @@ def paper(mediabox: list) -> str:
     return pdim + f' ({ptype})'
 
 
-def page_layouts(doc: Doc) -> list:
+def page_layouts(doc: Doc, max_nb=None) -> list:
     """List page layouts"""
-    pl = pages(doc)
+    pl = pages(doc, max_nb)
     med = [(p['/MediaBox'], p.get('/Rotate')) for p in pl]
     return med
 

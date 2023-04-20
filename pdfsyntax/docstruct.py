@@ -112,7 +112,7 @@ def get_object(doc: Doc, obj):
         return deepcopy(obj)
 
 
-def flat_page_tree(doc: Doc, num=None, inherited={}) -> list:
+def flat_page_tree(doc: Doc, num=None, inherited={}, max_nb=None) -> list:
     """Recursively list the pages of a node"""
     accu = []
     if num:
@@ -123,7 +123,9 @@ def flat_page_tree(doc: Doc, num=None, inherited={}) -> list:
         for kid in node['/Kids']:
             e = {k: node.get(k) for k in INHERITABLE_ATTRS if node.get(k) is not None}
             inherited.update(e)
-            accu = accu + flat_page_tree(doc, kid, inherited.copy())
+            accu = accu + flat_page_tree(doc, kid, inherited.copy(), max_nb)
+            if max_nb is not None and len(accu) == max_nb:
+                return accu
         return accu
     elif node['/Type'] == '/Page':
         return[(num, inherited)]
@@ -234,10 +236,10 @@ def number_pages(doc: Doc):
     return p['/Count']
 
 
-def pages(doc: Doc) -> list:
+def pages(doc: Doc, max_nb=None) -> list:
     """ """
     pl = []
-    for num, in_attr in flat_page_tree(doc):
+    for num, in_attr in flat_page_tree(doc, max_nb=max_nb):
         temp = deepcopy(get_object(doc, num))
         for a in in_attr:
             if a not in temp:

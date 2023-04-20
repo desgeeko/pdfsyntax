@@ -68,7 +68,7 @@ For example both samples are equivalent:
 ```Python
 >>> #File structure
 >>> structure(doc)
-{'Version': '1.4', 'Pages': 1, 'Revisions': 1, 'Encrypted': False, 'Paper': '215x279mm or 8.5x11.0in (US Letter)'}
+{'Version': '1.4', 'Pages': 1, 'Revisions': 1, 'Encrypted': False, 'Paper of 1st page': '215x279mm or 8.5x11.0in (US Letter)'}
 
 >>> #File metadata
 >>> metadata(doc)
@@ -133,7 +133,7 @@ PDFSyntax tracks document incremental updates made possible by appending new or 
 >>> import pdfsyntax as pdf
 >>> doc = pdf.read("samples/add_text_annotation.pdf")
 >>> doc.structure()
-{'Version': '1.4', 'Pages': 1, 'Revisions': 2, 'Encrypted': False, 'Paper': '215x279mm or 8.5x11.0in (US Letter)'}
+{'Version': '1.4', 'Pages': 1, 'Revisions': 2, 'Encrypted': False, 'Paper of 1st page': '215x279mm or 8.5x11.0in (US Letter)'}
 
 >>> #This file contains 2 revisions and PDFSyntax has initialized the doc object for a future revision 3
 
