@@ -124,10 +124,11 @@ def metadata(doc: Doc) -> dict:
     """Return doc metadata"""
     ret = {}
     i = info(doc) or {}
+    print(i)
     for entry in METADATA_ATTRS:
-        ret[entry[1:]] = text_string(i.get(entry)) or None    
-    ret['CreationDate'] = text_string(i.get('/CreationDate')) or None
-    ret['ModDate'] = text_string(i.get('/ModDate')) or None
+        ret[entry[1:]] = text_string(get_object(doc, i.get(entry))) or None
+    ret['CreationDate'] = text_string(get_object(doc, i.get('/CreationDate'))) or None
+    ret['ModDate'] = text_string(get_object(doc, i.get('/ModDate'))) or None
     return ret 
 
 
