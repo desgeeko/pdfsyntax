@@ -33,7 +33,11 @@ def text_string(string: bytes) -> str:
         if string[1:3] == b'\xfe\xff': 
             res = string[3:-1].decode('utf-16be')
         else:
-            res = decode_pdfdoc(string[1:-1])
+            s = string[1:-1]
+            s = s.replace(b'\x5c\x5c', b'\x5c') # x5c is backslash
+            s = s.replace(b'\x5c(', b'(')
+            s = s.replace(b'\x5c)', b')')
+            res = decode_pdfdoc(s)
     elif string[0:1] == b'<': # Hexadecimal string
         if string[1:5] == b'FEFF':
             b = bytes.fromhex(string[5:-1].decode('ascii'))

@@ -4,10 +4,16 @@ import pdfsyntax as pdf
 
 class Unicode(unittest.TestCase):
 
-    def test_literal_pdfdocencoded(self):
+    def test_literal_pdfdocencoded_basic(self):
         self.assertEqual(pdf.text_string(b'(Martin D.)'), 'Martin D.')
 
-    def test_literal_pdfdocencoded2(self): # Euro sign does not exist in latin-1
+    def test_literal_pdfdocencoded_backslash(self):
+        self.assertEqual(pdf.text_string(b'(a\\\\b)'), 'a\\b')
+
+    def test_literal_pdfdocencoded_parenthesis(self):
+        self.assertEqual(pdf.text_string(b'(page\\(s\\))'), 'page(s)')
+
+    def test_literal_pdfdocencoded_special(self): # Euro sign does not exist in latin-1
         self.assertEqual(pdf.text_string(b'(10\xa0!)'), '10€!')
 
     def test_literal_utf16be(self):
