@@ -77,7 +77,6 @@ TRUNCATED = '<em> ...(truncated) </em>'
 
 def build_html(articles: list, pos_index: dict, nb_ver: int, filename: str, version: bytes) -> str:
     """Compose the page layout"""
-    #print(articles)
     page = HEADER
     page += build_header(filename, nb_ver, version)
     for article in articles:

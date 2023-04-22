@@ -57,7 +57,7 @@ def file_map(fdata: Callable) -> tuple:
         if obj['o_num'] >= 0:
             obj['content'] = memoize_obj_in_cache(file_index, fdata, obj['o_num'], rev=obj['doc_ver'])[-1]
             if obj['o_num'] == 0:
-                temp_2.append({'o_num': -2, 'o_gen': -2, 'o_ver': obj['o_ver'], 'content': obj['xref_table_pos'], 'abs_pos': obj['startxref_pos']})
+                temp_2.append({'o_num': -2, 'o_gen': -2, 'o_ver': obj['o_ver'], 'content': obj.get('xref_table_pos') or obj.get('xref_stream_pos'), 'abs_pos': obj['startxref_pos']})
                 pos_index[obj['startxref_pos']] = f"-2.-2.{obj['o_ver']}"
         elif obj['o_num'] == -1:
             obj['content'] = None

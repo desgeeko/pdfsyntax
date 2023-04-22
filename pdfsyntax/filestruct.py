@@ -4,6 +4,7 @@ from typing import Callable
 from .objects import *
 import os
 from copy import deepcopy
+from .filters import *
 
 MARGIN = b'\n'
 
@@ -122,6 +123,7 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
         o_pos is the position of the object within the stream
     """
     xref = []
+    table = []
     cols = xref_stream['entries']['/W']
     i = 0
     obj_range = (0, 0)
@@ -132,15 +134,19 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
     while i < len(xref_stream['stream']):
         line = ''
         params = []
+        ppr = b''
         for col in cols:
-            params.append(int.from_bytes(xref_stream['stream'][i:i+int(col)], byteorder='big')) # struct.unpack cannot work with 3-byte words
+            x = xref_stream['stream'][i:i+int(col)]
+            params.append(int.from_bytes(x, byteorder='big')) # struct.unpack cannot work with 3-byte words
             i += int(col)
+            ppr += asciihex(x) + b' '
+        table.append((ppr, obj_num))
         if params[0] == 1:
             xref.append({'abs_pos': params[1], 'o_num': obj_num, 'o_gen': params[2]})
         elif params[0] == 2:
             xref.append({'env_num': params[1], 'o_num': obj_num, 'o_gen': 0, 'o_pos': params[2]})
         obj_num += 1
-    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream_pos': trailer_pos ,'xref_stream': []})
+    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream_pos': trailer_pos ,'xref_stream': table})
     return xref
     
 

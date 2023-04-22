@@ -20,6 +20,7 @@ class Stream:
         return getattr(self, item)
 
     def __repr__(self):
+        print(self.entries)
         res = "<PDF Stream," + f" entries: {self.entries},"
         if len(self.stream) > 40:
             res += f" stream: '{self.stream[:10].decode('ascii')} (...truncated...) {self.stream[-10:].decode('ascii')}>'\n"
