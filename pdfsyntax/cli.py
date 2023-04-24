@@ -70,6 +70,13 @@ def file_map(fdata: Callable) -> tuple:
             obj['abs_pos'] = obj['a_']
     file_seq.extend(temp_2)
     file_seq.sort(key=lambda x: x.get('abs_pos') or x.get('a_'))
-    file_seq = [x for i, x in enumerate(file_seq) if i == 0 or file_seq[i-1]['abs_pos'] != x['abs_pos']]
+    #file_seq = [x for i, x in enumerate(file_seq) if i == 0 or file_seq[i-1]['abs_pos'] != x['abs_pos']]
+    for i, x in enumerate(file_seq):
+        if i > 0 and file_seq[i-1]['abs_pos'] == file_seq[i]['abs_pos']:
+            if file_seq[i-1].get('xref_stream_num') == file_seq[i]['o_num']:
+                file_seq[i]['xref_stream'] = file_seq[i-1]['xref_stream']
+                del file_seq[i-1]
+            elif file_seq[i].get('xref_stream_num') == file_seq[i-1]['o_num']:
+                file_seq[i-1]['xref_stream'] = file_seq[i]['xref_stream']
+                del file_seq[i]
     return (file_seq, pos_index, nb_ver)
-

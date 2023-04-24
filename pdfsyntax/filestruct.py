@@ -109,7 +109,7 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
     return xref
 
 
-def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
+def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     """Return a list of dicts indexing indirect objects
 
     for regular objects:
@@ -146,7 +146,7 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int) -> list:
         elif params[0] == 2:
             xref.append({'env_num': params[1], 'o_num': obj_num, 'o_gen': 0, 'o_pos': params[2]})
         obj_num += 1
-    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream_pos': trailer_pos ,'xref_stream': table})
+    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream_pos': trailer_pos ,'xref_stream': table, 'xref_stream_num': o_num})
     return xref
     
 
@@ -174,20 +174,22 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             xref_pos = int(new_xref_pos)
             bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
             i, j, _ = next_token(bdata, a0)
+            o_num = parse_obj(bdata, i)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)
-            chrono = parse_xref_stream(xref, xref_pos)
+            chrono = parse_xref_stream(xref, xref_pos, o_num)
             trailer = xref['entries']
     else: # must be a /XRef stream
         bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
         i, j, _ = next_token(bdata, a0)
+        o_num = parse_obj(bdata, i)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
         xref = parse_obj(bdata, i)
-        chrono = parse_xref_stream(xref, xref_pos)
+        chrono = parse_xref_stream(xref, xref_pos, o_num)
         trailer = xref['entries']
     chrono[0]['startxref_pos'] = startxref_pos
     if xref_stm:
@@ -215,11 +217,12 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         else: # must be a /XRef stream
             bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
             i, j, _ = next_token(bdata, a0 - o0)
+            o_num = parse_obj(bdata, i)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)
-            tmp_index = parse_xref_stream(xref, xref_pos)
+            tmp_index = parse_xref_stream(xref, xref_pos, o_num)
             tmp_index[0]['startxref_pos'] = startxref_pos
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
             chrono =  tmp_index + chrono

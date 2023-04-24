@@ -4,7 +4,7 @@ import html
 from .objects import Stream
 
 NAME_MAX_WIDTH = 20
-VALUE_MAX_WIDTH = 40
+VALUE_MAX_WIDTH = 30
 
 HEADER = '''
 <!DOCTYPE html>
@@ -93,7 +93,11 @@ def build_html(articles: list, pos_index: dict, nb_ver: int, filename: str, vers
         if 'xref_table' in article:
             page += build_xref_table(article['xref_table'], mini_index)
             page += "\ntrailer\n"
-        page += follow_obj(obj, mini_index, pos_index)
+        if 'xref_stream' in article:
+            page += follow_obj(obj['entries'], mini_index, pos_index)
+            page += build_xref_stream(article['xref_stream'], mini_index)
+        else:
+            page += follow_obj(obj, mini_index, pos_index)
         page += build_obj_trailer()
     page += TRAILER
     return page
@@ -148,6 +152,20 @@ def build_xref_table(table: list, mini_index: list) -> str:
         ret += '\n'
     return ret
 
+def build_xref_stream(table: list, mini_index: list) -> str:
+    """Display XREF stream with additional links to objects """
+    ret = '\nstream\n'
+    for line, o_num in table:
+        ret += line.decode('ascii')
+        if o_num != None:
+            o_gen, o_ver = mini_index[o_num]
+            ret += '    '
+            ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
+            ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
+            ret += '</a>'
+        ret += '\n'
+    return ret
+
 def move_list_item(mod_list: list, item: int, new_pos: int) -> str:
     """Reposition an item in a list"""
     if item in mod_list:
@@ -185,12 +203,12 @@ def follow_obj(obj, mini_index: list, pos_index: dict, depth=0) -> str:
                 ret += f'  {name:{NAME_MAX_WIDTH}}<a class="obj-link" href="#obj{pos_index[int(value)]}">{value}</a>\n'                
             else:
                 ret += f'  {name:{NAME_MAX_WIDTH}}{value}\n'
+        ret += ' ' * (NAME_MAX_WIDTH + 2) * depth
+        ret += '>>'
         if content:
             content = f'{content}'[2:-1]
             content = content[:VALUE_MAX_WIDTH * 2] + TRUNCATED
-            ret += f'  {"stream":{NAME_MAX_WIDTH}}{content}\n'                
-        ret += ' ' * (NAME_MAX_WIDTH + 2) * depth
-        ret += '>>'
+            ret += f'  \n{"stream":{NAME_MAX_WIDTH}}\n{content}\n'
     elif type(obj) == list:
         ret += '[ '
         for i in obj:
@@ -228,11 +246,15 @@ def build_obj_header(article) -> str:
         ret += f'<span class="obj-header"><strong>XREF table & trailer</strong></span>'
         ret += f'<em class="obj-low">  at offset {article.get("abs_pos")}</em>'
     else:
-        ret += f'<span class="obj-header"><strong>{o_num}</strong> <span class="obj-low">{o_gen} obj</span></span>'
-        if 'a_' not in article:
-            ret += f'<em class="obj-low">  at offset {article.get("abs_pos")}</em>'
+        if 'xref_stream' in article:
+            ret += f'<span class="obj-header"><strong>{o_num}</strong> <span class="obj-low">{o_gen} obj</span></span>'
+            ret += f'<em class="obj-low">  as XREF stream object at offset {article.get("abs_pos")}</em>'
         else:
-            ret += f'<em class="obj-low">  from object stream {article.get("env_num")} above</em>'
+            ret += f'<span class="obj-header"><strong>{o_num}</strong> <span class="obj-low">{o_gen} obj</span></span>'
+            if 'a_' not in article:
+                ret += f'<em class="obj-low">  at offset {article.get("abs_pos")}</em>'
+            else:
+                ret += f'<em class="obj-low">  from object stream {article.get("env_num")} above</em>'
     ret += f'<div class="obj-body">\n'
     return ret
 
