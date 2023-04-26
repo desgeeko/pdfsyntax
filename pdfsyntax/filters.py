@@ -44,7 +44,20 @@ def encode_stream(stream, stream_def):
     return stream
 
 
-def asciihex(stream):
+def asciihex(stream, columns = None):
     """ """
-    return (binascii.hexlify(stream)).upper()
+    if columns is None:
+        return (binascii.hexlify(stream)).upper()
+    else:
+        res = b''
+        i = 0
+        l = sum(columns)
+        while i+l <= len(stream):
+            for c in columns:
+                res += (binascii.hexlify(stream[i:i+c])).upper() 
+                res += b' '
+                i += c
+            res += b'\n'
+        return res
+
 

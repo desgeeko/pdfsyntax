@@ -23,9 +23,9 @@ class Stream:
         print(self.entries)
         res = "<PDF Stream," + f" entries: {self.entries},"
         if len(self.stream) > 40:
-            res += f" stream: '{self.stream[:10].decode('ascii')} (...truncated...) {self.stream[-10:].decode('ascii')}>'\n"
+            res += f" decoded stream: {self.stream[:10]+b' (...truncated...)'}>\n"
         else:
-            res += f" stream: '{self.stream}>'\n"
+            res += f" decoded stream: {self.stream}>\n"
         return res
 
 
