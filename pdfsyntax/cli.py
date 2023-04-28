@@ -48,17 +48,47 @@ def file_map(fdata: Callable) -> tuple:
     pos_index = {}
     mini_indexes = []
     temp_2 = []
-
     nb_ver = len(file_index)
     for ver_index in file_index:
-        mini_indexes.append([(x['o_gen'], x['o_ver']) for x in ver_index if x is not None])
- 
+        l = []
+        for x in ver_index:
+            if x is not None and type(x) == dict:
+                l.append((x['o_gen'], x['o_ver']))
+            elif x is not None and type(x) == list:
+                l.append((x[1]['o_gen'], x[1]['o_ver']))
+        mini_indexes.append(l)
     for obj in file_seq:
         if obj['o_num'] >= 0:
-            obj['content'] = memoize_obj_in_cache(file_index, fdata, obj['o_num'], rev=obj['doc_ver'])[-1]
             if obj['o_num'] == 0:
-                temp_2.append({'o_num': -2, 'o_gen': -2, 'o_ver': obj['o_ver'], 'content': obj.get('xref_table_pos') or obj.get('xref_stream_pos'), 'abs_pos': obj['startxref_pos']})
-                pos_index[obj['startxref_pos']] = f"-2.-2.{obj['o_ver']}"
+                content = 1
+                o_ver = obj['o_ver']
+                i0 = file_index[obj['doc_ver']][0]
+                if type(i0) == list:
+                    i1 = i0.pop(0)
+                    if len(i0) == 1:
+                        content = 0
+                        o_ver = 1
+                    else:
+                        o_ver = 0
+                else:
+                    i1 = i0
+                bdata, a0, _, _ = fdata(i1['abs_pos'], i1['abs_next'] - i1['abs_pos'])
+                i, j, _ = next_token(bdata, a0)
+                i, j, _ = next_token(bdata, j)
+                if 'xref_stream' in i1:
+                    i, j, _ = next_token(bdata, j)
+                    i, j, _ = next_token(bdata, j)
+                i_obj = parse_obj(bdata, i)
+                if type(i_obj) == Stream:
+                    i_obj = i_obj['entries']
+                obj['content'] = i_obj
+                if content:
+                    content = obj.get('xref_table_pos') or obj.get('xref_stream_pos')
+                x = {'o_num': -2, 'o_gen': -2, 'o_ver': o_ver, 'content': content, 'abs_pos': obj['startxref_pos']}
+                temp_2.append(x)
+                pos_index[obj['startxref_pos']] = f"-2.-2.{o_ver}"
+            else:
+                obj['content'] = memoize_obj_in_cache(file_index, fdata, obj['o_num'], rev=obj['doc_ver'])[-1]
         elif obj['o_num'] == -1:
             obj['content'] = None
         obj['mini_index'] = mini_indexes[obj['doc_ver']]
@@ -70,7 +100,7 @@ def file_map(fdata: Callable) -> tuple:
             obj['abs_pos'] = obj['a_']
     file_seq.extend(temp_2)
     file_seq.sort(key=lambda x: x.get('abs_pos') or x.get('a_'))
-    #file_seq = [x for i, x in enumerate(file_seq) if i == 0 or file_seq[i-1]['abs_pos'] != x['abs_pos']]
+
     for i, x in enumerate(file_seq):
         if i > 0 and file_seq[i-1]['abs_pos'] == file_seq[i]['abs_pos']:
             if file_seq[i-1].get('xref_stream_num') == file_seq[i]['o_num']:

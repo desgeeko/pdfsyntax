@@ -126,13 +126,13 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     table = []
     cols = xref_stream['entries']['/W']
     i = 0
-    obj_range = (0, 0)
     if '/Index' in xref_stream['entries']:
         obj_range = xref_stream['entries']['/Index']
+    else:
+        obj_range = [0, xref_stream['entries']['/Size']]
     start_obj, nb_obj = int(obj_range[0]), int(obj_range[1])
     obj_num = start_obj
     while i < len(xref_stream['stream']):
-        line = ''
         params = []
         ppr = b''
         for col in cols:
@@ -201,10 +201,16 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     prev_eof = eof_pos
     while '/Prev' in trailer:
         new_xref_pos = trailer['/Prev']
-        xref_pos = int(new_xref_pos)
-        bdata, a0, o0, _ = fdata(xref_pos, prev_eof - xref_pos)
-        startxref_pos = o0 + bdata.find(STARTXREF, a0)
-        eof_pos = o0 + bdata.find(EOF, a0)
+        if new_xref_pos < xref_pos:
+            xref_pos = int(new_xref_pos)
+            bdata, a0, o0, _ = fdata(xref_pos, prev_eof - xref_pos)
+            startxref_pos = o0 + bdata.find(STARTXREF, a0)
+            eof_pos = o0 + bdata.find(EOF, a0)
+        else: # Linearized
+            startxref_pos = o0 + bdata.find(STARTXREF, 0)
+            eof_pos = o0 + bdata.find(EOF, 0)
+            xref_pos = int(new_xref_pos)
+            bdata, a0, o0, _ = fdata(xref_pos, prev_eof - xref_pos)
         prev_eof = eof_pos
         if bdata[a0:a0+4] == XREF:
             tmp_index = parse_xref_table(bdata, a0, o0)
