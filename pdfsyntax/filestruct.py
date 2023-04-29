@@ -257,7 +257,7 @@ def build_index_from_chrono(chrono: list) -> list:
     doc_ver = -1
     prev_pos = 0
     for obj in chrono:
-        if obj['o_num'] == 0 and (obj['abs_pos'] > prev_pos or obj['xref_stm']):
+        if obj['o_num'] == 0 and (obj['abs_pos'] > prev_pos or obj.get('xref_stm')):
             m = m[:]
             m[0] = None
             index.append(m)
