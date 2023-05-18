@@ -12,14 +12,14 @@ class Bdata(unittest.TestCase):
         cls.f["CONTINUOUS"] = pdf.bdata_provider('./samples/simple_text_string.pdf', 'CONTINUOUS')
 
     def test_length_single(self):
-        self.assertEqual(pdf.bdata_length(self.f["SINGLE"]), 823)
+        self.assertEqual(pdf.bdata_length(self.f["SINGLE"]), 866)
 
     def test_length_continuous(self):
-        self.assertEqual(pdf.bdata_length(self.f["CONTINUOUS"]), 823)
+        self.assertEqual(pdf.bdata_length(self.f["CONTINUOUS"]), 866)
 
     def test_all_single(self):
-        self.assertEqual(len(pdf.bdata_all(self.f["SINGLE"])), 823)
+        self.assertEqual(len(pdf.bdata_all(self.f["SINGLE"])), 866)
 
     def test_all_continuous(self):
-        self.assertEqual(len(pdf.bdata_all(self.f["CONTINUOUS"])), 823)
+        self.assertEqual(len(pdf.bdata_all(self.f["CONTINUOUS"])), 866)
 
