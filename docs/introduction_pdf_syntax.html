@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="desgeeko" />
+    <meta name="description" content="Anatomy of a PDF file" />
+    <title>A Quick Introduction to PDF Syntax</title>
+    <link rel="icon" href="logo.svg">
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #fff;
+        }
+        header, footer {
+            text-align: center;
+        }
+        h1 {
+            font-size: 2em;
+            margin-top: 0;
+        }
+        #raw {
+            display: none;
+        }
+        h2, h3, h4 {
+            margin-top: 1.5em;
+            margin-bottom: 1em;
+        }
+        p, ul {
+            margin-top: 1em;
+            font-size: 1.1em;
+        }
+        li {
+            margin-bottom: 0.5em;
+        }
+        code {
+            font-size: 1.1em;
+            padding: 0.15em 0.2em;
+            border: 0px solid red;
+            background-color: lightgrey;
+            display: inline-block;
+        }
+        section {
+            width: 80%;
+            max-width: 700px;
+            margin: 2em auto;
+        }
+        .centered {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        svg {
+            max-width: 500px;
+        }
+        em {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <br/>
+    <header>
+        <a href="https://pdfsyntax.dev/"><img src="logo.svg" width="150" height="150"/></a>
+        <br/><br/>
+        <h1>A Quick Introduction to PDF Syntax</h1>
+        <h2><em>Anatomy of a PDF File</em></h2>
+        <h4>June 2023</h4>
+    </header>
+    <svg id="raw" xmlns="http://www.w3.org/2000/svg">
+        <style>
+            text {
+                font: 18px monospace;
+
+            }
+            .content {
+                fill: black;
+            }
+            .offset {
+                fill: grey;
+            }
+            .frame {
+                stroke: red;
+                stroke-width: 1;
+                fill: none;
+            }
+            .highlight {
+                fill: red;
+                fill-opacity: 20%;
+            }
+            .arrow {
+                stroke: red;
+                stroke-width: 2; 
+            }
+            #arrowhead {
+                fill: red;
+            }
+        </style>
+
+        <g id="pdf">
+            <rect x="100" y="100" width="500" height="1370" fill="#ddd" stroke="#000" stroke-width="1"/>
+            <g id="filecontent" text-anchor="start" class="content">
+                <text x="105" y="120">%PDF-1.4</text>
+                <text x="105" y="140">1 0 obj</text>
+                <text x="105" y="160">&lt;&lt; /Type /Catalog</text>
+                <text x="135" y="180">   /Outlines 2 0 R</text>
+                <text x="135" y="200">   /Pages 3 0 R</text>
+                <text x="105" y="220">&gt;&gt;</text>
+                <text x="105" y="240">endobj</text>
+                <text x="105" y="260">2 0 obj</text>
+                <text x="105" y="280">&lt;&lt; /Type /Outlines</text>
+                <text x="135" y="300">   /Count 0</text>
+                <text x="105" y="320">&gt;&gt;</text>
+                <text x="105" y="340">endobj</text>
+                <text x="105" y="360">3 0 obj</text>
+                <text x="105" y="380">&lt;&lt; /Type /Pages</text>
+                <text x="135" y="400">   /Kids [4 0 R]</text>
+                <text x="135" y="420">   /Count 1</text>
+                <text x="105" y="440">&gt;&gt;</text>
+                <text x="105" y="460">endobj</text>
+                <text x="105" y="480">4 0 obj</text>
+                <text x="105" y="500">&lt;&lt; /Type /Page</text>
+                <text x="135" y="520">   /Parent 3 0 R</text>
+                <text x="135" y="540">   /MediaBox [0 0 612 792]</text>
+                <text x="135" y="560">   /Contents 5 0 R</text>
+                <text x="135" y="580">   /Resources &lt;&lt; /ProcSet 6 0 R</text>
+                <text x="285" y="600">                 /Font &lt;&lt; /F1 7 0 R &gt;&gt;</text>
+                <text x="255" y="620">              &gt;&gt;</text>
+                <text x="105" y="640">&gt;&gt;</text>
+                <text x="105" y="660">endobj</text>
+                <text x="105" y="680">5 0 obj</text>
+                <text x="105" y="700">&lt;&lt; /Length 73 >></text>
+                <text x="105" y="720">stream</text>
+                <text x="135" y="740">    BT</text>
+                <text x="165" y="760">       /F1 24 Tf</text>
+                <text x="165" y="780">       100 100 Td</text>
+                <text x="165" y="800">       (Hello World) Tj</text>
+                <text x="135" y="820">    ET</text>
+                <text x="105" y="840">endstream</text>
+                <text x="105" y="860">endobj</text>
+                <text x="105" y="880">6 0 obj</text>
+                <text x="105" y="900">[/PDF /Text]</text>
+                <text x="105" y="920">endobj</text>
+                <text x="105" y="940">7 0 obj</text>
+                <text x="105" y="960">&lt;&lt; /Type /Font</text>
+                <text x="135" y="980">   /Subtype /Type1</text>
+                <text x="135" y="1000">   /Name /F1</text>
+                <text x="135" y="1020">   /BaseFont /Helvetica</text>
+                <text x="135" y="1040">   /Encoding /MacRomanEncoding</text>
+                <text x="105" y="1060">&gt;&gt;</text>
+                <text x="105" y="1080">endobj</text>
+                <text x="105" y="1100">xref</text>
+                <text x="105" y="1120">0 8</text>
+                <text x="105" y="1140">0000000000 65535 f</text>
+                <text x="105" y="1160">0000000009 00000 n</text>
+                <text x="105" y="1180">0000000080 00000 n</text>
+                <text x="105" y="1200">0000000129 00000 n</text>
+                <text x="105" y="1220">0000000192 00000 n</text>
+                <text x="105" y="1240">0000000376 00000 n</text>
+                <text x="105" y="1260">0000000498 00000 n</text>
+                <text x="105" y="1280">0000000526 00000 n</text>
+                <text x="105" y="1300"></text>
+                <text x="105" y="1320">trailer</text>
+                <text x="105" y="1340">&lt;&lt; /Size 8</text>
+                <text x="135" y="1360">   /Root 1 0 R</text>
+                <text x="105" y="1380">&gt;&gt;</text>
+                <text x="105" y="1400">startxref</text>
+                <text x="105" y="1420">646</text>
+                <text x="105" y="1440">%%EOF</text>
+
+                <rect x="100" y="1485" width="500" height="800" fill="lightgrey" stroke="#000" stroke-width="1"/>
+                <text x="105" y="1510">4 0 obj</text>
+                <text x="105" y="1530">&lt;&lt; /Type /Page</text>
+                <text x="135" y="1550">   /Parent 3 0 R</text>
+                <text x="135" y="1570">/MediaBox [0 0 612 792]</text>
+                <text x="135" y="1590">/Contents 5 0 R</text>
+                <text x="135" y="1610">/Resources &lt;&lt; /ProcSet 6 0 R</text>
+                <text x="285" y="1630">              /Font &lt;&lt; /F1 7 0 R >></text>
+                <text x="255" y="1650">           &gt;&gt;</text>
+                <text x="135" y="1670">/Annots 8 0 R</text>
+                <text x="105" y="1690">&gt;&gt;</text>
+                <text x="105" y="1710">endobj</text>
+                <text x="105" y="1730">8 0 obj</text>
+                <text x="105" y="1750">[9 0 R]</text>
+                <text x="105" y="1770">endobj</text>
+                <text x="105" y="1790">9 0 obj</text>
+                <text x="105" y="1810">&lt;&lt; /Type /Annot</text>
+                <text x="105" y="1830">/Subtype /Text</text>
+                <text x="105" y="1850">/Rect [44 616 162 735]</text>
+                <text x="105" y="1870">/Contents (Text #1)</text>
+                <text x="105" y="1890">/Open true</text>
+                <text x="105" y="1910">&gt;&gt;</text>
+                <text x="105" y="1930">endobj</text>
+                <text x="105" y="1950">xref</text>
+                <text x="105" y="1970">0 1</text>
+                <text x="105" y="1990">0000000000 65535 f</text>
+                <text x="105" y="2010">4 1</text>
+                <text x="105" y="2030">0000000866 00000 n</text>
+                <text x="105" y="2050">8 2</text>
+                <text x="105" y="2070">0000001067 00000 n</text>
+                <text x="105" y="2090">0000001090 00000 n</text>
+                <text x="105" y="2110"></text>
+                <text x="105" y="2130">trailer</text>
+                <text x="105" y="2150">&lt;&lt; /Size 10</text>
+                <text x="105" y="2170">/Root 1 0 R</text>
+                <text x="105" y="2190">/Prev 646</text>
+                <text x="105" y="2210">&gt;&gt;</text>
+                <text x="105" y="2230">startxref</text>
+                <text x="105" y="2250">1205</text>
+                <text x="105" y="2270">%%EOF</text>
+            </g>
+            <g id="offsets" text-anchor="end" class="offset">
+                <text x="80" y="65">byte</text>
+                <text x="90" y="85">offset&darr;</text>
+                <text x="90" y="120">0</text>
+                <text x="90" y="140">9</text>
+                <text x="90" y="260">80</text>
+                <text x="90" y="360">129</text>
+                <text x="90" y="480">192</text>
+                <text x="90" y="680">376</text>
+                <text x="90" y="880">498</text>
+                <text x="90" y="940">526</text>
+                <text x="90" y="1100">646</text>
+            </g>
+        </g>
+    </svg>
+    <svg id="arrow" width="0" viewBox="0 0 0 0" class="h">
+        <defs>
+            <marker id="arrowhead" refX="0.1" refY="4" markerWidth="8" markerHeight="8" orient="auto">
+                <path d="M 0 0 V 8 L 4 4 Z" />
+            </marker>
+        </defs>
+    </svg>
+
+    <section id="preamble">
+            <p>
+                How do you read a PDF file? 
+            </p>
+            <p>
+                This introductory memo will walk you through the process of decoding its internal structure. A very simple "Hello World" file similar to an example written in the PDF specification will serve as a material. 
+            </p>
+    </section>
+    <section id="syntax">
+        <h2>Syntax Overview</h2>
+            <p>
+                The PDF specification distinguishes 4 domains : 
+                <ul>
+                <li><em>Objects</em> : the basic building blocks,</li>
+                <li><em>File structure</em> : how objects are stored and accessed in a file,</li>
+                <li><em>Document structure</em> : how linked objects are interpreted to represent a document,</li>
+                <li><em>Content streams</em> : special objects that describe the appearance of a page.</li>
+                </ul>
+            </p>
+            <p>
+                    The following explanations will show you how reading a PDF file make use of these domains.
+            </p>
+    </section>
+    <section id="pdfheader">
+        <h2>Header</h2>
+            <p>
+                The first line of a PDF file is a <code>%PDF-X.Y</code> header. 
+                These numbers indicate the version of the specification the file complies to.
+                When the numbers are high, "modern" features may be used, but this is not an obligation because of PDF backward compatibily.
+                For example, a PDF 1.2 document is also a valid PDF 1.7 document.
+            </p>
+            <p>
+                But do not take this header for granted because, since PDF 1.4, another object (the root/catalog) you will see later on may specify another version with a higher precedence. 
+            </p>
+            <div class="centered">
+                <svg viewBox="0 50 600 200">
+                    <use href="#pdf"></use>
+                    <rect x="103" y="102" width="490" height="22" class="highlight"/>
+                    <text x="105" y="120">%PDF-1.4</text>
+                </svg>
+            </div>
+    </section>
+    <section id="pdfend">
+        <h2>End of File</h2>
+            <p>At the very end of the file sits a <code>%%EOF</code> line.</p>
+            <div class="centered">
+                <svg viewBox="0 1340 600 140">
+                    <use href="#pdf"></use>
+                    <rect x="103" y="1422" width="490" height="22" class="highlight"/>
+                    <text x="105" y="1440">%%EOF</text>
+                </svg>
+            </div>
+            <p>
+                We must go up by a few lines to see a <code>startxref</code> keyword implying that something is actually starting here.  
+                In fact the number immediately following this keyword is the file offset - in bytes - of a structure named the Cross-Reference.
+                This structure is an index that allows direct access to all parts (objects) and gives an entry point into the root of the document.
+            </p>
+            <div class="centered">
+                <svg viewBox="0 1044 600 430">
+                    <use href="#pdf"></use>
+                    <rect x="103" y="1382" width="490" height="22" class="highlight"/>
+                    <rect x="103" y="1402" width="490" height="22" class="highlight"/>
+                    <text x="105" y="1400">startxref</text>
+                    <text x="105" y="1420">646</text>
+                    <path d="M 90 1400 C 0 1280, 0 1170, 90 1110" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                </svg>
+            </div>
+            <p>Why is the entry point located at the end of the document? This approach allows efficient incremental updates. More on that later.</p>
+    </section>
+    <section id="xref_table">
+        <h2>Cross-Reference Table, and Trailer</h2>
+            <p>
+                When <code>startxref</code> points to a <code>xref</code> keyword, 
+                it means that the Cross-Reference is implemented as a table and immediately followed by a <code>trailer</code>.
+                A table subsection starts with a line specifying the number of the first object mentioned, and the total number of the objects referenced in the subsection;
+                then lines of fixed-length strings (20 bytes) that specify the location of each object and its status (in use, or freed).
+            </p>
+            <div class="centered">
+                <svg viewBox="0 884 600 500">
+                    <use href="#pdf"></use>
+                    <rect x="103" y="1082" width="490" height="22" class="highlight"/>
+                    <rect x="103" y="1302" width="490" height="22" class="highlight"/>
+                    <text x="105" y="1100">xref</text>
+                    <text x="105" y="1320">trailer</text>
+                    <path d="M 90 1275 C 0 1280, 0 1030, 90 948" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                </svg>
+            </div>
+            <p>
+                The subsection lists 8 indirect objects starting at index 0, so object #7 is mentioned on the 8th line and can be found at file offset 526.
+   </section>
+    <section id="indirect_objects">
+        <h2>Indirect Objects</h2>
+            <p>
+                A <code>N G obj</code> line denotes an indirect object, where N is its object number (ID) and G is its generation number.
+                These indirection properties are an envelope that allows to address the object. But the payload is just a "regular" object:
+                this object is enclosed between <code>obj</code> and <code>endobj</code> keywords. 
+            </p>
+            <div class="centered">
+                <svg viewBox="0 924 600 160">
+                    <use href="#pdf"></use>
+                    <rect x="103" y="922" width="490" height="22" class="highlight"/>
+                    <rect x="103" y="1062" width="490" height="22" class="highlight"/>
+                    <text x="105" y="940">7 0 obj</text>
+                    <text x="105" y="1080">endobj</text>
+                </svg>
+            </div>
+            <p>
+                In the previous example, indirect object #7 contains a payload that is a dictionnary defining 5 key-value pairs.
+                The following section is here to describe most of the object types.
+            </p>
+    </section>
+    <section id="object_types">
+        <h2>Object Types</h2>
+            <p>
+                There are atomic types : 
+                <ul>
+                <li><em>Boolean</em> : <code>true</code> or <code>false</code>,</li>
+                <li><em>Integer</em> : for example <code>800</code>,</li>
+                <li><em>Real</em> : for example <code>-3.14</code>,</li>
+                <li><em>Literal String</em> : characters enclosed in parentheses like <code>(ABC)</code>,</li>
+                <li><em>Hexadecimal String</em> : digits enclosed in angle brackets like <code>&lt;414243&gt;</code> (3 ASCII bytes for "ABC"),</li>
+                <li><em>Name</em> : a symbol that begins with a slash like <code>/Something</code>,</li>
+                <li><em>Comment</em> : all characters between a <code>%</code> and the end of the line, like <code>% some comment</code>.</li>
+                </ul>
+            </p>
+            <p>
+                And there are collection types : 
+                <ul>
+                <li><em>Array</em> : an ordered list of atomic objects written bewteen brackets, like <code>[true 800 (ABC) /Something]</code>,</li>
+                <li><em>Dictionary</em> : a map / associative array of unordered key-value pairs; 
+                                        all keys must be names, and the object is enclosed in double angle brackets like <code>&lt;&lt; /Key1 (Value1) /Key2 (Value2) &gt;&gt;</code>;
+                                    Note that the same separator (for example space or carriage return) may occur bewteen a key and a value and bewteen distinct pairs: 
+                                    a parser needs to keep a context in order to determine if the next token is a key or a value.</li>
+                </ul>
+            </p>
+            <p>
+                And there is a composite type for content : 
+                <ul>
+                <li><em>Stream</em> : a dictionnary immediately followed by a sequence of bytes enclosed bewteen the <code>stream</code> and <code>endstream</code> keywords; 
+                                    It typically conveys either a sequence of commands that write content on a page or a blob used in a sequence of commands (font file, image).</li>
+                </ul>
+            </p>
+            <p>
+                Last but not least : 
+                <ul>
+                <li><em>Indirect reference</em> : an ordered sequence of an object number, a generation number, and the <code>R</code> keyword that references an indirect object,
+                        like <code>7 0 R</code> for object #7 in its generation 0; 
+                        This sequence is not enclosed in delimiters (unlike an array), therefore a special attention is needed when parsing it in order to correctly group tokens.
+                        For example the array <code>[3 0 R 4 0 R 5 0 R]</code> does not begin with 2 integers and does not contain 9 items: it contains 3 indirect references to objects #3, #4 and #5.</li>
+                </ul>
+            </p>
+    </section>
+    <section id="filter">
+        <h2>Filters</h2>
+            <p>
+                In this example the stream content is made of plain ASCII characters:  
+            </p>
+            <div class="centered">
+                <svg viewBox="0 664 600 200">
+                    <use href="#pdf"></use>
+                    <rect x="103" y="724" width="490" height="100" class="highlight"/>
+                </svg>
+            </div>
+            <p>
+                But very often some filter modifies the bytes sequence. A filter may compress the data or encode it, and several may be chained to form a pipeline.
+                For example a stream dictionnary containing <code>/Filter [/ASCII85Decode /FlateDecode]</code> (besides the mandatory <code>/Length</code> attribute) 
+                should be decoded from ASCII Base85 into binary and then decompressed with the deflate algorithm. 
+    
+            </p>
+        </section>
+        <section id="xref_stream">
+            <h2>Cross-Reference Stream</h2>
+                <p>
+                    The most common type of Cross-Reference, as explained above, is a table. But since PDF 1.5 a cross-reference may be encoded as a Stream object:
+                </p>
+                <ul>
+                        <li>the dictionary is defined with <code>/Type /XRef</code> and contains the same <code>/Root</code> attribute that occurs in a trailer,</li>
+                        <li>and the stream content contains a structure specifying the location of indirect objects</li>
+                        </ul>
+                        <p>
+                            This mecanism adds a feature that was not possible with Cross-Reference tables where all objects are accessed with file offset in bytes: 
+                    an indirect object may be located inside another indirect object. 
+                    In that case the terminology says that the container is an Object Stream that contains compressed objects.
+                </p>
+            </section>
+        <section id="document_structure">
+        <h2>Document Structure</h2>
+        <p> The <code>/Root</code> attribute of the Trailer or Cross-Reference Stream indicates the reference of the <code>/Catalog</code> indirect object:</p>
+        <div class="centered">
+            <svg viewBox="0 1284 600 200">
+                <use href="#pdf"></use>
+                <rect x="103" y="1344" width="490" height="22" class="highlight"/>
+            </svg>
+        </div>
+        <p>The Catalog object starts a tree of nested Pages (plural) objects. This hierarchy leads to Page (singular) objects.
+            A Page have dimensions (<code>/MediaBox</code>), content and associated resources like fonts.
+        </p>
+            <div class="centered">
+                <svg viewBox="0 50 600 1035">
+                    <use href="#pdf"></use>
+                    <rect x="103" y="144" width="250" height="80" class="frame"/>
+                    <rect x="203" y="144" width="90" height="22" class="highlight"/>
+                    <rect x="103" y="364" width="230" height="80" class="frame"/>
+                    <rect x="203" y="364" width="70" height="22" class="highlight"/>
+                    <rect x="103" y="484" width="430" height="160" class="frame"/>
+                    <rect x="203" y="484" width="60" height="22" class="highlight"/>
+                    <rect x="103" y="684" width="270" height="160" class="frame"/>
+                    <rect x="100" y="704" width="70" height="22" class="highlight"/>
+                    <rect x="103" y="944" width="350" height="120" class="frame"/>
+                    <rect x="203" y="944" width="60" height="22" class="highlight"/>
+
+                    <path d="M 30 164 C 90 164, 90 164, 90 164" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                    <path d="M 280 194 C 350 200, 350 300, 280 350" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                    <path d="M 285 390 C 325 390, 325 420, 260 470" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                    <path d="M 305 552 C 365 580, 355 640, 315 690" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                    <path d="M 480 602 C 490 642, 490 742, 285 930" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                </svg>
+            </div>
+    </section>
+    <section id="incremental_updates">
+        <h2>Incremental Updates</h2>
+            <p>It is possible to build a new revision of a document without writing a whole new file: changes are appended to the original file.
+             Changes consist in new or modified objects, a Cross-reference, and a <code>startxref</code> that points to it. 
+             The Cross-Reference (either its trailer or its stream dictionary) contains a <code>/Prev</code> attribute thats links the new revision to the original Cross-Reference. 
+    </p>
+            <div class="centered">
+                <svg viewBox="0 1360 600 930">
+                    <use href="#pdf"></use>
+                    <path d="M 80 1630 C 80 1630, 80 1480, 80 1475" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                    <text x="5" y="1580" fill="red">append</text>
+                    <path d="M 80 2180 C 30 2210, 30 2130, 30 1930" class="arrow" fill="none" marker-end="url(#arrowhead)" />
+                    <rect x="103" y="2174" width="490" height="22" class="highlight"/>
+                    <text x="5" y="1900" fill="red">original</text>
+                    <text x="5" y="1920" fill="red">xref</text>
+                </svg>
+            </div>
+    </section>
+    <section id="xref_stream">
+        <h2>Conclusion</h2>
+            <p>
+                This was an overview of the main concepts and syntactic elements. 
+                To go further you can read chapter 7 of the freely available Adobe PDF 1.7 Specification 
+                or - if you can access it - the subsequent ISO 32000 Specification that took over.
+            </p>
+    </section>
+    <br/>
+    <br/>
+
+    <footer>&copy; 2023 <a href="mailto:desgeeko@gmail.com">Martin D.</a> &lt;desgeeko@gmail.com&gt;
+    </footer>
+    <br/>
+</body>
+<!-- -->
+</html>
