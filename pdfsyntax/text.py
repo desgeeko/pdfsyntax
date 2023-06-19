@@ -1,6 +1,6 @@
-"""Should be archived: not a part of pdfsyntax"""
+""" """
 
-#from .objects import *
+from .objects import *
 #import re
 #import zlib
 #from collections import namedtuple
@@ -48,6 +48,88 @@ def text_string(string: bytes) -> str:
     return res
 
 
+def apply_tounicode(cmap_stream: bytes, string: bytes) -> str:
+    """ """
+    cmap = parse_obj(b'[' + cmap_stream + b']')
+    i = 0
+    word_l = 4
+    section = None
+    tokens = []
+    string = string[1:-1]
+    while i < len(cmap):
+        if cmap[i] == 'begincodespacerange':
+            word_l = len(cmap[i+1])-2
+            tokens = [int(string[j:j+word_l], 16) for j in range(0, len(string), word_l)]
+            i += 4
+            continue
+        if cmap[i] == 'beginbfchar':
+            section = 'CHAR'
+            i += 1
+            continue
+        if section == 'CHAR' and cmap[i] != 'endbfchar':
+            for k, token in enumerate(tokens):
+                if token == int(cmap[i][1:-1], 16):
+                    tokens[k] = bytes.fromhex(cmap[i+1][1:-1].decode('ascii')).decode('utf-16be')
+            i += 2
+            continue
+        if section == 'CHAR' and cmap[i] == 'endbfchar':
+            section = None
+            i += 1
+            continue
+        if cmap[i] == 'beginbfrange':
+            section = 'RANGE'
+            i += 1
+            continue
+        if section == 'RANGE' and cmap[i] != 'endbfrange':
+            for k, token in enumerate(tokens):
+                r_a = int(cmap[i][1:-1], 16)
+                r_z = int(cmap[i+1][1:-1], 16)
+                if type(token) == int and token > r_a and token < r_z:
+                    target = cmap[i+2][1:-1]
+                    if type(target) == list:
+                        tokens[k] = bytes.fromhex(target[token - r_a][1:-1].decode('ascii')).decode('utf-16be')
+                    else:
+                        x = int(target, 16) + (token - r_a)
+                        if word_l == 4:
+                            tokens[k] = bytes.fromhex(f'{x:04X}').decode('utf-16be')
+                        else:
+                            tokens[k] = bytes.fromhex(f'{x:02X}').decode('utf-16be')
+            i += 3
+            continue
+        if section == 'RANGE' and cmap[i] == 'endbfrange':
+            section = None
+            i += 1
+            continue
+        i += 1
+    return ''.join(tokens)
+
+
+def parse_text_content(content_stream: bytes):
+    """ """
+    ret = []
+    tokens = parse_obj(b'[' + content_stream + b']')
+    i = len(tokens) - 1
+    section = None
+    current = []
+    while i >= 0:
+        if tokens[i] == 'ET':
+            section = 'TEXT'
+            i -= 1
+            continue
+        if tokens[i] == 'BT':
+            ret.insert(0, current)
+            current = []
+            section = None
+            i -= 1
+            continue
+        if section == 'TEXT':
+            current = [tokens[i]] + current
+            i -= 1
+            continue
+        i -= 1
+    return ret
+
+
 #def extract_text(text):
 #    """ """
 #    l = []
@@ -68,27 +150,4 @@ def text_string(string: bytes) -> str:
 #            text = l[j-1]
 #            res.append((x, y, font, fsize, text[1:-1]))
 #    return res
-
-
-#def codespacerange(toUnicode):
-#    """ """
-#    re_code = re.compile(rb'beginbfrange.*?<(\w*)>.*?<(\w*)>.*?<(\w*)>.*?endbfrange', re.S)
-#    for match in re.finditer(re_code, toUnicode):
-#        print(f"{match.group(1)} {match.group(2)} {match.group(3)}")
-
-
-#def dec_empty(text):
-#    """ """
-#    return ''
-
-
-#def dec_unicode(text):
-#    """ """
-#    text = text.replace(b'\\(', b'(')
-#    text = text.replace(b'\\)', b')')
-#    ch = [text[x:x+2].decode('utf_16_be') for x in range(0,len(text),2)]
-#    res = ''.join(ch)
-#    return res
-
-
 
