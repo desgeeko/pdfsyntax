@@ -1,9 +1,6 @@
 """ """
 
 from .objects import *
-#import re
-#import zlib
-#from collections import namedtuple
 
 def prepare_pdfdoc_charset():
     charset = []
@@ -48,9 +45,14 @@ def text_string(string: bytes) -> str:
     return res
 
 
-def apply_tounicode(cmap_stream: bytes, string: bytes) -> str:
+def apply_encoding(encoding: str, string: bytes) -> str:
     """ """
-    cmap = parse_obj(b'[' + cmap_stream + b']')
+    s = string[1:-1]
+    return s.decode('cp1252')
+
+
+def apply_tounicode(cmap: list, string: bytes) -> str:
+    """ """
     i = 0
     word_l = 4
     section = None
@@ -114,9 +116,11 @@ def parse_text_content(content_stream: bytes):
     while i >= 0:
         if tokens[i] == 'ET':
             section = 'TEXT'
+            current = [tokens[i]] + current
             i -= 1
             continue
         if tokens[i] == 'BT':
+            current = [tokens[i]] + current
             ret.insert(0, current)
             current = []
             section = None
@@ -130,24 +134,15 @@ def parse_text_content(content_stream: bytes):
     return ret
 
 
-#def extract_text(text):
-#    """ """
-#    l = []
-#    res = []
-#    i = 0
-#    while i < len(text) - 2:
-#        h, i, _ = next_token(text, i)
-#        obj = text[h:i]
-#        l.append(obj)
-#    for j, tok in enumerate(l):
-#        if tok == b'Tf':
-#            font = l[j-2] 
-#            fsize = float(l[j-1])
-#        elif tok == b'Td':
-#            x = float(l[j-2]) 
-#            y = float(l[j-1])
-#        elif tok == b'Tj':
-#            text = l[j-1]
-#            res.append((x, y, font, fsize, text[1:-1]))
-#    return res
-
+def test_text_element_to_unicode(fonts: dict, element: list):
+    """ """
+    font = ''
+    ret = ''
+    for i, o in enumerate(element):
+        if o == 'Tf':
+            font = element[i-2]
+        if o == 'TJ':
+            for t in element[i-1]:
+                if type(t) == bytes:
+                    ret += fonts[font]['dec_fun'](t)
+    return ret

@@ -478,36 +478,39 @@ def flatten(doc: Doc) -> Doc:
     return new_doc
 
 
+def prepare_font(doc: Doc, o) -> dict:
+    """ """
+    font_desc = {}
+    font_desc['name'] = o['/BaseFont']
+    font_desc['type'] = o['/Subtype']
+    font_desc['descriptor'] = o.get('/FontDescriptor')
+    font_desc['to_unicode'] = o.get('/ToUnicode')
+    font_desc['encoding'] = o.get('/Encoding')
+    if font_desc['to_unicode']:
+        cmap_stream = get_object(doc, font_desc['to_unicode'])
+        cmap = parse_obj(b'[' + cmap_stream['stream'] + b']')
+        def dec_unicode_cmap(text):
+            return apply_tounicode(cmap, text)
+        font_desc['dec_fun'] = dec_unicode_cmap
+    else:
+        def dec_encoding(text):
+            return apply_encoding(font_desc['encoding'], text)
+        font_desc['dec_fun'] = dec_encoding
+    return font_desc
 
-#def get_fonts(doc: Doc, page_num: int) -> dict:
-#    """Return the dictionary of fonts used in page number page_num"""
-#    page_idx = build_page_list(doc)
-#    fonts = {}
-#    resources = get_object(doc, page_idx[page_num]['/Resources'])
-#    l = get_object(doc, resources['/Font'])
-#    for f in l:
-#        res = {}
-#        font = get_object(doc, l[f])
-#        for k in font:
-#            res[k] = font[k]
-#        if res['/Subtype'] == '/Type1':
-#            res['TRANSCO'] = dec_empty
-#        else:
-#            #toU = get_object(doc, font[b'/ToUnicode'])
-#            res['TRANSCO'] = dec_unicode
-#        fonts[f] = res
-#    return fonts
 
-
-#def print_page(doc: Doc, page_num: int) -> None:
-#    """ """
-#    page_idx = build_page_list(doc)
-#    f = get_fonts(doc, page_num)
-#    c = get_object(doc, page_idx[page_num]['/Contents'])
-#    for j in extract_text(c['stream_content']):
-#        _, _, font, _, text = j
-#        dec_fun = f[font]['TRANSCO']
-#        if len(text) == 16:
-#            print(dec_fun(text))
-#   return None
-
+def get_page_fonts(doc: Doc, page_nums: list) -> list:
+    """ """
+    ret = []
+    for page_num in page_nums:
+        fonts = {}
+        font_res = {}
+        page_ref, _ = flat_page_tree(doc)[page_num]
+        resources = get_object(doc, page_ref)['/Resources']
+        if resources:
+            fonts = get_object(doc, resources)['/Font']
+        for font in fonts:
+            o = get_object(doc, fonts[font])
+            font_res[font] = prepare_font(doc, o)
+        ret.append(font_res)
+    return ret

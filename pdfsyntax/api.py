@@ -183,6 +183,34 @@ def single_text_annotation(doc: Doc, page_num: int, text: str) -> Doc:
     return doc
 
 
+def fonts(doc: Doc) -> dict:
+    """ """
+    ret = {}
+    nb = number_pages(doc)
+    font_index = get_page_fonts(doc, list(range(nb)))
+    for i, page_fonts in enumerate(font_index):
+        for font in page_fonts:
+            n = page_fonts[font]['name'][1:]
+            t = page_fonts[font]['type'][1:]
+            u = page_fonts[font]['to_unicode']
+            name = f'{n} ({t})'
+            if name not in ret:
+                ret[name] = {'pages': [], 'to_unicode': u}
+            ret[name]['pages'].append(i)
+    return ret
+
+
+def test_extract_page_text(doc: Doc, page_nums: list):
+    """ """
+    ret = []
+    pages = flat_page_tree(doc)
+    for page_num in page_nums:
+        i_c = get_object(doc, pages[page_num][0])['/Contents']
+        content = get_object(doc, i_c)
+        ret.append(parse_text_content(content['stream']))
+    return ret
+
+
 Doc.trailer = trailer
 Doc.catalog = catalog
 Doc.metadata = metadata
