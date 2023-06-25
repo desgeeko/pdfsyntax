@@ -19,5 +19,8 @@ build:
 upload:
 	python3 -m twine upload dist/*
 
+inspect:
+	python3 -m pdfsyntax inspect samples/simple_text_string.pdf > docs/simple_text_string.html
+
 .PHONY: clean test build upload
 
