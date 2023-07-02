@@ -60,6 +60,24 @@ def unespace_literal_string(string: bytes) -> bytes:
             elif string[i+1:i+2] == b')':
                 ret += b')'
                 i += 1
+            elif string[i+1:i+2] == b'n':
+                ret += b'\n'
+                i += 1
+            elif string[i+1:i+2] == b'r':
+                ret += b'\r'
+                i += 1
+            elif string[i+1:i+2] == b't':
+                ret += b'\r'
+                i += 1
+            elif string[i+1:i+2] == b'b':
+                ret += b'\r'
+                i += 1
+            elif string[i+1:i+2] == b'f':
+                ret += b'\f'
+                i += 1
+            elif string[i+1:i+2] == b'\\':
+                ret += b'\\'
+                i += 1
         else:
             ret += string[i:i+1]
         i += 1
@@ -114,10 +132,12 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
                 r_a = int(cmap[i][1:-1], 16)
                 r_z = int(cmap[i+1][1:-1], 16)
                 if type(token) == int and token >= r_a and token <= r_z:
-                    target = cmap[i+2][1:-1]
+                    target = cmap[i+2]
                     if type(target) == list:
+                        target = cmap[i+2]
                         tokens[k] = bytes.fromhex(target[token - r_a][1:-1].decode('ascii')).decode('utf-16be')
                     else:
+                        target = cmap[i+2][1:-1]
                         x = int(target, 16) + (token - r_a)
                         if word_l == 4:
                             tokens[k] = bytes.fromhex(f'{x:04X}').decode('utf-16be')
@@ -130,6 +150,9 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
             i += 1
             continue
         i += 1
+    for j, t in enumerate(tokens):
+        if type(t) != str:
+            del tokens[j]
     return ''.join(tokens)
 
 
@@ -161,9 +184,8 @@ def parse_text_content(content_stream: bytes):
     return ret
 
 
-def text_element_to_unicode(fonts: dict, element: list):
+def text_element_to_unicode(fonts: dict, element: list, font: str):
     """ """
-    font = ''
     ret = ''
     for i, o in enumerate(element):
         if o == 'Tf':
@@ -177,4 +199,4 @@ def text_element_to_unicode(fonts: dict, element: list):
             for t in element[i-1]:
                 if type(t) == bytes:
                     ret += fonts[font]['dec_fun'](t)
-    return ret
+    return ret, font

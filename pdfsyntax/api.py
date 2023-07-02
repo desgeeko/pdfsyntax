@@ -211,7 +211,11 @@ def extract_page_text(doc: Doc, page_nums: list):
         accu = []
         for content in i_c:
             c = get_object(doc, content)
-            accu = accu + parse_text_content(c['stream'])
+            if type(c) != list:
+                c = [c]
+            for content2 in c:
+                c2 = get_object(doc, content2)
+                accu = accu + parse_text_content(c2['stream'])
         ret.append(accu)
     return ret
 
@@ -219,9 +223,11 @@ def extract_page_text(doc: Doc, page_nums: list):
 def test_all_page_text(doc: Doc, page_num: int):
     t = extract_page_text(doc, [page_num])
     f = get_page_fonts(doc, [page_num])
+    font_state = ''
     for te in t[0]:
-        print(te)
-        print(text_element_to_unicode(f[0], te))
+        #print(te)
+        res, font_state = text_element_to_unicode(f[0], te, font_state)
+        print(res)
     return
 
 
