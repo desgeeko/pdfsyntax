@@ -45,13 +45,35 @@ def text_string(string: bytes) -> str:
     return res
 
 
+def unespace_literal_string(string: bytes) -> bytes:
+    """ """
+    ret = b''
+    i = 0
+    while i < len(string) :
+        if string[i:i+1] == b'\x5c':
+            if string[i+1:i+2] > b'0' and string[i+1:i+2] < b'9':
+                ret += bytes([int(string[i+1:i+4], 8)])
+                i += 3
+            elif string[i+1:i+2] == b'(':
+                ret += b'('
+                i += 1
+            elif string[i+1:i+2] == b')':
+                ret += b')'
+                i += 1
+        else:
+            ret += string[i:i+1]
+        i += 1
+    return ret
+
+
 def apply_encoding(encoding: str, string: bytes) -> str:
     """ """
     s = string[1:-1]
+    s = unespace_literal_string(s)
     return s.decode('cp1252')
 
 
-def apply_tounicode(cmap: list, string: bytes) -> str:
+def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
     """ """
     i = 0
     word_l = 4
@@ -60,9 +82,14 @@ def apply_tounicode(cmap: list, string: bytes) -> str:
     string = string[1:-1]
     while i < len(cmap):
         if cmap[i] == 'begincodespacerange':
-            word_l = len(cmap[i+1])-2
-            tokens = [int(string[j:j+word_l], 16) for j in range(0, len(string), word_l)]
-            i += 4
+            if simple:
+                string = unespace_literal_string(string)
+                tokens = [string[j] for j in range(0, len(string))]
+                i += 4
+            else:
+                word_l = len(cmap[i+1])-2
+                tokens = [int(string[j:j+word_l], 16) for j in range(0, len(string), word_l)]
+                i += 4
             continue
         if cmap[i] == 'beginbfchar':
             section = 'CHAR'
@@ -86,7 +113,7 @@ def apply_tounicode(cmap: list, string: bytes) -> str:
             for k, token in enumerate(tokens):
                 r_a = int(cmap[i][1:-1], 16)
                 r_z = int(cmap[i+1][1:-1], 16)
-                if type(token) == int and token > r_a and token < r_z:
+                if type(token) == int and token >= r_a and token <= r_z:
                     target = cmap[i+2][1:-1]
                     if type(target) == list:
                         tokens[k] = bytes.fromhex(target[token - r_a][1:-1].decode('ascii')).decode('utf-16be')
@@ -134,14 +161,19 @@ def parse_text_content(content_stream: bytes):
     return ret
 
 
-def test_text_element_to_unicode(fonts: dict, element: list):
+def text_element_to_unicode(fonts: dict, element: list):
     """ """
     font = ''
     ret = ''
     for i, o in enumerate(element):
         if o == 'Tf':
-            font = element[i-2]
-        if o == 'TJ':
+            if font != element[i-2]:
+                font = element[i-2]
+                ret += f'[{font}] ' #for debug purpose
+        elif o == 'Tj':
+                t = element[i-1]
+                ret += fonts[font]['dec_fun'](t)
+        elif o == 'TJ':
             for t in element[i-1]:
                 if type(t) == bytes:
                     ret += fonts[font]['dec_fun'](t)

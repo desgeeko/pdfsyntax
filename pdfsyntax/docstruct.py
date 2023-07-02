@@ -486,11 +486,15 @@ def prepare_font(doc: Doc, o) -> dict:
     font_desc['descriptor'] = o.get('/FontDescriptor')
     font_desc['to_unicode'] = o.get('/ToUnicode')
     font_desc['encoding'] = o.get('/Encoding')
+    if font_desc['type'] == '/Type0':
+        simple = False
+    else:
+        simple = True
     if font_desc['to_unicode']:
         cmap_stream = get_object(doc, font_desc['to_unicode'])
         cmap = parse_obj(b'[' + cmap_stream['stream'] + b']')
         def dec_unicode_cmap(text):
-            return apply_tounicode(cmap, text)
+            return apply_tounicode(cmap, text, simple)
         font_desc['dec_fun'] = dec_unicode_cmap
     else:
         def dec_encoding(text):

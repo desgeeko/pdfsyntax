@@ -200,15 +200,29 @@ def fonts(doc: Doc) -> dict:
     return ret
 
 
-def test_extract_page_text(doc: Doc, page_nums: list):
+def extract_page_text(doc: Doc, page_nums: list):
     """ """
     ret = []
     pages = flat_page_tree(doc)
     for page_num in page_nums:
         i_c = get_object(doc, pages[page_num][0])['/Contents']
-        content = get_object(doc, i_c)
-        ret.append(parse_text_content(content['stream']))
+        if type(i_c) == complex:
+            i_c = [i_c]
+        accu = []
+        for content in i_c:
+            c = get_object(doc, content)
+            accu = accu + parse_text_content(c['stream'])
+        ret.append(accu)
     return ret
+
+
+def test_all_page_text(doc: Doc, page_num: int):
+    t = extract_page_text(doc, [page_num])
+    f = get_page_fonts(doc, [page_num])
+    for te in t[0]:
+        print(te)
+        print(text_element_to_unicode(f[0], te))
+    return
 
 
 Doc.trailer = trailer

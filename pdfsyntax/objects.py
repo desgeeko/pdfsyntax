@@ -32,6 +32,7 @@ def next_token(text: bytes, i=0) -> tuple:
     """Find next token in raw string starting at some index"""
     search = "TBD"
     nested = 1
+    text_in_array = 0
     h = i
     while i < len(text):
         single = text[i:i+1]
@@ -105,9 +106,13 @@ def next_token(text: bytes, i=0) -> tuple:
             if text[i:i+11] == b'\r\nendstream' or text[i:i+10] == b'\nendstream' or text[i:i+10] == b'\rendstream':
                 return (h, i, 'STREAM')
         elif search == "ARRAY":
-            if single == b'[':
+            if single == b'(':
+                text_in_array = 1
+            elif single == b')':
+                text_in_array = 0
+            elif text_in_array == 0 and single == b'[':
                 nested += 1
-            elif single == b']':
+            elif text_in_array == 0 and single == b']':
                 nested -= 1
             if nested == 0:
                 return (h, i + 1, 'ARRAY')

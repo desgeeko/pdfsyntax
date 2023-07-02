@@ -54,3 +54,12 @@ class Parsing(unittest.TestCase):
     
     def test_rn_stream(self):
         self.assertEqual(pdf.parse_obj(b'<< /a 1 >>stream\r\ncontent\rendstream').stream, b'content')
+
+    def test_simple_content(self):
+        self.assertEqual(pdf.parse_obj(b'[BT /F1 12 Tf 123.45 200 Td (text) Tj ET]'), ['BT', '/F1', 12, 'Tf', 123.45, 200, 'Td', b'(text)', 'Tj', 'ET'])
+
+    def test_text_array_content(self):
+        self.assertEqual(pdf.parse_obj(b'[BT /F1 12 Tf 123.45 200 Td [(text1)-5(text2)] TJ ET]'), ['BT', '/F1', 12, 'Tf', 123.45, 200, 'Td', [b'(text1)', -5, b'(text2)'], 'TJ', 'ET'])
+
+    def test_delimiter_in_content(self):
+        self.assertEqual(pdf.parse_obj(b'[BT /F1 12 Tf 123.45 200 Td [(text1)-5(])] TJ ET]'), ['BT', '/F1', 12, 'Tf', 123.45, 200, 'Td', [b'(text1)', -5, b'(])'], 'TJ', 'ET'])
