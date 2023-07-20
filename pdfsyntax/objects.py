@@ -50,7 +50,6 @@ def next_token(text: bytes, i=0) -> tuple:
                 search = "NAME"
             elif text[i:i+6] == b"stream":
                 search = "STREAM"
-                #offset = 7 if text[i+6:i+7] == b'\n' else 8
                 if text[i+6:i+8] == b'\r\n':
                     offset = 8
                 else:
@@ -60,8 +59,10 @@ def next_token(text: bytes, i=0) -> tuple:
                 search = "VALUE"
             elif single in b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ":
                 search = "KEYWORD"
-            elif single in b"(<":
-                search = "STRING"
+            elif single in b"(":
+                search = "LSTRING"
+            elif single in b"<":
+                search = "HSTRING"
             elif single == b'%':
                 search = "COMMENT"
             h = i
@@ -82,11 +83,17 @@ def next_token(text: bytes, i=0) -> tuple:
         elif search == "COMMENT":
             if single in EOL:
                 return (h, i, 'COMMENT')
-        elif search == "STRING":
-            if double == b'\\(' or double == b'\\)' or double == b'\\<' or double == b'\\>':
+        elif search == "LSTRING":
+            if double == b'\\(' or double == b'\\)':
                 i += 1
             else:    
-                if single in b')>':
+                if single in b')':
+                    return (h, i + 1, 'STRING')
+        elif search == "HSTRING":
+            if double == b'\\<' or double == b'\\>':
+                i += 1
+            else:
+                if single in b'>':
                     return (h, i + 1, 'STRING')
         elif search == "KEYWORD":
             if single in (SPACE + DELIMITERS): #or i == len(text) - 1:
