@@ -67,10 +67,10 @@ def unespace_literal_string(string: bytes) -> bytes:
                 ret += b'\r'
                 i += 1
             elif string[i+1:i+2] == b't':
-                ret += b'\r'
+                ret += b'\t'
                 i += 1
             elif string[i+1:i+2] == b'b':
-                ret += b'\r'
+                ret += b'\b'
                 i += 1
             elif string[i+1:i+2] == b'f':
                 ret += b'\f'
@@ -91,26 +91,33 @@ def apply_encoding(encoding: str, string: bytes) -> str:
     return s.decode('cp1252')
 
 
+def tokenize_string(string: bytes, word_l: int) -> list:
+    """ """
+    s_string = string[1:-1]
+    if string[:1] == b'(':
+        s_string = unespace_literal_string(s_string)
+        return [int.from_bytes(s_string[j:j+word_l], "big") for j in range(0, len(s_string), word_l)]
+    else:
+        return [int(s_string[j:j+word_l*2], 16) for j in range(0, len(s_string), word_l*2)]
+
+
 def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
     """ """
     i = 0
-    word_l = 4
+    word_l = 2 # in bytes
     section = None
     tokens = []
-    string = string[1:-1]
     while i < len(cmap):
         if cmap[i] == 'begincodespacerange':
-            if simple:
-                string = unespace_literal_string(string)
-                tokens = [string[j] for j in range(0, len(string))]
-                i += 4
-            else:
-                word_l = len(cmap[i+1])-2
-                tokens = [int(string[j:j+word_l], 16) for j in range(0, len(string), word_l)]
-                i += 4
+            #word_l = (len(cmap[i+1])-2) // 2
+            #tokens = tokenize_string(string, word_l)
+            i += 4
             continue
         if cmap[i] == 'beginbfchar':
             section = 'CHAR'
+            if not tokens:
+                word_l = (len(cmap[i+1])-2) // 2
+                tokens = tokenize_string(string, word_l)
             i += 1
             continue
         if section == 'CHAR' and cmap[i] != 'endbfchar':
@@ -125,6 +132,9 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
             continue
         if cmap[i] == 'beginbfrange':
             section = 'RANGE'
+            if not tokens:
+                word_l = (len(cmap[i+1])-2) // 2
+                tokens = tokenize_string(string, word_l)
             i += 1
             continue
         if section == 'RANGE' and cmap[i] != 'endbfrange':
@@ -139,7 +149,7 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
                     else:
                         target = cmap[i+2][1:-1]
                         x = int(target, 16) + (token - r_a)
-                        if word_l == 4:
+                        if word_l == 2:
                             tokens[k] = bytes.fromhex(f'{x:04X}').decode('utf-16be')
                         else:
                             tokens[k] = bytes.fromhex(f'{x:02X}').decode('utf-16be')
@@ -152,7 +162,7 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
         i += 1
     for j, t in enumerate(tokens):
         if type(t) != str:
-            del tokens[j]
+            tokens[j] = f"!!! {t} !!!"
     return ''.join(tokens)
 
 

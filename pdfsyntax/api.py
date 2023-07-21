@@ -225,7 +225,7 @@ def test_all_page_text(doc: Doc, page_num: int):
     f = get_page_fonts(doc, [page_num])
     font_state = ''
     for te in t[0]:
-        #print(te)
+        print(te)
         res, font_state = text_element_to_unicode(f[0], te, font_state)
         print(res)
     return
