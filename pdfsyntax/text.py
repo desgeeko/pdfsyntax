@@ -166,47 +166,14 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
     return ''.join(tokens)
 
 
-def parse_text_content(content_stream: bytes):
-    """ """
-    ret = []
-    tokens = parse_obj(b'[' + content_stream + b']')
-    i = len(tokens) - 1
-    section = None
-    current = []
-    while i >= 0:
-        if tokens[i] == 'ET':
-            section = 'TEXT'
-            current = [tokens[i]] + current
-            i -= 1
-            continue
-        if tokens[i] == 'BT':
-            current = [tokens[i]] + current
-            ret.insert(0, current)
-            current = []
-            section = None
-            i -= 1
-            continue
-        if section == 'TEXT':
-            current = [tokens[i]] + current
-            i -= 1
-            continue
-        i -= 1
-    return ret
-
-
-def text_element_to_unicode(fonts: dict, element: list, font: str):
+def text_element_to_unicode(fonts: dict, element: list, font: str) -> tuple:
     """ """
     ret = ''
-    for i, o in enumerate(element):
-        if o == 'Tf':
-            if font != element[i-2]:
-                font = element[i-2]
-                ret += f'[{font}] ' #for debug purpose
-        elif o == 'Tj':
-                t = element[i-1]
+    if element[-1] == 'Tj':
+            t = element[-2]
+            ret += fonts[font]['dec_fun'](t)
+    elif element[-1] == 'TJ':
+        for t in element[-2]:
+            if type(t) == bytes:
                 ret += fonts[font]['dec_fun'](t)
-        elif o == 'TJ':
-            for t in element[i-1]:
-                if type(t) == bytes:
-                    ret += fonts[font]['dec_fun'](t)
-    return ret, font
+    return ret

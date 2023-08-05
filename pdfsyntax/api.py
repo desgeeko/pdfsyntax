@@ -5,6 +5,8 @@ from .docstruct import *
 from .filestruct import *
 from .objects import *
 from .text import *
+from .graphics import *
+
 
 METADATA_ATTRS = '/Title /Author /Subject /Keywords /Creator /Producer'.split()
 
@@ -200,35 +202,50 @@ def fonts(doc: Doc) -> dict:
     return ret
 
 
-def extract_page_text(doc: Doc, page_nums: list):
+def get_page_contents(doc: Doc, page_num: int) -> list:
     """ """
     ret = []
     pages = flat_page_tree(doc)
-    for page_num in page_nums:
-        i_c = get_object(doc, pages[page_num][0])['/Contents']
-        if type(i_c) == complex:
-            i_c = [i_c]
-        accu = []
-        for content in i_c:
-            c = get_object(doc, content)
-            if type(c) != list:
-                c = [c]
-            for content2 in c:
-                c2 = get_object(doc, content2)
-                accu = accu + parse_text_content(c2['stream'])
-        ret.append(accu)
+    i_c = get_object(doc, pages[page_num][0])['/Contents']
+    if type(i_c) == complex:
+        i_c = [i_c]
+    for content in i_c:
+        c2 = get_object(doc, content)
+        if type(c2) != list:
+            c2 = [c2]
+        for content2 in c2:
+            c3 = get_object(doc, content2)
+            ret.append(c3)
     return ret
 
 
-def test_all_page_text(doc: Doc, page_num: int):
-    t = extract_page_text(doc, [page_num])
+def extract_page_text(doc: Doc, page_num: int):
+    """ """
+    res = ''
     f = get_page_fonts(doc, [page_num])
-    font_state = ''
-    for te in t[0]:
-        print(te)
-        res, font_state = text_element_to_unicode(f[0], te, font_state)
-        print(res)
-    return
+    pc = get_page_contents(doc, page_num)
+    for c in pc:
+        tz = []
+        gs = []
+        ts = {}
+        t = parse_stream_content(c['stream'])
+        for te in t:
+            apply_command(te, gs, ts)
+            if te[-1] == 'TJ' or te[-1] == 'Tj':
+                loc = multiply_matrices(ts['tm'], gs[-1]['ctm'])
+                tz.append([loc, text_element_to_unicode(f[0], te, ts['Tf'])])
+        tz.sort(key=lambda x: -(int(x[0][5]*1000) + int(x[0][5]/1000)))
+        i = 1
+        if tz:
+            res += tz[i-1][1]
+        while i < len(tz):
+            if tz[i][0][5] == tz[i-1][0][5]:
+                res = res + ' ' + tz[i][1]
+                del tz[i]
+            else:
+                res = res + '\n' + tz[i][1]
+                i+=1
+    return res
 
 
 Doc.trailer = trailer
