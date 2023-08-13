@@ -88,7 +88,10 @@ def apply_encoding(encoding: str, string: bytes) -> str:
     """ """
     s = string[1:-1]
     s = unespace_literal_string(s)
-    return s.decode('cp1252')
+    if encoding == '/MacRomanEncoding':
+        return s.decode('mac_roman')
+    else:
+        return s.decode('cp1252')
 
 
 def tokenize_string(string: bytes, word_l: int) -> list:
