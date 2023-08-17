@@ -230,9 +230,13 @@ def extract_page_text(doc: Doc, page_num: int):
         ts = {}
         t = parse_stream_content(c['stream'])
         for te in t:
+            if te[-1] not in 'lmchnf':
+                print(te)
             apply_command(te, gs, ts)
+            #print(ts['tm'])
             if te[-1] == 'TJ' or te[-1] == 'Tj':
                 loc = multiply_matrices(ts['tm'], gs[-1]['ctm'])
+                print(f"LOC ====> {loc}")
                 tz.append([loc, text_element_to_unicode(f[0], te, ts['Tf'])])
         tz.sort(key=lambda x: -(int(x[0][5]*1000) + int(x[0][5]/1000)))
         i = 1

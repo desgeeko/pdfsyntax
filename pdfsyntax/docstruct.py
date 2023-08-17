@@ -478,14 +478,49 @@ def flatten(doc: Doc) -> Doc:
     return new_doc
 
 
-def prepare_font(doc: Doc, o) -> dict:
+def prepare_w(w, default_w):
+    """ Width decoding for type0 / CID fonts"""
+    i = 0
+    width = {}
+    while i < len(w):
+        if type(w[i+1]) == list:
+            current = w[i]
+            for x in w[i+1]:
+                width[current] = x
+                current += 1
+            i += 2
+        else:
+            first = w[i]
+            last = w[i+1]
+            x = w[i+2]
+            for j in range(first, last+1):
+                width[j] = x
+            i += 3
+    def char_width_cid(character_num):
+        return width.get(character_num, default_w)
+    return char_width_cid
+
+
+def prepare_widths(widths, first_char):
+    """ Width decoding for simple fonts """
+    def char_width_table(character_num):
+        return widths[character_num-first_char]
+    return char_width_table
+
+
+def prepare_font(doc: Doc, iref) -> dict:
     """ """
     font_desc = {}
+    o = get_object(doc, iref)
+    font_desc['iref'] = iref
     font_desc['name'] = o['/BaseFont']
     font_desc['type'] = o['/Subtype']
     font_desc['descriptor'] = o.get('/FontDescriptor')
     font_desc['to_unicode'] = o.get('/ToUnicode')
     font_desc['encoding'] = o.get('/Encoding')
+    first_char = o.get('/FirstChar')
+    #last_char = o.get('/LastChar')
+    widths = o.get('/Widths')
     if font_desc['type'] == '/Type0':
         simple = False
     else:
@@ -500,6 +535,14 @@ def prepare_font(doc: Doc, o) -> dict:
         def dec_encoding(text):
             return apply_encoding(font_desc['encoding'], text)
         font_desc['dec_fun'] = dec_encoding
+    if widths:
+        font_desc['char_width'] = prepare_widths(get_object(doc, widths), get_object(doc, first_char))
+    else:
+        iref = get_object(doc, o.get('/DescendantFonts'))[0]
+        d = get_object(doc, iref)
+        w = d.get('/W')
+        dw = d.get('/DW', 1000)
+        font_desc['char_width'] = prepare_w(get_object(doc, w), get_object(doc, dw))
     return font_desc
 
 
@@ -514,7 +557,6 @@ def get_page_fonts(doc: Doc, page_nums: list) -> list:
         if resources:
             fonts = get_object(doc, resources)['/Font']
         for font in fonts:
-            o = get_object(doc, fonts[font])
-            font_res[font] = prepare_font(doc, o)
+            font_res[font] = prepare_font(doc, fonts[font])
         ret.append(font_res)
     return ret
