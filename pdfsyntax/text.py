@@ -84,16 +84,6 @@ def unespace_literal_string(string: bytes) -> bytes:
     return ret
 
 
-def apply_encoding(encoding: str, string: bytes) -> str:
-    """ """
-    s = string[1:-1]
-    s = unespace_literal_string(s)
-    if encoding == '/MacRomanEncoding':
-        return s.decode('mac_roman')
-    else:
-        return s.decode('cp1252')
-
-
 def tokenize_string(string: bytes, word_l: int) -> list:
     """ """
     s_string = string[1:-1]
@@ -104,7 +94,18 @@ def tokenize_string(string: bytes, word_l: int) -> list:
         return [int(s_string[j:j+word_l*2], 16) for j in range(0, len(s_string), word_l*2)]
 
 
-def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
+def apply_encoding(encoding: str, string: bytes) -> tuple:
+    """ """
+    s = string[1:-1]
+    s = unespace_literal_string(s)
+    if encoding == '/MacRomanEncoding':
+        us = s.decode('mac_roman')
+    else:
+        us = s.decode('cp1252')
+    return us, list(s)
+
+
+def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> tuple:
     """ """
     i = 0
     word_l = 2 # in bytes
@@ -121,6 +122,7 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
             if not tokens:
                 word_l = (len(cmap[i+1])-2) // 2
                 tokens = tokenize_string(string, word_l)
+                tokens_backup = tokens.copy()
             i += 1
             continue
         if section == 'CHAR' and cmap[i] != 'endbfchar':
@@ -138,6 +140,7 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
             if not tokens:
                 word_l = (len(cmap[i+1])-2) // 2
                 tokens = tokenize_string(string, word_l)
+                tokens_backup = tokens.copy()
             i += 1
             continue
         if section == 'RANGE' and cmap[i] != 'endbfrange':
@@ -165,18 +168,29 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> str:
         i += 1
     for j, t in enumerate(tokens):
         if type(t) != str:
-            tokens[j] = f"!!! {t} !!!"
-    return ''.join(tokens)
+            tokens[j] = f"!!! {t} !!!" #for DEBUG
+    return ''.join(tokens), tokens_backup
 
 
-def text_element_to_unicode(fonts: dict, element: list, font: str) -> tuple:
+def text_element_to_unicode(fonts: dict, element: list, ts: dict) -> tuple:
     """ """
-    ret = ''
+    font = ts['Tf']
+    ustring = ''
+    width = 0
     if element[-1] == 'Tj':
             t = element[-2]
-            ret += fonts[font]['dec_fun'](t)
+            us, chars = fonts[font]['dec_fun'](t)
+            ustring += us
+            for c in chars:
+                width += fonts[font]['char_width'](c) / 1000
     elif element[-1] == 'TJ':
         for t in element[-2]:
             if type(t) == bytes:
-                ret += fonts[font]['dec_fun'](t)
-    return ret
+                us, chars = fonts[font]['dec_fun'](t)
+                ustring += us
+                for c in chars:
+                    width += fonts[font]['char_width'](c) / 1000
+            else:
+                width -= t/1000
+    #print(f"width={width}")
+    return ustring, width

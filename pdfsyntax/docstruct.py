@@ -521,6 +521,14 @@ def prepare_font(doc: Doc, iref) -> dict:
     first_char = o.get('/FirstChar')
     #last_char = o.get('/LastChar')
     widths = o.get('/Widths')
+    if widths:
+        font_desc['char_width'] = prepare_widths(get_object(doc, widths), get_object(doc, first_char))
+    else:
+        iref = get_object(doc, o.get('/DescendantFonts'))[0]
+        d = get_object(doc, iref)
+        w = d.get('/W')
+        dw = d.get('/DW', 1000)
+        font_desc['char_width'] = prepare_w(get_object(doc, w), get_object(doc, dw))
     if font_desc['type'] == '/Type0':
         simple = False
     else:
@@ -535,14 +543,6 @@ def prepare_font(doc: Doc, iref) -> dict:
         def dec_encoding(text):
             return apply_encoding(font_desc['encoding'], text)
         font_desc['dec_fun'] = dec_encoding
-    if widths:
-        font_desc['char_width'] = prepare_widths(get_object(doc, widths), get_object(doc, first_char))
-    else:
-        iref = get_object(doc, o.get('/DescendantFonts'))[0]
-        d = get_object(doc, iref)
-        w = d.get('/W')
-        dw = d.get('/DW', 1000)
-        font_desc['char_width'] = prepare_w(get_object(doc, w), get_object(doc, dw))
     return font_desc
 
 

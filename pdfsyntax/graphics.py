@@ -24,6 +24,14 @@ def multiply_matrices(m1: list, m2: list) -> list:
     return [a, b, c, d, e, f]
 
 
+def trm(ts, gs):
+    """Text rendering matrix"""
+    c = [ts['Tfs']*ts['Th'], 0, 0, ts['Tfs'], 0, ts['Trise']]
+    res = multiply_matrices(c, ts['tm'])
+    res = multiply_matrices(res, gs[-1]['ctm'])
+    return res
+
+
 def apply_command(command: list, graphics_state_stack: list, text_state: dict):
     """ """
     if not graphics_state_stack:
@@ -49,7 +57,7 @@ def apply_command(command: list, graphics_state_stack: list, text_state: dict):
         operands = command[:7]
         new_ctm = multiply_matrices(operands, current_state['ctm'])
         current_state['ctm'] = new_ctm
-        print(f"CTM ====> {current_state['ctm']}")
+        #print(f"CTM ====> {current_state['ctm']}")
     elif command[-1] == 'Tc': # character spacing
         text_state['Tc'] = command[0]
     elif command[-1] == 'Tw': # word spacing
@@ -68,14 +76,14 @@ def apply_command(command: list, graphics_state_stack: list, text_state: dict):
     elif command[-1] == 'BT':
         text_state['tm'] = IDENTITY_MATRIX
         text_state['tlm'] = IDENTITY_MATRIX
-        print(f"Tm ====> {text_state['tm']}")
+        #print(f"Tm ====> {text_state['tm']}")
     elif command[-1] == 'Td':
         operands = [1, 0, 0, 1, command[0], command[1]]
         tlm = text_state['tlm']
         new_m = multiply_matrices(operands, tlm)
         text_state['tm'] = new_m
         text_state['tlm'] = new_m
-        print(f"Tm ====> {text_state['tm']}")
+        #print(f"Tm ====> {text_state['tm']}")
     elif command[-1] == 'TD':
         apply_command([-command[1], 'TL'], graphics_state_stack, text_state)
         apply_command([command[0], command[1], 'Td'], graphics_state_stack, text_state)
@@ -84,7 +92,7 @@ def apply_command(command: list, graphics_state_stack: list, text_state: dict):
         new_m = multiply_matrices(operands, IDENTITY_MATRIX)
         text_state['tm'] = new_m
         text_state['tlm'] = new_m
-        print(f"Tm ====> {text_state['tm']}")
+        #print(f"Tm ====> {text_state['tm']}")
     elif command[-1] == 'T*':
         apply_command([0, -text_state['Tl'], 'Td'], graphics_state_stack, text_state)
     elif command[-1] == "'":

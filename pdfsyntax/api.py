@@ -6,6 +6,7 @@ from .filestruct import *
 from .objects import *
 from .text import *
 from .graphics import *
+from .layout import *
 
 
 METADATA_ATTRS = '/Title /Author /Subject /Keywords /Creator /Producer'.split()
@@ -219,36 +220,38 @@ def get_page_contents(doc: Doc, page_num: int) -> list:
     return ret
 
 
-def extract_page_text(doc: Doc, page_num: int):
+def build_text_fragments(page_contents: list, f: list):
     """ """
-    res = ''
-    f = get_page_fonts(doc, [page_num])
-    pc = get_page_contents(doc, page_num)
-    for c in pc:
-        tz = []
+    tfs = []
+    for c in page_contents:
         gs = []
         ts = {}
         t = parse_stream_content(c['stream'])
         for te in t:
-            if te[-1] not in 'lmchnf':
-                print(te)
+            #if te[-1] not in 'lmchnfgGref*':
+            #    print(te)
             apply_command(te, gs, ts)
             #print(ts['tm'])
             if te[-1] == 'TJ' or te[-1] == 'Tj':
-                loc = multiply_matrices(ts['tm'], gs[-1]['ctm'])
-                print(f"LOC ====> {loc}")
-                tz.append([loc, text_element_to_unicode(f[0], te, ts['Tf'])])
-        tz.sort(key=lambda x: -(int(x[0][5]*1000) + int(x[0][5]/1000)))
-        i = 1
-        if tz:
-            res += tz[i-1][1]
-        while i < len(tz):
-            if tz[i][0][5] == tz[i-1][0][5]:
-                res = res + ' ' + tz[i][1]
-                del tz[i]
-            else:
-                res = res + '\n' + tz[i][1]
-                i+=1
+                old_trm = trm(ts, gs)
+                #print(f"TRM ====> {old_trm}")
+                uc, displacement = text_element_to_unicode(f[0], te, ts)
+                tx = (displacement * ts['Tfs'] + ts['Tc'] + ts['Tw']) * ts['Th'] / 100
+                ty = 0 #TODO
+                ts['tm'] = multiply_matrices([1, 0, 0, 1, tx, ty], ts['tm'])
+                new_trm = trm(ts, gs)
+                tfs.append([old_trm, uc, new_trm])
+    return tfs
+
+
+def extract_page_text(doc: Doc, page_num: int):
+    """ """
+    res = ''
+    f = get_page_fonts(doc, [page_num])
+    pcs = get_page_contents(doc, page_num)
+    tfs = build_text_fragments(pcs, f)
+    #print_debug(tfs)
+    res += basic_layout_test(tfs)
     return res
 
 
