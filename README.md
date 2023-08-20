@@ -1,4 +1,4 @@
-![PDFSyntax logo](https://raw.githubusercontent.com/desgeeko/pdfsyntax/main/docs/logo.svg | width=100)
+<img src="https://raw.githubusercontent.com/desgeeko/pdfsyntax/main/docs/logo.svg" width="100">
 
 PDFSyntax
 =========
