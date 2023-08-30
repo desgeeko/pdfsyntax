@@ -26,7 +26,7 @@ def multiply_matrices(m1: list, m2: list) -> list:
 
 def trm(ts, gs):
     """Text rendering matrix"""
-    c = [ts['Tfs']*ts['Th'], 0, 0, ts['Tfs'], 0, ts['Trise']]
+    c = [ts['Tfs']*ts['Th']/100, 0, 0, ts['Tfs'], 0, ts['Trise']]
     res = multiply_matrices(c, ts['tm'])
     res = multiply_matrices(res, gs[-1]['ctm'])
     return res

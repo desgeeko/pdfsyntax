@@ -246,13 +246,17 @@ def build_text_fragments(page_contents: list, f: list):
 
 def extract_page_text(doc: Doc, page_num: int):
     """ """
-    res = ''
     f = get_page_fonts(doc, [page_num])
     pcs = get_page_contents(doc, page_num)
     tfs = build_text_fragments(pcs, f)
+    #print(tfs)
+    simplify_horizontal_text_elements(tfs)
     #print_debug(tfs)
-    res += basic_layout_test(tfs)
-    return res
+    fs = typical_font_size(tfs)
+    #print(typical_line_spacing(tfs, fs))
+    #print(typical_char_width(tfs, fs))
+    return basic_spatial_layout(tfs)
+
 
 
 Doc.trailer = trailer
