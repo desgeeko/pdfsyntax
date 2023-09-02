@@ -28,7 +28,10 @@ The command writes on the standard output so you need to redirect to a file that
 
     python3 -m pdfsyntax inspect file.pdf > inspection_file.pdf
 
-#### Screenshot
+
+[This is a link to an EXAMPLE](https://pdfsyntax.dev/simple_text_string.html) of a full inspection output that you can browse.
+
+Here is another example, as a partial screenshot:
 ![PDFSyntax screenshot](https://raw.githubusercontent.com/desgeeko/pdfsyntax/main/docs/screenshot.png)
 
 

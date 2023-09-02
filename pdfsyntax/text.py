@@ -168,7 +168,9 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> tuple:
         i += 1
     for j, t in enumerate(tokens):
         if type(t) != str:
-            tokens[j] = f"!!! {t} !!!" #for DEBUG
+            #for DEBUG
+            #tokens[j] = f"!!! {t} !!!"
+            tokens[j] = ''
     return ''.join(tokens), tokens_backup
 
 

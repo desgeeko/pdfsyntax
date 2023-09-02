@@ -6,16 +6,30 @@ from .objects import *
 from .api import *
 from .display import build_html
 
+
 def main():
     """ """
     parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax', description='Navigate through the structure of a PDF file')
-    parser.add_argument('command', type=str, choices=['inspect', 'overview'], help='Command')
+    parser.add_argument('command', type=str, choices=['inspect', 'overview', 'spacial'], help='Command')
     parser.add_argument('filename', type=str, help='PDF file name')
     args = parser.parse_args()
     if args.command == 'inspect':
         inspect(args.filename)
     elif args.command == 'overview':
         overview(args.filename)
+    elif args.command == 'spacial':
+        spacial(args.filename)
+
+
+def spacial(filename: str) -> None:
+    """Print text content of a file with spacial awareness"""
+    fdata = bdata_provider(filename)
+    doc, _ = init_doc(fdata)
+    doc = add_revision(doc)
+    for i in range(len(pages(doc))):
+        print(extract_page_text(doc, i))
+    return
+
 
 def overview(filename: str) -> None:
     """Print both structure and metadata of a file"""

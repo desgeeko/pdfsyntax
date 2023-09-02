@@ -1,9 +1,9 @@
-""" """
+"""Module pdfsyntax.layout: from spatial representation to text file"""
 
 MIN_SEP_DISTANCE = 5
 
 
-def basic_spatial_layout(text_blocks):
+def basic_spatial_layout(text_blocks: list) -> str:
     """ """
     res = ''
     text_blocks.sort(key=lambda tb: -tb['y'])
@@ -15,10 +15,13 @@ def basic_spatial_layout(text_blocks):
         line_string = ''
         line_items = [text_blocks.pop(0)]
         target_y = line_items[0]['y']
+        #print("-----------------------------------")
+        #print(line_items[0])
         while text_blocks:
-            if abs(target_y - text_blocks[0]['y']) >= spacing / 2 :
+            if abs(target_y - text_blocks[0]['y']) > spacing / 2 :
                 break
             line_items.append(text_blocks.pop(0))
+            #print(line_items[-1])
         line_items.sort(key=lambda tb: tb['x'])
         #TODO exclude overlapping blocks
         nb_spaces = (line_items[0]['x'] - min_x) // char_w
@@ -27,17 +30,17 @@ def basic_spatial_layout(text_blocks):
         i = 1
         while i < len(line_items):
             if line_items[i]['x'] > line_items[i-1]['x'] + line_items[i-1]['width'] + MIN_SEP_DISTANCE:
-                #nb_spaces = (line_items[i]['x'] - line_items[i-1]['x'] - line_items[i-1]['width']) // char_w
                 nb_spaces = (line_items[i]['x'] - min_x) // char_w
                 offset = len(line_string)
                 line_string += ' ' * (int(nb_spaces) - offset)
             line_string += line_items[i]['text']
             i += 1
-        res += line_string + '\n'
+        if line_string != ' ':
+            res += line_string + '\n'
     return res
 
 
-def simplify_horizontal_text_elements(text_blocks):
+def simplify_horizontal_text_elements(text_blocks: list):
     """ """
     for i, tz in enumerate(text_blocks):
         old_trm, uc, new_trm = tz[0], tz[1], tz[2]
@@ -49,7 +52,7 @@ def simplify_horizontal_text_elements(text_blocks):
     return
 
 
-def most_frequent(distrib):
+def most_frequent(distrib: dict):
     """ """
     most_frequent = 0
     max_occur = 0
@@ -60,7 +63,7 @@ def most_frequent(distrib):
     return most_frequent
 
 
-def typical_font_size(text_blocks):
+def typical_font_size(text_blocks: list) -> float:
     """ """
     distrib = {}
     for x in text_blocks:
@@ -72,7 +75,7 @@ def typical_font_size(text_blocks):
     return most_frequent(distrib)
 
 
-def minimum_x(text_blocks):
+def minimum_x(text_blocks: list) -> float:
     """ """
     min_x = -1
     for tb in text_blocks:
@@ -81,7 +84,7 @@ def minimum_x(text_blocks):
     return min_x
 
 
-def typical_line_spacing(text_blocks, typical_font_size):
+def typical_line_spacing(text_blocks: list, typical_font_size: float) -> float:
     """ """
     distrib = {}
     columns = {}
@@ -105,7 +108,7 @@ def typical_line_spacing(text_blocks, typical_font_size):
     return most_frequent(distrib)
 
 
-def typical_char_width(text_blocks, typical_font_size):
+def typical_char_width(text_blocks: list, typical_font_size: float) -> float:
     """ """
     distrib = []
     for i in text_blocks:
@@ -115,7 +118,7 @@ def typical_char_width(text_blocks, typical_font_size):
     return sum(distrib) / len(distrib)
 
 
-def print_debug(text_blocks):
+def print_debug(text_blocks: list):
     """ """
     #text_blocks.sort(key=lambda tz: -(int(tz['y']*1000)) + int(tz['x']/1000))
     for tz in text_blocks:
