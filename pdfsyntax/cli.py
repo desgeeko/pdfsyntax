@@ -10,19 +10,19 @@ from .display import build_html
 def main():
     """ """
     parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax', description='Navigate through the structure of a PDF file')
-    parser.add_argument('command', type=str, choices=['inspect', 'overview', 'spacial'], help='Command')
+    parser.add_argument('command', type=str, choices=['inspect', 'overview', 'text'], help='Command')
     parser.add_argument('filename', type=str, help='PDF file name')
     args = parser.parse_args()
     if args.command == 'inspect':
         inspect(args.filename)
     elif args.command == 'overview':
         overview(args.filename)
-    elif args.command == 'spacial':
-        spacial(args.filename)
+    elif args.command == 'text':
+        spatial(args.filename)
 
 
-def spacial(filename: str) -> None:
-    """Print text content of a file with spacial awareness"""
+def spatial(filename: str) -> None:
+    """Print text content of a file with spatial awareness"""
     fdata = bdata_provider(filename)
     doc, _ = init_doc(fdata)
     doc = add_revision(doc)

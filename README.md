@@ -1,7 +1,7 @@
 PDFSyntax
 =========
 
-*A Python PDF parsing library and tool built on top to browse the internal structure of a PDF file*
+*A Python library to inspect and modify the internal structure of a PDF file*
 
 ## Introduction
 
