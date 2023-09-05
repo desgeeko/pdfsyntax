@@ -7,12 +7,16 @@ The general form of the CLI usage is:
 
 You can get quick insights on a PDF file with these commands:
 - `overview` outputs text data about the structure and the metadata. 
+- `text` extracts text content on all pages. 
 - `inspect` outputs static html data that lets you browse the internal structure of the PDF file: the PDF source is pretty-printed and augmented with hyperlinks.
 
 ### `overview`
 The output shows information about:
 - the structure : Version, Pages, Revisions, etc...
 - the metadata : Title, Author, Subject, etc...
+
+### `text`
+The output shows a full extract of the text content, with a spatial awareness: the algorithm *tries* to respect the original layout, as if characters of all sizes were approximately rendered on a fixed-size grid.
 
 ### `inspect`
 The generated HTML looks like the raw PDF file with the following additions:

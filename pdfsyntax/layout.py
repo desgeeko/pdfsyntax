@@ -12,6 +12,7 @@ def basic_spatial_layout(text_blocks: list) -> str:
     spacing = typical_line_spacing(text_blocks, fs)
     #print(f"spacing = {spacing}")
     char_w = typical_char_width(text_blocks, fs)
+    #print(f"char w = {char_w}")
     previous_y = -1
     while text_blocks:
         line_string = ''
@@ -19,7 +20,7 @@ def basic_spatial_layout(text_blocks: list) -> str:
         target_y = line_items[0]['y']
         if previous_y != -1:
             inter_lines = int((previous_y - target_y - spacing / NEWLINE_COEFF) / spacing)
-            line_string += '\n' * inter_lines
+            res += '\n' * inter_lines
         previous_y = target_y
         #print("-----------------------------------")
         #print(line_items[0])
@@ -30,13 +31,13 @@ def basic_spatial_layout(text_blocks: list) -> str:
             #print(line_items[-1])
         line_items.sort(key=lambda tb: tb['x'])
         #TODO exclude overlapping blocks
-        nb_spaces = (line_items[0]['x'] - min_x) // char_w
+        nb_spaces = (int(line_items[0]['x']) - min_x) // char_w
         line_string += ' ' * int(nb_spaces)
         line_string += line_items[0]['text']
         i = 1
         while i < len(line_items):
             if line_items[i]['x'] > line_items[i-1]['x'] + line_items[i-1]['width'] + MIN_SEP_DISTANCE:
-                nb_spaces = (line_items[i]['x'] - min_x) // char_w
+                nb_spaces = (int(line_items[i]['x']) - min_x) // char_w
                 offset = len(line_string)
                 line_string += ' ' * (int(nb_spaces) - offset)
             line_string += line_items[i]['text']
@@ -125,7 +126,10 @@ def typical_char_width(text_blocks: list, typical_font_size: float) -> float:
         if i['scaling'] != typical_font_size or len(i['text']) < 2:
             continue
         distrib.append(i['width'] / len(i['text']))
-    return sum(distrib) / len(distrib)
+    if len(distrib):
+        return sum(distrib) / len(distrib)
+    else:
+        return 0
 
 
 def print_debug(text_blocks: list):
