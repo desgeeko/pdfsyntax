@@ -23,9 +23,7 @@ def main():
 
 def spatial(filename: str) -> None:
     """Print text content of a file with spatial awareness"""
-    fdata = bdata_provider(filename)
-    doc, _ = init_doc(fdata)
-    doc = add_revision(doc)
+    doc = readfile(filename)
     for i in range(len(pages(doc))):
         print(extract_page_text(doc, i))
     return
@@ -33,9 +31,7 @@ def spatial(filename: str) -> None:
 
 def overview(filename: str) -> None:
     """Print both structure and metadata of a file"""
-    fdata = bdata_provider(filename)
-    doc, _ = init_doc(fdata)
-    doc = add_revision(doc)
+    doc = readfile(filename)
     s = structure(doc)
     m = metadata(doc)
     print('# Structure')
@@ -51,7 +47,8 @@ def overview(filename: str) -> None:
 
 def inspect(filename: str) -> None:
     """Print html view of the file map"""
-    fdata = bdata_provider(filename)
+    file_obj = open(filename, 'rb')
+    fdata = bdata_provider(file_obj)
     file_seq, pos_index, nb_ver = file_map(fdata)
     print(build_html(file_seq, pos_index, nb_ver, filename, fdata(0, 8)[0]))
 

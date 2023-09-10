@@ -1,6 +1,7 @@
 """Module pdfsyntax.filestruct: how objects are stored in a PDF file"""
 
 from typing import Callable
+from typing import IO
 from .objects import *
 import os
 from copy import deepcopy
@@ -9,8 +10,10 @@ from .filters import *
 MARGIN = b'\n'
 
 
-def bdata_provider(filename: str, mode: str = "SINGLE"):
-    """Higher order function that offer an interface to binary data, either:
+def bdata_provider(data_source, mode: str = "SINGLE"):
+    """Higher order function that offer an interface to binary data
+    
+    It can read either:
     - from a buffer loaded at init,
     - or directly from disk. 
     A starting position equal to -1 means access to the last <length> bytes.
@@ -21,9 +24,10 @@ def bdata_provider(filename: str, mode: str = "SINGLE"):
     - the number of readable bytes.
     """
     if mode == "SINGLE":
-        bfile = open(filename, 'rb')
-        bdata = bfile.read()
-        bfile.close()
+        if type(data_source) == bytes:
+            bdata = data_source
+        else:
+            bdata = data_source.read()
         def single_load(start_pos: int, length: int) -> tuple:
             if start_pos == -1 and length == 0:
                 return (None, None, None, len(bdata))
@@ -36,20 +40,25 @@ def bdata_provider(filename: str, mode: str = "SINGLE"):
             return (bdata, i, 0, min(len(bdata) - start_pos, length))
         return single_load
     else:
+        file_obj = data_source
         def continuous_load(start_pos: int, length: int) -> tuple:
             if start_pos == -1 and length == 0:
-                return (None, None, None, os.stat(filename).st_size)
+                file_obj.seek(0, os.SEEK_END)
+                return (None, None, None, file_obj.tell())
             if length == -1:
-                length = os.stat(filename).st_size - start_pos
+                file_obj.seek(0, os.SEEK_END)
+                length = file_obj.tell() - start_pos
             if start_pos == -1:
-                i = os.stat(filename).st_size - length
+                file_obj.seek(0, os.SEEK_END)
+                i = file_obj.tell() - length
             else:
                 i = start_pos
-            bfile = open(filename, 'rb')
-            bfile.seek(i, 0)
-            bdata = bfile.read(length)
-            bfile.close()
-            return (bdata, 0, i, min(os.stat(filename).st_size - start_pos, length))
+            #bfile = open(filename, 'rb')
+            file_obj.seek(i, 0)
+            bdata = file_obj.read(length)
+            #bfile.close()
+            file_obj.seek(0, os.SEEK_END)
+            return (bdata, 0, i, min(file_obj.tell() - start_pos, length))
         return continuous_load
 
 

@@ -47,8 +47,8 @@ Please refer to the [API README](https://github.com/desgeeko/pdfsyntax/blob/main
 PDFSyntax is mostly made of simple functions. Example:
 
 ```Python
->>> from pdfsyntax import read, metadata
->>> doc = read("samples/simple_text_string.pdf")
+>>> from pdfsyntax import readfile, metadata
+>>> doc = readfile("samples/simple_text_string.pdf")
 >>> metadata(doc) #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
 ```
 
@@ -71,7 +71,7 @@ Low-level functions like `get_object` or `update_object` allow you to directly a
 You may also use higher-level functions like `rotate`:
 
 ```Python
->>> from pdfsyntax import rotate, write
+>>> from pdfsyntax import rotate, writefile
 >>> doc180 = rotate(doc, 180) #rotate pages by 180°
 ```
 
@@ -85,7 +85,7 @@ The orignal object is unchanged and a new object is created with an incremental 
 You then can write the modified PDF to disk. Note that the resulting file contains a new section appended to the original content. You may cut this section to revert the change.
 
 ```Python
->>> write(doc180, "rotated_doc.pdf")
+>>> writefile(doc180, "rotated_doc.pdf")
 ```
 
 

@@ -6,7 +6,7 @@ class SimpleFile(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.doc = pdf.read('./samples/simple_text_string.pdf')
+        cls.doc = pdf.readfile('./samples/simple_text_string.pdf')
 
     def test_index_length(self):
         self.assertEqual(len(self.doc.index), 2)

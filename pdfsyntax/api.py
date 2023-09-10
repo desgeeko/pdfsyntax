@@ -50,33 +50,33 @@ def init_doc(fdata: Callable) -> tuple:
     return doc, chrono
 
 
-#def load(fp) -> Doc:
-#    """ """
-#    bdata = fp.read()
-#    doc, _ = init_doc(bdata)
-#    doc = add_version(doc)
-#    return doc
-
-
-#def loads(bdata) -> Doc:
-#    """ """
-#    doc, _ = init_doc(bdata)
-#    doc = add_version(doc)
-#    return doc
-
-
-def read(filename: str, mode: str = "SINGLE") -> Doc:
-    """Read file and initialize doc"""
-    #bfile = open(filename, 'rb')
-    #bdata = bfile.read()
-    #bfile.close()
-    fdata = bdata_provider(filename, mode)
+def doc_constructor(fdata) -> Doc:
+    """ """
     doc, _ = init_doc(fdata)
     doc = add_revision(doc)
     return doc
 
 
-def write(doc: Doc, filename: str) -> Doc:
+def load(file_obj, mode: str = "SINGLE") -> Doc:
+    """ """
+    fdata = bdata_provider(file_obj, mode)
+    return doc_constructor(fdata)
+
+
+def loads(bdata) -> Doc:
+    """ """
+    fdata = bdata_provider(bdata, "SINGLE")
+    return doc_constructor(fdata)
+
+
+def readfile(filename: str) -> Doc:
+    """Read file and initialize doc"""
+    with open(filename, 'rb') as file_obj:
+        doc = load(file_obj, "SINGLE")
+    return doc
+
+
+def writefile(doc: Doc, filename: str) -> Doc:
     """Write doc into file"""
     bdata = b''
     idx = 0

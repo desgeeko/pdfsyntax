@@ -7,15 +7,15 @@ For example both samples are equivalent:
 
 ```Python
 >>> #Function pattern
->>> from pdfsyntax import read, metadata
->>> doc = read("samples/simple_text_string.pdf")
+>>> from pdfsyntax import readfile, metadata
+>>> doc = readfile("samples/simple_text_string.pdf")
 >>> m = metadata(doc)
 ```
 
 ```Python
 >>> #Method pattern
 >>> import pdfsyntax as pdf
->>> doc = pdf.read("samples/simple_text_string.pdf")
+>>> doc = pdf.readfile("samples/simple_text_string.pdf")
 >>> m = doc.metadata()
 ```
 
@@ -65,7 +65,7 @@ Page index is a tree structure where attributes can be inherited from parent nod
 
 ```Python
 >>> #Each item of the list is a tuple with the page object reference and its inherited attributes
->>> doc = pdf.read("samples/simple_text_string.pdf")
+>>> doc = pdf.readfile("samples/simple_text_string.pdf")
 >>> pdf.flat_page_tree(doc)
 [(4j, {})]
 >>> #(In this example, nothing is inherited from upper nodes)
@@ -89,7 +89,7 @@ PDFSyntax tracks document incremental updates made possible by appending new or 
 
 ```Python
 >>> import pdfsyntax as pdf
->>> doc = pdf.read("samples/add_text_annotation.pdf")
+>>> doc = pdf.readfile("samples/add_text_annotation.pdf")
 >>> doc.structure()
 {'Version': '1.4', 'Pages': 1, 'Revisions': 2, 'Encrypted': False, 'Paper of 1st page': '215x279mm or 8.5x11.0in (US Letter)'}
 
