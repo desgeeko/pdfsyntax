@@ -61,8 +61,10 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
         for index in indexes:
             bdata, a0, _, _ = fdata(index['abs_pos'], index['abs_next'] - index['abs_pos'])
             i, j, _ = next_token(bdata, a0)
-            i, j, _ = next_token(bdata, j)
-            if 'xref_stream' in index:
+            if bdata[i:j] == b'trailer':
+                i, j, _ = next_token(bdata, j)
+            else:
+                i, j, _ = next_token(bdata, j)
                 i, j, _ = next_token(bdata, j)
                 i, j, _ = next_token(bdata, j)
             text = bdata

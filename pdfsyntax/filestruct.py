@@ -160,7 +160,12 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     
 
 def build_chrono_from_xref(fdata: Callable) -> list:
-    """Return a merged list of all entries found in xref tables or xref streams """
+    """Return a merged list of all entries sequentially found in xref tables or xref streams.
+
+    Chrono means that the sequence goes from the oldest (first revision) to the newest (last revision) entries.
+    An xref+trailer or an /Xref is seen as a virtual object #0
+    An EOF is seen as a virtual object #-1
+    """
     EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
@@ -174,6 +179,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     if bdata[a0:a0+4] == XREF:
         chrono = parse_xref_table(bdata, a0, o0)
         i, j, _ = next_token(bdata, chrono[0]['abs_pos'] - o0)  # b'trailer'
+        abs_pos_trailer = i
         i, j, _ = next_token(bdata, j)
         trailer = parse_obj(bdata[i:j])
         if '/XRefStm' in trailer:
@@ -188,8 +194,10 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)
-            chrono = parse_xref_stream(xref, xref_pos, o_num)
+            chrono2 = parse_xref_stream(xref, xref_pos, o_num)
+            chrono2[0]['abs_pos'] = abs_pos_trailer
             trailer = xref['entries']
+            chrono = chrono + chrono2[1:]
     else: # must be a /XRef stream
         bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
         i, j, _ = next_token(bdata, a0)
