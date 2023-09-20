@@ -223,24 +223,26 @@ def get_page_contents(doc: Doc, page_num: int) -> list:
 def build_text_fragments(page_contents: list, f: list):
     """ """
     tfs = []
+    gs = []
+    ts = {}
+    c_all = b''
     for c in page_contents:
-        gs = []
-        ts = {}
-        t = parse_stream_content(c['stream'])
-        for te in t:
-            #if te[-1] not in 'lmchnfgGref*':
-            #    print(te)
-            apply_command(te, gs, ts)
-            #print(ts['tm'])
-            if te[-1] == 'TJ' or te[-1] == 'Tj':
-                old_trm = trm(ts, gs)
-                #print(f"TRM ====> {old_trm}")
-                uc, displacement = text_element_to_unicode(f[0], te, ts)
-                tx = (displacement * ts['Tfs'] + ts['Tc'] + ts['Tw']) * ts['Th'] / 100
-                ty = 0 #TODO
-                ts['tm'] = multiply_matrices([1, 0, 0, 1, tx, ty], ts['tm'])
-                new_trm = trm(ts, gs)
-                tfs.append([old_trm, uc, new_trm])
+        c_all += c['stream']
+    t =parse_stream_content(c_all)
+    for te in t:
+        #if te[-1] not in 'lmchnfgGref*':
+            #print(te)
+        apply_command(te, gs, ts)
+        #print(ts['tm'])
+        if te[-1] == 'TJ' or te[-1] == 'Tj':
+            old_trm = trm(ts, gs)
+            #print(f"TRM ====> {old_trm}")
+            uc, displacement = text_element_to_unicode(f[0], te, ts)
+            tx = (displacement * ts['Tfs'] + ts['Tc'] + ts['Tw']) * ts['Th'] / 100
+            ty = 0 #TODO
+            ts['tm'] = multiply_matrices([1, 0, 0, 1, tx, ty], ts['tm'])
+            new_trm = trm(ts, gs)
+            tfs.append([old_trm, uc, new_trm])
     return tfs
 
 
