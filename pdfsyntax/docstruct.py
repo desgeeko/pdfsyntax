@@ -506,7 +506,10 @@ def prepare_w(w, default_w):
 def prepare_widths(widths, first_char):
     """ Width decoding for simple fonts """
     def char_width_table(character_num):
-        return widths[character_num-first_char]
+        if character_num-first_char >= len(widths):
+            return 500
+        else:
+            return widths[character_num-first_char]
     return char_width_table
 
 
