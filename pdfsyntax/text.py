@@ -193,6 +193,10 @@ def text_element_to_unicode(fonts: dict, element: list, ts: dict) -> tuple:
                 for c in chars:
                     width += fonts[font]['char_width'](c) / 1000
             else:
+                space_char_width = fonts[font]['char_width'](32) # char 32 is SPACE
+                t -= space_char_width * 0.2
+                if t <= -space_char_width:
+                    nb_char = int(-t) // int(space_char_width)
+                    ustring += ' ' * nb_char
                 width -= t/1000
-    #print(f"width={width}")
     return ustring, width

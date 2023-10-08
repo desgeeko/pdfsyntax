@@ -230,8 +230,9 @@ def build_text_fragments(page_contents: list, f: list):
         c_all += c['stream']
     t =parse_stream_content(c_all)
     for te in t:
-        #if te[-1] not in 'lmchnfgGref*':
-            #print(te)
+        if te[-1] not in 'lmchnfgGref*':
+             #print(te)
+             pass
         apply_command(te, gs, ts)
         #print(ts['tm'])
         if te[-1] == 'TJ' or te[-1] == 'Tj':
