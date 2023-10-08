@@ -484,6 +484,10 @@ def prepare_w(w, default_w):
     """ Width decoding for type0 / CID fonts"""
     i = 0
     width = {}
+    if not w:
+        def char_width_cid_default(character_num):
+            return 500
+        return char_width_cid_default
     while i < len(w):
         if type(w[i+1]) == list:
             current = w[i]
