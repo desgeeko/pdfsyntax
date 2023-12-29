@@ -2,7 +2,9 @@
 
 from .objects import *
 
+
 def prepare_pdfdoc_charset():
+    """ """
     charset = []
     charset += list(range(0, 0x18))
     charset += [0x02d8, 0x02c7, 0x02c6, 0x02d9, 0x02dd, 0x02db, 0x02da, 0x02dc]
@@ -16,14 +18,15 @@ def prepare_pdfdoc_charset():
 
 PDFDOC_CHARSET = prepare_pdfdoc_charset()
 
+
 def decode_pdfdoc(string: bytes) -> str:
-    """Decode a PDFDocEncoded string"""
+    """Decode a PDFDocEncoded string."""
     chars = [chr(PDFDOC_CHARSET[x]) for x in string]
     return ''.join(chars)
 
 
 def text_string(string: bytes) -> str:
-    """Transform a fundamental string into a text string"""
+    """Transform a fundamental string into a text string."""
     if string is None: return None
     res = ''
     if string[0:1] == b'(': # Literal string

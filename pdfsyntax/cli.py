@@ -8,7 +8,7 @@ from .display import build_html
 
 
 def main():
-    """ """
+    """Entry point."""
     parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax', description='Navigate through the structure of a PDF file')
     parser.add_argument('command', type=str, choices=['inspect', 'overview', 'text'], help='Command')
     parser.add_argument('filename', type=str, help='PDF file name')
@@ -22,7 +22,7 @@ def main():
 
 
 def spatial(filename: str) -> None:
-    """Print text content of a file with spatial awareness"""
+    """Print text content of a file with spatial awareness."""
     doc = readfile(filename)
     for i in range(len(pages(doc))):
         print(extract_page_text(doc, i))
@@ -30,7 +30,7 @@ def spatial(filename: str) -> None:
 
 
 def overview(filename: str) -> None:
-    """Print both structure and metadata of a file"""
+    """Print both structure and metadata of a file."""
     doc = readfile(filename)
     s = structure(doc)
     m = metadata(doc)
@@ -45,15 +45,17 @@ def overview(filename: str) -> None:
             print(f"{key}: {m[key]}")
     return
 
+
 def inspect(filename: str) -> None:
-    """Print html view of the file map"""
+    """Print html view of the file map."""
     file_obj = open(filename, 'rb')
     fdata = bdata_provider(file_obj)
     file_seq, pos_index, nb_ver = file_map(fdata)
     print(build_html(file_seq, pos_index, nb_ver, filename, fdata(0, 8)[0]))
 
+    
 def file_map(fdata: Callable) -> tuple:
-    """Build file sequence and sort it by absolute position"""
+    """Build file sequence and sort it by absolute position."""
     file_seq = build_chrono_from_xref(fdata)
     file_index = build_index_from_chrono(file_seq)    
     pos_index = {}

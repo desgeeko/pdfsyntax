@@ -40,9 +40,10 @@ SPACE = EOL + b'\x00\x09\x0c\x20'
 
 
 def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-1) -> list:
-    """Parse indirect object whose number is [key] and return a cache filled at index [key]
+    """Parse indirect object whose number is [key] and return a cache filled at index [key].
+
     cache argument may be:
-    - a list that is updated,
+    - a list that is updated
     - or None that is replaced with an empty list
     """
     if cache is None:
@@ -109,7 +110,7 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
 
 
 def get_object(doc: Doc, obj):
-    """Return raw object or the target of an indirect reference"""
+    """Return raw object or the target of an indirect reference."""
     if isinstance(obj, complex) == True:
         ref = int(obj.imag)
         res = memoize_obj_in_cache(doc.index, doc.data[-1]['fdata'], ref, doc.cache)
@@ -119,7 +120,7 @@ def get_object(doc: Doc, obj):
 
 
 def flat_page_tree(doc: Doc, num=None, inherited={}, max_nb=None) -> list:
-    """Recursively list the pages of a node"""
+    """Recursively list the pages of a node."""
     accu = []
     if num:
         node = get_object(doc, num)
@@ -138,7 +139,7 @@ def flat_page_tree(doc: Doc, num=None, inherited={}, max_nb=None) -> list:
 
 
 def build_cache(fdata: Callable, index: list) -> list:
-    """Initialize cache with trailer"""
+    """Initialize cache with trailer."""
     size = len(index[-1])
     cache = size * [None]
     memoize_obj_in_cache(index, fdata, 0, cache)
@@ -146,7 +147,7 @@ def build_cache(fdata: Callable, index: list) -> list:
 
 
 def changes(doc: Doc, rev: int=-1):
-    """List deleted/updated/added objects"""
+    """List deleted/updated/added objects."""
     res = []
     current = doc.index[rev]
     if len(doc.index) == 1:
@@ -168,7 +169,7 @@ def changes(doc: Doc, rev: int=-1):
 
 
 def group_obj_into_stream(doc: Doc):
-    """Provision a ObjStm object and tag all changes to target this envelope"""
+    """Provision a ObjStm object and tag all changes to target this envelope."""
     doc2, _ = add_object(doc, b'')
     current = doc2.index[-1]
     o_num = current[-2]['o_num']
@@ -184,7 +185,7 @@ def group_obj_into_stream(doc: Doc):
 
 
 def version(doc: Doc) -> str:
-    """Return PDF version"""
+    """Return PDF version."""
     fdata = doc.data[0]['fdata']
     bdata, a0, _, _ = fdata(5, 3)
     ver = bdata[a0:a0+3]
@@ -195,18 +196,18 @@ def version(doc: Doc) -> str:
 
 
 def updates(doc: Doc) -> int:
-    """Return the number of updates the document received"""
+    """Return the number of updates the document received."""
     upd = len(doc.index) - 1
     return upd
 
 
 def trailer(doc: Doc):
-    """Return doc trailer dictionary"""
+    """Return doc trailer dictionary."""
     return get_object(doc, 0j)
 
 
 def encrypted(doc: Doc) -> bool:
-    """Detect if doc is encrypted"""
+    """Detect if doc is encrypted."""
     trail = trailer(doc)
     encrypt = trail.get('/Encrypt')
     if encrypt:
@@ -216,7 +217,7 @@ def encrypted(doc: Doc) -> bool:
 
 
 def hybrid(doc: Doc) -> bool:
-    """Detect if doc is hybrid"""
+    """Detect if doc is hybrid."""
     if len(doc.index) >= 2 and doc.index[1][0].get('xref_stm'):
         return True
     else:
@@ -224,12 +225,12 @@ def hybrid(doc: Doc) -> bool:
 
 
 def catalog(doc: Doc):
-    """Return doc Root/Catalog dictionary"""
+    """Return doc Root/Catalog dictionary."""
     return get_object(doc, trailer(doc)['/Root'])
 
 
 def info(doc: Doc):
-    """Return doc Info dictionary if present"""
+    """Return doc Info dictionary if present."""
     trail = trailer(doc)
     info = trail.get('/Info')
     if info:
@@ -237,13 +238,13 @@ def info(doc: Doc):
 
 
 def number_pages(doc: Doc):
-    """Return doc number of pages"""
+    """Return doc number of pages."""
     p = get_object(doc, catalog(doc)['/Pages'])
     return p['/Count']
 
 
 def pages(doc: Doc, max_nb=None) -> list:
-    """ """
+    """List page objects."""
     pl = []
     for num, in_attr in flat_page_tree(doc, max_nb=max_nb):
         temp = deepcopy(get_object(doc, num))
@@ -255,6 +256,7 @@ def pages(doc: Doc, max_nb=None) -> list:
 
 
 def revision_index(doc: Doc, rev=-1) -> int:
+    """Return bytes index of revision within the file."""
     index = 0
     if rev == -1:
         rev = len(doc.data)-1
@@ -268,6 +270,7 @@ def revision_index(doc: Doc, rev=-1) -> int:
 
 
 def gen_fdata(fdata: Callable, index: int, bdata: bytes):
+    """ """
     def new_fdata(start_pos: int, length: int) -> tuple:
         if start_pos > index:
             start_pos = start_pos - index
@@ -286,7 +289,7 @@ def gen_fdata(fdata: Callable, index: int, bdata: bytes):
 
 
 def add_revision(doc: Doc) -> Doc:
-    """Add new index for incremental update"""
+    """Add new index for incremental update."""
     if len(changes(doc)) == 0:
         return doc
     ver = len(doc.index)
@@ -315,7 +318,7 @@ def add_revision(doc: Doc) -> Doc:
 
 
 def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
-    """Build bytes representing incremental update"""
+    """Build bytes representing incremental update."""
     chg = changes(doc, rev)
     if not chg:
         return b''
@@ -330,7 +333,7 @@ def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
 
 
 def rewind(doc: Doc) -> Doc:
-    """Go back to previous revision"""
+    """Go back to previous revision."""
     if len(doc.index) == 1:
         return doc
     new_index = doc.index.copy()
@@ -342,7 +345,7 @@ def rewind(doc: Doc) -> Doc:
 
 
 def copy_doc(doc: Doc) -> Doc:
-    """ """
+    """Shallow copy."""
     new_index = doc.index.copy()
     new_index[-1] = doc.index[-1].copy()
     new_cache = doc.cache.copy()
@@ -350,7 +353,7 @@ def copy_doc(doc: Doc) -> Doc:
 
 
 def update_object(doc: Doc, num: int, new_o) -> Doc:
-    """Update object in the current revision"""
+    """Update object in the current revision."""
     ver = len(doc.index)
     old_i = doc.index[-1][num]
     if new_o is None:
@@ -364,7 +367,7 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
 
 
 def add_object(doc: Doc, new_o) -> tuple:
-    """Add new object at the end of current index"""
+    """Add new object at the end of current index."""
     if doc.index[-1][-1]:
         doc = add_revision(doc)
     ver = len(doc.index)
@@ -379,7 +382,7 @@ def add_object(doc: Doc, new_o) -> tuple:
 
 
 def dependencies(doc: Doc, obj: Any) -> set:
-    """Recursively list indirect references found inside object""" 
+    """Recursively list indirect references found inside object.""" 
     if type(obj) == dict:
         res = set()
         for k, v in obj.items():
@@ -401,7 +404,7 @@ def dependencies(doc: Doc, obj: Any) -> set:
 
 
 def delete_pages(doc: Doc, del_pages) -> Doc:
-    """Delete one (an int) or more (an array of int) pages"""
+    """Delete one (an int) or more (an array of int) pages."""
     if type(del_pages) != list:
         del_pages = [del_pages]
     pages = flat_page_tree(doc)
@@ -431,7 +434,7 @@ def delete_pages(doc: Doc, del_pages) -> Doc:
 
 
 def defragment_map(current_index: list) -> tuple:
-    """Build new index without empty slots (ie deleted objects)"""
+    """Build new index without empty slots (ie deleted objects)."""
     new_index = [None]
     mapping = {}
     nb = 0
@@ -481,7 +484,7 @@ def flatten(doc: Doc) -> Doc:
 
 
 def prepare_w(w, default_w):
-    """ Width decoding for type0 / CID fonts"""
+    """Decode widths for type0 / CID fonts."""
     i = 0
     width = {}
     if not w:
@@ -508,7 +511,7 @@ def prepare_w(w, default_w):
 
 
 def prepare_widths(widths, first_char):
-    """ Width decoding for simple fonts """
+    """Decode widths for simple fonts."""
     def char_width_table(character_num):
         offset = character_num-first_char
         if offset < 0 or offset >= len(widths):
@@ -562,7 +565,10 @@ def prepare_font(doc: Doc, iref) -> dict:
 
 
 def get_page_fonts(doc: Doc, page_nums: list) -> list:
-    """ """
+    """Return a list of fonts dict of each page.
+
+    Dict key is font name, for example /F1
+    """
     ret = []
     for page_num in page_nums:
         fonts = {}

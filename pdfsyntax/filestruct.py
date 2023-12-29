@@ -11,7 +11,7 @@ MARGIN = b'\n'
 
 
 def bdata_provider(data_source, mode: str = "SINGLE"):
-    """Higher order function that offer an interface to binary data
+    """Build - with a higher order function - an interface to binary data.
     
     It can read either:
     - from a buffer loaded at init,
@@ -78,23 +78,23 @@ def bdata_dummy(bdata: bytes):
 
 
 def bdata_length(bdata: Callable) -> int:
-    """Direct access to data length without reading it"""
+    """Offer direct access to data length without reading it."""
     _, _, _, i = bdata(-1, 0)
     return i
 
 
 def bdata_all(bdata: Callable) -> bytes:
-    """Return full bdata content as bytes"""
+    """Return full bdata content as bytes."""
     bdata, _, _, _ = bdata(0, -1)
     return bdata
 
 
 def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
-    """Return a list of dicts indexing indirect objects
+    """Return a list of dicts indexing indirect objects.
 
-    abs_pos is the absolute position of the object
-    o_num is the object number
-    o_gen is the object generation number
+    - abs_pos is the absolute position of the object
+    - o_num is the object number
+    - o_gen is the object generation number
     """
     xref = []
     table = []
@@ -119,17 +119,17 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
 
 
 def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
-    """Return a list of dicts indexing indirect objects
+    """Return a list of dicts indexing indirect objects.
 
     for regular objects:
-        abs_pos is the absolute position of the object
-        o_num is the object number
-        o_gen is the object generation number
+    - abs_pos is the absolute position of the object
+    - o_num is the object number
+    - o_gen is the object generation number
     for objects embedded in object streams:
-        env_num is the number of the envelope object
-        o_num is the object number
-        o_gen is the object generation number
-        o_pos is the position of the object within the stream
+    - env_num is the number of the envelope object
+    - o_num is the object number
+    - o_gen is the object generation number
+    - o_pos is the position of the object within the stream
     """
     xref = []
     table = []
@@ -266,7 +266,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
 
 
 def build_index_from_chrono(chrono: list) -> list:
-    """Build a multi-dimensional array where each column represents a doc update"""
+    """Build a multi-dimensional array where each column represents a doc update."""
     nb = max(chrono, key = lambda i: i['o_num']).get('o_num') + 2
     m = nb * [None]
     abs_pos_array = nb * [0]
@@ -322,7 +322,7 @@ def build_data_from_cache(index: list, fdata: Callable) -> list:
 
 
 def circular_deleted(changes: list) -> dict:
-    """Build lookup dict to ref of next deleted object"""
+    """Build lookup dict to ref of next deleted object."""
     res = {}
     deleted = [x for x in changes if x[1] == 'd']
     for i, d in enumerate([(0, 'd')] + deleted):
@@ -334,7 +334,7 @@ def circular_deleted(changes: list) -> dict:
 
 
 def format_xref_table(elems: list, trailer: dict, next_free: dict) -> bytes:
-    """Build XREF table"""
+    """Build XREF table."""
     xref_table = []
     for use, num, o_gen, counter, _ in elems:
         if use == 'f':
@@ -370,7 +370,7 @@ def format_xref_table(elems: list, trailer: dict, next_free: dict) -> bytes:
 
 
 def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
-    """Build XREF stream object"""
+    """Build XREF stream object."""
     xref_stream = []
     index = []
     o_num = trailer['/Size'] - 1
@@ -416,7 +416,7 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
 
 
 def serialize_fragment(num, o_gen, obj):
-    """Build ascii block representing indirect object in file"""
+    """Build ascii block representing indirect object in file."""
     beginobj = f'{num} {o_gen}'.encode('ascii') + b' obj\n'
     ser = serialize(obj) + b'\n'
     endobj = b'endobj\n'
@@ -425,7 +425,7 @@ def serialize_fragment(num, o_gen, obj):
 
 
 def append_to_stream_fragment(num, obj, envelope):
-    """Concatenate object at the end of stream"""
+    """Concatenate object at the end of stream."""
     ser = serialize(obj) + b'\n'
     entries = envelope['entries'].copy()
     if '/FirstLine' not in entries:
@@ -438,14 +438,14 @@ def append_to_stream_fragment(num, obj, envelope):
 
 
 def get_pos_in_stream(envelope):
-    """Calculate current object position in the stream"""
+    """Calculate current object position in the stream."""
     entries = envelope['entries']
     pos = len(entries['/FirstLine']) // 2
     return pos
 
 
 def finalize_stream(envelope):
-    """Add index at the beginning of stream and count objects"""
+    """Add index at the beginning of stream and count objects."""
     header = b''
     entries = envelope['entries'].copy()
     tokens = entries['/FirstLine']
@@ -461,7 +461,7 @@ def finalize_stream(envelope):
 
 
 def build_fragment_and_xref(changes: list, current_index: list, cache: list, starting_pos: int, use_xref_stream: bool) -> tuple:
-    """List the sequence of byte blocks that make the update"""
+    """List the sequence of byte blocks that make the update."""
     fragments = []
     xref_table = []
     res = b''

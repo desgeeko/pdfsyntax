@@ -76,7 +76,7 @@ TRUNCATED = '<em> ...(truncated) </em>'
 
 
 def build_html(articles: list, pos_index: dict, nb_ver: int, filename: str, version: bytes) -> str:
-    """Compose the page layout"""
+    """Compose the page layout."""
     page = HEADER
     page += build_header(filename, nb_ver, version)
     for article in articles:
@@ -103,7 +103,7 @@ def build_html(articles: list, pos_index: dict, nb_ver: int, filename: str, vers
     return page
 
 def build_header(filename: str, nb_ver: int, version: bytes) -> str:
-    """Add a banner with the file name"""
+    """Add a banner with the file name."""
     ret = ''
     ret += f'<div class="header">\n'
     ret += f'<pre> <a class="header-button" href="#obj-2.-2.{nb_ver-1}">jump to startxref</a>'
@@ -139,7 +139,7 @@ def add_eof(article: dict) -> str:
     return ret
 
 def build_xref_table(table: list, mini_index: list) -> str:
-    """Display XREF table with additional links to objects """
+    """Display XREF table with additional links to objects."""
     ret = ''
     for line, o_num in table:
         ret += line.decode('ascii')
@@ -153,7 +153,7 @@ def build_xref_table(table: list, mini_index: list) -> str:
     return ret
 
 def build_xref_stream(table: list, mini_index: list) -> str:
-    """Display XREF stream with additional links to objects """
+    """Display XREF stream with additional links to objects."""
     ret = '\nstream\n'
     for line, o_num in table:
         ret += line.decode('ascii')
@@ -167,7 +167,7 @@ def build_xref_stream(table: list, mini_index: list) -> str:
     return ret
 
 def move_list_item(mod_list: list, item: int, new_pos: int) -> str:
-    """Reposition an item in a list"""
+    """Reposition an item in a list."""
     if item in mod_list:
         old_pos = mod_list.index(item)
         mod_list.pop(old_pos)
@@ -175,7 +175,7 @@ def move_list_item(mod_list: list, item: int, new_pos: int) -> str:
     return mod_list
 
 def follow_obj(obj, mini_index: list, pos_index: dict, depth=0) -> str:
-    """Recursively construct object representation"""
+    """Recursively construct object representation."""
     ret = ''
     content = None
     if isinstance(obj, complex):
@@ -237,7 +237,7 @@ def follow_obj(obj, mini_index: list, pos_index: dict, depth=0) -> str:
     return ret
 
 def build_obj_header(article) -> str:
-    """Add opening elements to object"""
+    """Add opening elements to object."""
     obj = article['content']
     o_num, o_gen, o_ver = article['o_num'], article['o_gen'], article['o_ver']
     ret = ''
@@ -259,7 +259,7 @@ def build_obj_header(article) -> str:
     return ret
 
 def build_obj_trailer() -> str:
-    """Add closing elements to object"""
+    """Add closing elements to object."""
     ret = ''
     ret += f'</div>\n'
     ret += f'</pre>\n</div>\n'

@@ -12,11 +12,11 @@ from .layout import *
 METADATA_ATTRS = '/Title /Author /Subject /Keywords /Creator /Producer'.split()
 
 def in2pt(inches: float) -> int:
-    """Convert inches into points"""
+    """Convert inches into points."""
     return int(inches*72)
 
 def mm2pt(millimeters: int) -> int:
-    """Convert millimeters into points"""
+    """Convert millimeters into points."""
     return round(millimeters/25.4*72)
 
 
@@ -39,7 +39,7 @@ PAPER_SIZES = {
 
 
 def init_doc(fdata: Callable) -> tuple:
-    """Initialize doc object representing PDF file"""
+    """Initialize doc object representing PDF file."""
     chrono = build_chrono_from_xref(fdata)
     index = build_index_from_chrono(chrono)
     data = build_data_from_cache(index, fdata)
@@ -51,26 +51,26 @@ def init_doc(fdata: Callable) -> tuple:
 
 
 def doc_constructor(fdata) -> Doc:
-    """ """
+    """Initialize doc and close first revision."""
     doc, _ = init_doc(fdata)
     doc = add_revision(doc)
     return doc
 
 
 def load(file_obj, mode: str = "SINGLE") -> Doc:
-    """ """
+    """Load from file."""
     fdata = bdata_provider(file_obj, mode)
     return doc_constructor(fdata)
 
 
 def loads(bdata) -> Doc:
-    """ """
+    """Load from bytes sequence."""
     fdata = bdata_provider(bdata, "SINGLE")
     return doc_constructor(fdata)
 
 
 def readfile(filename: str) -> Doc:
-    """Read file and initialize doc"""
+    """Read file and initialize doc."""
     with open(filename, 'rb') as file_obj:
         doc = load(file_obj, "SINGLE")
     return doc
@@ -108,7 +108,7 @@ def writefile(doc: Doc, filename: str) -> Doc:
 
 
 def structure(doc: Doc) -> dict:
-    """Return various doc attributes (other than metadata)"""
+    """Return various doc attributes (other than metadata)."""
     ret = {}
     ret['Version'] = version(doc)
     ret['Pages'] = number_pages(doc)
@@ -124,7 +124,7 @@ def structure(doc: Doc) -> dict:
 
 
 def metadata(doc: Doc) -> dict:
-    """Return doc metadata"""
+    """Return doc metadata."""
     ret = {}
     i = info(doc) or {}
     for entry in METADATA_ATTRS:
@@ -135,7 +135,7 @@ def metadata(doc: Doc) -> dict:
 
 
 def paper(mediabox: list) -> str:
-    """Detect paper size"""
+    """Detect paper size."""
     x, y = mediabox[2] - mediabox[0], mediabox[3] - mediabox[1]
     ptype = PAPER_SIZES.get((x, y)) or PAPER_SIZES.get((y, x)) or "unknown"
     pdim = f'{int(x*25.4/72)}x{int(y*25.4/72)}mm or {round(x/72, 2)}x{round(y/72, 2)}in'
@@ -143,14 +143,14 @@ def paper(mediabox: list) -> str:
 
 
 def page_layouts(doc: Doc, max_nb=None) -> list:
-    """List page layouts"""
+    """List page layouts."""
     pl = pages(doc, max_nb)
     med = [(p['/MediaBox'], p.get('/Rotate')) for p in pl]
     return med
 
 
 def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
-    """Rotate 1 or several pages"""
+    """Rotate 1 or several pages."""
     pl = page_layouts(doc)
     if pages:
         work_pages = pages
@@ -168,7 +168,7 @@ def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
 
 
 def single_text_annotation(doc: Doc, page_num: int, text: str) -> Doc:
-    """Add simple text annotation"""
+    """Add simple text annotation."""
     annot = {
         '/Type': '/Annot',
         '/Subtype': '/Text',
@@ -187,7 +187,7 @@ def single_text_annotation(doc: Doc, page_num: int, text: str) -> Doc:
 
 
 def fonts(doc: Doc) -> dict:
-    """ """
+    """Return for each font the pages where it appears."""
     ret = {}
     nb = number_pages(doc)
     font_index = get_page_fonts(doc, list(range(nb)))
@@ -204,7 +204,7 @@ def fonts(doc: Doc) -> dict:
 
 
 def get_page_contents(doc: Doc, page_num: int) -> list:
-    """ """
+    """List all content streams of a page."""
     ret = []
     pages = flat_page_tree(doc)
     i_c = get_object(doc, pages[page_num][0])['/Contents']
@@ -221,7 +221,13 @@ def get_page_contents(doc: Doc, page_num: int) -> list:
 
 
 def build_text_fragments(page_contents: list, f: list):
-    """ """
+    """List all text fragmemts that are part of a page, with their coordinates.
+    
+    Each list item is another list made of:
+    - the intial transformation matrix
+    - the text
+    - the final tranformation matrix
+    """
     tfs = []
     gs = []
     ts = {}
@@ -248,7 +254,7 @@ def build_text_fragments(page_contents: list, f: list):
 
 
 def extract_page_text(doc: Doc, page_num: int):
-    """ """
+    """Return all page text as a single string."""
     f = get_page_fonts(doc, [page_num])
     pcs = get_page_contents(doc, page_num)
     tfs = build_text_fragments(pcs, f)

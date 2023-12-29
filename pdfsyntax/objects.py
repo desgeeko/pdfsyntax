@@ -29,7 +29,7 @@ class Stream:
 
 
 def next_token(text: bytes, i=0) -> tuple:
-    """Find next token in raw string starting at some index"""
+    """Find next token in raw string starting at some index."""
     search = "TBD"
     nested = 1
     text_in_array = 0
@@ -128,7 +128,7 @@ def next_token(text: bytes, i=0) -> tuple:
 
 
 def replace_ref(tokens: list) -> list:
-    """Replace a sublist of X, Y, 'R' into a unique R namedtuple"""
+    """Replace a sublist of X, Y, 'R' into a unique R namedtuple."""
     size = len(tokens)
     new_list = []
     i = 0
@@ -143,7 +143,7 @@ def replace_ref(tokens: list) -> list:
 
 
 def dedicated_type(text: bytes, type: str) -> Any:
-    """Transform a PDF basic type into a Python basic type"""
+    """Transform a PDF basic type into a Python basic type."""
     if type == 'INTEGER':
         return int(text)
     elif type == 'REAL':
@@ -158,7 +158,7 @@ def dedicated_type(text: bytes, type: str) -> Any:
         return text
 
 def parse_obj(text: bytes, start=0) -> Any:
-    """Recursively parse bytes into PDF objects"""
+    """Recursively parse bytes into PDF objects."""
     h1, j1, t1 = next_token(text, start)
     obj = text[h1:j1]
     if t1 == 'DICT':
@@ -218,7 +218,7 @@ def parse_obj(text: bytes, start=0) -> Any:
 
 
 def to_str(obj) -> bytes:
-    """Transform a Python basic type into bytes"""
+    """Transform a Python basic type into bytes."""
     if type(obj) == bool:
         if obj == True:
             return b'true'
@@ -240,7 +240,7 @@ def to_str(obj) -> bytes:
 
 
 def serialize(obj, depth=0) -> bytes:
-    """Recursively construct object bytes"""
+    """Recursively construct object bytes."""
     ret = b''
     content = None
     if type(obj) == dict or type(obj) == Stream:
@@ -278,7 +278,7 @@ def serialize(obj, depth=0) -> bytes:
 
 
 def rename_ref(obj: Any, mapping: dict) -> Any:
-    """Recursively replace an indirect reference in object tree""" 
+    """Recursively replace an indirect reference in object tree.""" 
     if type(obj) == complex:
         if obj in mapping:
             return mapping[obj]

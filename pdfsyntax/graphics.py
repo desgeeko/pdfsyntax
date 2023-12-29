@@ -7,7 +7,8 @@ IDENTITY_MATRIX = [1, 0, 0, 1, 0, 0]
 
 
 def multiply_matrices(m1: list, m2: list) -> list:
-    """Multiply two 3x3 matrices to produce the new ctm
+    """Multiply two 3x3 matrices to produce the new ctm.
+
     A matrix is defined by 6 variables:
     [ a b 0 ]
     [ c d 0 ]
@@ -25,7 +26,7 @@ def multiply_matrices(m1: list, m2: list) -> list:
 
 
 def trm(ts, gs):
-    """Text rendering matrix"""
+    """Text rendering matrix."""
     c = [ts['Tfs']*ts['Th']/100, 0, 0, ts['Tfs'], 0, ts['Trise']]
     res = multiply_matrices(c, ts['tm'])
     res = multiply_matrices(res, gs[-1]['ctm'])
@@ -106,6 +107,7 @@ def apply_command(command: list, graphics_state_stack: list, text_state: dict):
 
 def parse_stream_content(content_stream: bytes) -> list:
     """Break down stream content into a list of commands.
+
     A command is a list made of operands followed by an operator, like [1, 0, 0, 1, 0, 0, 'cm']
     """
     ret = []

@@ -1,10 +1,12 @@
 """Module pdfsyntax.layout: from spatial representation to text file"""
 
+
 MIN_SEP_DISTANCE = 5
 NEWLINE_COEFF = 3
 
+
 def basic_spatial_layout(text_blocks: list) -> str:
-    """Extract text"""
+    """Extract text."""
     res = ''
     text_blocks.sort(key=lambda tb: -tb['y'])
     min_x = minimum_x(text_blocks)
@@ -48,7 +50,7 @@ def basic_spatial_layout(text_blocks: list) -> str:
 
 
 def simplify_horizontal_text_elements(text_blocks: list):
-    """Arrange text blocks into something more readable"""
+    """Arrange text blocks into something more readable."""
     for i, tz in enumerate(text_blocks):
         old_trm, uc, new_trm = tz[0], tz[1], tz[2]
         x = old_trm[4]
@@ -60,7 +62,7 @@ def simplify_horizontal_text_elements(text_blocks: list):
 
 
 def most_frequent(distrib: dict):
-    """Helper to get the key that points at the highest value"""
+    """Helper to get the key that points at the highest value."""
     most_frequent = 0
     max_occur = 0
     for s in distrib:
@@ -71,7 +73,7 @@ def most_frequent(distrib: dict):
 
 
 def typical_font_size(text_blocks: list) -> float:
-    """Find the most frequent font size"""
+    """Find the most frequent font size."""
     distrib = {}
     for x in text_blocks:
         scaling = x['scaling']
@@ -83,7 +85,7 @@ def typical_font_size(text_blocks: list) -> float:
 
 
 def minimum_x(text_blocks: list) -> float:
-    """Find the minimum x coordinate of all text blocks"""
+    """Find the minimum x coordinate of all text blocks."""
     min_x = -1
     for tb in text_blocks:
         if min_x == -1 or tb['x'] < min_x:
