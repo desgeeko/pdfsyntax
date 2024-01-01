@@ -38,23 +38,17 @@ PAPER_SIZES = {
     }
 
 
-def init_doc(fdata: Callable) -> tuple:
-    """Initialize doc object representing PDF file."""
+def doc_constructor(fdata: Callable) -> Doc:
+    """Initialize doc and close first revision."""
     chrono = build_chrono_from_xref(fdata)
     index = build_index_from_chrono(chrono)
-    data = build_data_from_cache(index, fdata)
+    data = [{'eof_cut': eof_cut(i[-1]['abs_pos'], fdata), 'fdata': fdata} for i in index if i[-1]]
     for i in index:
         del i[-1]
     cache = build_cache(fdata, index)
-    doc = Doc(index, cache, data)
-    return doc, chrono
-
-
-def doc_constructor(fdata) -> Doc:
-    """Initialize doc and close first revision."""
-    doc, _ = init_doc(fdata)
-    doc = add_revision(doc)
-    return doc
+    doc_initial = Doc(index, cache, data)
+    doc_new_rev = commit(doc_initial)
+    return doc_new_rev
 
 
 def load(file_obj, mode: str = "SINGLE") -> Doc:
@@ -80,7 +74,7 @@ def writefile(doc: Doc, filename: str) -> Doc:
     """Write doc into file"""
     bdata = b''
     idx = 0
-    doc = add_revision(doc)
+    doc = commit(doc)
     nb_rev = len(doc.index)
     eof_rev = -1
     for i in range(nb_rev):

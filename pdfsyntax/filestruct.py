@@ -305,7 +305,7 @@ def build_index_from_chrono(chrono: list) -> list:
 
 
 def eof_cut(eof_index: int, fdata: Callable) -> int:
-    """ """
+    """Calculate where to cut the byte stream of a revision: after %%EOF and possibly EOLs"""
     bdata, start, _, n = fdata(eof_index, bdata_length(fdata) - eof_index)
     i = start + len('%%EOF')
     while i < start + n:
@@ -313,12 +313,6 @@ def eof_cut(eof_index: int, fdata: Callable) -> int:
             break
         i += 1
     return i
-
-
-def build_data_from_cache(index: list, fdata: Callable) -> list:
-    """ """
-    data = [{'eof_cut': eof_cut(i[-1]['abs_pos'], fdata), 'fdata': fdata} for i in index if i[-1]]
-    return data
 
 
 def circular_deleted(changes: list) -> dict:

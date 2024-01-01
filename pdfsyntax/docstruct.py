@@ -288,7 +288,7 @@ def gen_fdata(fdata: Callable, index: int, bdata: bytes):
     return new_fdata
 
 
-def add_revision(doc: Doc) -> Doc:
+def commit(doc: Doc) -> Doc:
     """Add new index for incremental update."""
     if len(changes(doc)) == 0:
         return doc
@@ -304,6 +304,7 @@ def add_revision(doc: Doc) -> Doc:
     new_index = doc.index.copy()
     new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
     new_data = doc.data.copy()
+    new_data[-1] = new_data[-1].copy()
     if 'eof_cut' not in new_data[-1]:
         idx = revision_index(doc)
         new_bdata, new_i = prepare_revision(doc, idx=idx)
@@ -349,7 +350,8 @@ def copy_doc(doc: Doc) -> Doc:
     new_index = doc.index.copy()
     new_index[-1] = doc.index[-1].copy()
     new_cache = doc.cache.copy()
-    return Doc(new_index, new_cache, doc.data)
+    new_data = doc.data.copy()
+    return Doc(new_index, new_cache, new_data)
 
 
 def update_object(doc: Doc, num: int, new_o) -> Doc:
@@ -368,8 +370,8 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
 
 def add_object(doc: Doc, new_o) -> tuple:
     """Add new object at the end of current index."""
-    if doc.index[-1][-1]:
-        doc = add_revision(doc)
+    #if doc.index[-1][-1]:
+    #    doc = commit(doc)
     ver = len(doc.index)
     num = len(doc.index[-1])
     new_i = {'o_num': num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': ver-1}
