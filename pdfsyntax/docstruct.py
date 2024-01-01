@@ -293,16 +293,9 @@ def commit(doc: Doc) -> Doc:
     if len(changes(doc)) == 0:
         return doc
     ver = len(doc.index)
+    new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
     current_v = doc.index[-1]
-    new_cache = len(current_v) * [None]
-    new_trailer = doc.cache[0].copy()
-    if type(current_v[0]) == list: #Linearized
-        new_trailer['/Prev'] = current_v[0][1].get('xref_table_pos') or current_v[0][1].get('xref_stream_pos')
-    else:
-        new_trailer['/Prev'] = current_v[0].get('xref_table_pos') or current_v[0].get('xref_stream_pos')
-    new_cache[0] = new_trailer
     new_index = doc.index.copy()
-    new_trailer = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
     new_data = doc.data.copy()
     new_data[-1] = new_data[-1].copy()
     if 'eof_cut' not in new_data[-1]:
@@ -313,8 +306,15 @@ def commit(doc: Doc) -> Doc:
             new_data[-1]['fdata'] = gen_fdata(new_data[-1]['fdata'], idx, new_bdata)
         new_index[-1] = new_i
     new_data.append({'fdata': new_data[-1]['fdata']})
-    new_v = [new_trailer] + [new_index[-1][i] for i in range(1,len(new_index[-1]))] 
+    new_v = [new_index0] + [new_index[-1][i] for i in range(1,len(new_index[-1]))] 
     new_index.append(new_v)
+    new_cache = len(current_v) * [None]
+    new_trailer = doc.cache[0].copy()
+    if type(new_index[-2][0]) == list: #Linearized
+        new_trailer['/Prev'] = new_index[-2][1].get('xref_table_pos') or new_index[-2][1].get('xref_stream_pos')
+    else:
+        new_trailer['/Prev'] = new_index[-2][0].get('xref_table_pos') or new_index[-2][0].get('xref_stream_pos')
+    new_cache[0] = new_trailer
     return Doc(new_index, new_cache, new_data)
 
 
