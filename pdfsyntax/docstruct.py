@@ -294,28 +294,24 @@ def commit(doc: Doc) -> Doc:
         return doc
     ver = len(doc.index)
     new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
-    current_v = doc.index[-1]
-    new_index = doc.index.copy()
-    new_data = doc.data.copy()
-    new_data[-1] = new_data[-1].copy()
-    if 'eof_cut' not in new_data[-1]:
+    new_doc = copy_doc(doc, revision='NEXT')
+    if 'eof_cut' not in new_doc.data[-1]:
         idx = revision_index(doc)
         new_bdata, new_i = prepare_revision(doc, idx=idx)
         if new_bdata:
-            new_data[-1]['bdata'] = new_bdata
-            new_data[-1]['fdata'] = gen_fdata(new_data[-1]['fdata'], idx, new_bdata)
-        new_index[-1] = new_i
-    new_data.append({'fdata': new_data[-1]['fdata']})
-    new_v = [new_index0] + [new_index[-1][i] for i in range(1,len(new_index[-1]))] 
-    new_index.append(new_v)
-    new_cache = len(current_v) * [None]
+            new_doc.data[-1]['bdata'] = new_bdata
+            new_doc.data[-1]['fdata'] = gen_fdata(new_doc.data[-1]['fdata'], idx, new_bdata)
+        new_doc.index[-1] = new_i
+    new_doc.data.append({'fdata': new_doc.data[-1]['fdata']})
+    new_v = [new_index0] + [new_doc.index[-1][i] for i in range(1,len(new_doc.index[-1]))] 
+    new_doc.index.append(new_v)
     new_trailer = doc.cache[0].copy()
-    if type(new_index[-2][0]) == list: #Linearized
-        new_trailer['/Prev'] = new_index[-2][1].get('xref_table_pos') or new_index[-2][1].get('xref_stream_pos')
+    if type(new_doc.index[-2][0]) == list: #Linearized
+        new_trailer['/Prev'] = new_doc.index[-2][1].get('xref_table_pos') or new_doc.index[-2][1].get('xref_stream_pos')
     else:
-        new_trailer['/Prev'] = new_index[-2][0].get('xref_table_pos') or new_index[-2][0].get('xref_stream_pos')
-    new_cache[0] = new_trailer
-    return Doc(new_index, new_cache, new_data)
+        new_trailer['/Prev'] = new_doc.index[-2][0].get('xref_table_pos') or new_doc.index[-2][0].get('xref_stream_pos')
+    new_doc.cache[0] = new_trailer
+    return new_doc
 
 
 def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
@@ -337,21 +333,27 @@ def rewind(doc: Doc) -> Doc:
     """Go back to previous revision."""
     if len(doc.index) == 1:
         return doc
-    new_index = doc.index.copy()
-    new_index.pop()
-    new_index[-1] = new_index[-1].copy()
-    new_cache = build_cache(doc.data[-2]['fdata'], new_index)
-    new_data = doc.data[0:-1]
-    return Doc(new_index, new_cache, new_data)
+    new_doc = copy_doc(doc, revision='PREVIOUS')
+    new_doc.index.pop()
+    new_doc.cache = build_cache(doc.data[-2]['fdata'], new_index)
+    new_doc.data.pop()
+    return new_doc
 
 
-def copy_doc(doc: Doc) -> Doc:
+def copy_doc(doc: Doc, revision='SAME') -> Doc:
     """Shallow copy."""
-    new_index = doc.index.copy()
-    new_index[-1] = doc.index[-1].copy()
-    new_cache = doc.cache.copy()
-    new_data = doc.data.copy()
-    return Doc(new_index, new_cache, new_data)
+    if revision == 'SAME':
+        new_doc = Doc(doc.index.copy(), doc.cache.copy(), doc.data.copy())
+        new_doc.index[-1] = new_doc.index[-1].copy()
+    elif revision == 'PREVIOUS':
+        new_doc = Doc(doc.index.copy(), None, doc.data.copy())
+        new_doc.index[-2] = new_doc.index[-2].copy()
+    elif revision == 'NEXT':
+        new_doc = Doc(doc.index.copy(), len(doc.index[-1]) * [None], doc.data.copy())
+        new_doc.data[-1] = new_doc.data[-1].copy()
+    else:
+        return None
+    return new_doc
 
 
 def update_object(doc: Doc, num: int, new_o) -> Doc:
@@ -362,7 +364,7 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
         new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1, 'DELETED': True}
     else:
         new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}
-    new_doc = copy_doc(doc)
+    new_doc = copy_doc(doc, revision='SAME')
     new_doc.index[-1][num] = new_i
     new_doc.cache[num] = new_o
     return new_doc
@@ -370,12 +372,10 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
 
 def add_object(doc: Doc, new_o) -> tuple:
     """Add new object at the end of current index."""
-    #if doc.index[-1][-1]:
-    #    doc = commit(doc)
     ver = len(doc.index)
     num = len(doc.index[-1])
     new_i = {'o_num': num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': ver-1}
-    new_doc = copy_doc(doc)
+    new_doc = copy_doc(doc, revision='SAME')
     new_doc.index[-1].append(None)
     new_doc.index[-1][num] = new_i
     new_doc.cache.append(None)
