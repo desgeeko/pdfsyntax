@@ -269,9 +269,9 @@ def revision_index(doc: Doc, rev=-1) -> int:
     return index
 
 
-def gen_fdata(fdata: Callable, index: int, bdata: bytes):
-    """ """
-    def new_fdata(start_pos: int, length: int) -> tuple:
+def merge_fdata(fdata: Callable, index: int, bdata: bytes):
+    """Merge a data provider and bytes into a new composite data provider."""
+    def composite_fdata(start_pos: int, length: int) -> tuple:
         if start_pos > index:
             start_pos = start_pos - index
             if start_pos == -1 and length == 0:
@@ -283,9 +283,10 @@ def gen_fdata(fdata: Callable, index: int, bdata: bytes):
             else:
                 i = start_pos
             return (bdata, i, 0, min(len(bdata) - start_pos, length))
+            #return (bdata, i, index, min(len(bdata) - start_pos, length)) #TODO
         else:
             return fdata(start_pos, length)
-    return new_fdata
+    return composite_fdata
 
 
 def commit(doc: Doc) -> Doc:
@@ -300,7 +301,7 @@ def commit(doc: Doc) -> Doc:
         new_bdata, new_i = prepare_revision(doc, idx=idx)
         if new_bdata:
             new_doc.data[-1]['bdata'] = new_bdata
-            new_doc.data[-1]['fdata'] = gen_fdata(new_doc.data[-1]['fdata'], idx, new_bdata)
+            new_doc.data[-1]['fdata'] = merge_fdata(new_doc.data[-1]['fdata'], idx, new_bdata)
         new_doc.index[-1] = new_i
     new_doc.data.append({'fdata': new_doc.data[-1]['fdata']})
     new_v = [new_index0] + [new_doc.index[-1][i] for i in range(1,len(new_doc.index[-1]))] 

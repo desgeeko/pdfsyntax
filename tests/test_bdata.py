@@ -15,6 +15,18 @@ class Bdata(unittest.TestCase):
         cls.f["file"] = f2
         cls.f["CONTINUOUS"] = pdf.bdata_provider(f2, 'CONTINUOUS')
 
+    def test_read_data(self):
+        data = pdf.bdata_provider(b'0123456789')
+        self.assertEqual(data(0, 2),(b'0123456789', 0, 0, 2))
+
+    def test_read_data2(self):
+        data = pdf.bdata_provider(b'0123456789')
+        self.assertEqual(data(5, 3),(b'0123456789', 5, 0, 3))
+
+    def test_read_partial_data(self):
+        data = pdf.bdata_provider(b'0123456789')
+        self.assertEqual(data(0, 99),(b'0123456789', 0, 0, 10))
+
     def test_length_single(self):
         self.assertEqual(pdf.bdata_length(self.f["SINGLE"]), 866)
 

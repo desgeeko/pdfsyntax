@@ -13,10 +13,9 @@ MARGIN = b'\n'
 def bdata_provider(data_source, mode: str = "SINGLE"):
     """Build - with a higher order function - an interface to binary data.
     
-    It can read either:
-    - from a buffer loaded at init,
-    - or directly from disk. 
-    A starting position equal to -1 means access to the last <length> bytes.
+    The generated function arguments are:
+    - start_pos: index in the data source, can be a negative integer to count from the end
+    - length: number of bytes needed
     Return a tuple containing:
     - the buffer to read,
     - the index into the buffer,
@@ -29,36 +28,30 @@ def bdata_provider(data_source, mode: str = "SINGLE"):
         else:
             bdata = data_source.read()
         def single_load(start_pos: int, length: int) -> tuple:
-            if start_pos == -1 and length == 0:
+            if start_pos ==  None and length == -1: #Special escape for length only
                 return (None, None, None, len(bdata))
+            i = (start_pos + len(bdata)) % len(bdata)
             if length == -1:
-                length = len(bdata) - start_pos
-            if start_pos == -1:
-                i = len(bdata) - length
+                nb_read = len(bdata) - i
             else:
-                i = start_pos
-            return (bdata, i, 0, min(len(bdata) - start_pos, length))
+                nb_read = min(len(bdata) - i, length)
+            return (bdata, i, 0, nb_read)
         return single_load
     else:
         file_obj = data_source
         def continuous_load(start_pos: int, length: int) -> tuple:
-            if start_pos == -1 and length == 0:
-                file_obj.seek(0, os.SEEK_END)
-                return (None, None, None, file_obj.tell())
-            if length == -1:
-                file_obj.seek(0, os.SEEK_END)
-                length = file_obj.tell() - start_pos
-            if start_pos == -1:
-                file_obj.seek(0, os.SEEK_END)
-                i = file_obj.tell() - length
-            else:
-                i = start_pos
-            #bfile = open(filename, 'rb')
-            file_obj.seek(i, 0)
-            bdata = file_obj.read(length)
-            #bfile.close()
             file_obj.seek(0, os.SEEK_END)
-            return (bdata, 0, i, min(file_obj.tell() - start_pos, length))
+            file_size = file_obj.tell()
+            if start_pos == None and length == -1:
+                return (None, None, None, file_size)
+            i = (start_pos + file_size) % file_size
+            if length == -1:
+                nb_read = file_size - i
+            else:
+                nb_read = min(file_size - i, length)
+            file_obj.seek(i)
+            bdata = file_obj.read(nb_read)
+            return (bdata, i, 0, nb_read)
         return continuous_load
 
 
@@ -79,7 +72,7 @@ def bdata_dummy(bdata: bytes):
 
 def bdata_length(bdata: Callable) -> int:
     """Offer direct access to data length without reading it."""
-    _, _, _, i = bdata(-1, 0)
+    _, _, _, i = bdata(None, -1)
     return i
 
 
@@ -170,7 +163,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     STARTXREF = b'startxref'
     XREF = b'xref'
     xref_stm = False
-    bdata, a0, o0, _ = fdata(-1, 100)
+    bdata, a0, o0, _ = fdata(-100, -1)
     eof_pos = o0 + bdata.rfind(EOF, a0)
     startxref_pos = o0 + bdata.rfind(STARTXREF, a0)
     i, j, _ = next_token(bdata, startxref_pos + len(STARTXREF) - o0)
