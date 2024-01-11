@@ -161,22 +161,28 @@ def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
     return doc
 
 
-def single_text_annotation(doc: Doc, page_num: int, text: str) -> Doc:
+def add_text_annotation(doc: Doc, page_num: int, text: str, rect: list, opened: bool = False) -> Doc:
     """Add simple text annotation."""
     annot = {
         '/Type': '/Annot',
         '/Subtype': '/Text',
-        '/Rect': [50, 50, 150, 150],
+        '/Rect': rect,
         '/Contents': f"({text})",
-        '/Open': False,
+        '/Open': opened,
     }
     doc, a_iref = add_object(doc, annot)
-    annot_array = [a_iref]
-    doc, aa_iref = add_object(doc, annot_array)
     page_ref, _ = flat_page_tree(doc)[page_num]
     new_page = deepcopy(get_object(doc, page_ref))
-    new_page['/Annots'] = aa_iref
-    doc = update_object(doc, int(page_ref.imag), new_page)
+    if '/Annots' in new_page:
+        annot_obj = new_page['/Annots']
+        new_array = deepcopy(get_object(doc, new_page['/Annots']))
+        new_array.append(a_iref)
+        doc = update_object(doc, int(annot_obj.imag), new_array)
+    else:
+        annot_array = [a_iref]
+        doc, aa_iref = add_object(doc, annot_array)
+        new_page['/Annots'] = aa_iref
+        doc = update_object(doc, int(page_ref.imag), new_page)
     return doc
 
 

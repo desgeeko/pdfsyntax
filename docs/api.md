@@ -110,7 +110,13 @@ PDFSyntax tracks document incremental updates made possible by appending new or 
 >>> #The annotation was not present in the initial revision of the file
 ```
 
-### Transformation
+### High-level transformation
+
+`add_text_annotation` inserts a simple text annotation in a page.
+
+```Python
+>>> annotated_doc = add_text_annotation(doc, 0, "abcdefg", [100, 100, 100, 100])
+```
 
 `rotate` turns pages relatively to their current position by multiples of 90 degrees clockwise. NB: It takes into account the inherited attributes from the page hierarchy.
 
