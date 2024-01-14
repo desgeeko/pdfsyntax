@@ -183,7 +183,8 @@ def group_obj_into_stream(doc: Doc):
             continue
         current[i]['env_num'] = o_num
     d = {'/Type': '/ObjStm', '/Length': 0, '/N': 0, '/First': 0, '/FirstLine': []}
-    doc2.cache[o_num] = Stream(d, b'')
+    #doc2.cache[o_num] = Stream(d, b'', b'')
+    doc2.cache[o_num] = stream_constructor(d, b'', b'')
     return doc2
 
 

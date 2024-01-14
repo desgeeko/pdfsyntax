@@ -15,6 +15,7 @@ DELIMITERS = b'<>[]/(){}%'
 class Stream:
     entries: dict
     stream: bytes
+    encoded: bytes
 
     def __getitem__(self, item):
         return getattr(self, item)
@@ -26,6 +27,19 @@ class Stream:
         else:
             res += f" decoded stream: {self.stream}>\n"
         return res
+
+
+def stream_constructor(entries: dict, stream: bytes, encoded: bytes) -> Stream:
+    """Build a Stream while adjusting its Length if necessary"""
+    if stream:
+        encoded = encode_stream(stream, entries)
+        entries['/Length'] = len(encoded) + 1
+        return Stream(entries, stream, encoded)
+    elif encoded:
+        stream = decode_stream(encoded, entries)
+        return Stream(entries, stream, encoded)
+    else:
+        return Stream(entries, b'', b'')
 
 
 def next_token(text: bytes, i=0) -> tuple:
@@ -170,8 +184,9 @@ def parse_obj(text: bytes, start=0) -> Any:
         following_obj = text[h2:j2]
         if t2 == 'STREAM': 
             stream_def =  parse_obj(obj)
-            stream_content = decode_stream(following_obj, stream_def)
-            res = Stream(stream_def, stream_content)
+            #stream_content = decode_stream(following_obj, stream_def)
+            #res = Stream(stream_def, stream_content, following_obj)
+            res = stream_constructor(stream_def, b'', following_obj)
             return res
 
         i = start + 2

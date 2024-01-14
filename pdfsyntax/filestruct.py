@@ -409,7 +409,8 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
     st = b''
     for x, _ in xref_stream:
         st += x
-    ser0 = serialize(Stream(trailer, st))
+    #ser0 = serialize(Stream(trailer, st, encode_stream(st, trailer)))
+    ser0 = serialize(stream_constructor(trailer, st, b''))
     build_xref_stream = b''
     build_xref_stream += f'{o_num}'.encode('ascii')
     build_xref_stream += b' 0 obj\n'
@@ -437,7 +438,8 @@ def append_to_stream_fragment(num, obj, envelope):
     entries['/FirstLine'].append(num)
     entries['/FirstLine'].append(len(envelope['stream']))
     new_ser = envelope['stream'] + ser
-    envelope = Stream(entries, new_ser)
+    #envelope = Stream(entries, new_ser, encode_stream(new_ser, entries))
+    envelope = stream_constructor(entries, new_ser, b'')
     return envelope
 
 
@@ -460,7 +462,8 @@ def finalize_stream(envelope):
     entries['/N'] = len(tokens) // 2
     del entries['/FirstLine']
     new_ser = header + envelope['stream']
-    envelope = Stream(entries, new_ser)
+    #envelope = Stream(entries, new_ser, encode_stream(new_ser, entries))
+    envelope = stream_constructor(entries, new_ser, b'')
     return envelope
 
 
