@@ -9,7 +9,8 @@ from .display import build_html
 
 def main():
     """Entry point."""
-    parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax', description='Navigate through the structure of a PDF file')
+    parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax',
+                                     description='Navigate through the structure of a PDF file')
     parser.add_argument('command', type=str, choices=['inspect', 'overview', 'text'], help='Command')
     parser.add_argument('filename', type=str, help='PDF file name')
     args = parser.parse_args()
@@ -97,11 +98,20 @@ def file_map(fdata: Callable) -> tuple:
                 obj['content'] = i_obj
                 if content:
                     content = obj.get('xref_table_pos') or obj.get('xref_stream_pos')
-                x = {'o_num': -2, 'o_gen': -2, 'o_ver': o_ver, 'content': content, 'abs_pos': obj['startxref_pos']}
+                x = {
+                    'o_num': -2,
+                    'o_gen': -2,
+                    'o_ver': o_ver,
+                    'content': content,
+                    'abs_pos': obj['startxref_pos'],
+                }
                 temp_2.append(x)
                 pos_index[obj['startxref_pos']] = f"-2.-2.{o_ver}"
             else:
-                obj['content'] = memoize_obj_in_cache(file_index, fdata, obj['o_num'], rev=obj['doc_ver'])[-1]
+                obj['content'] = memoize_obj_in_cache(file_index,
+                                                      fdata,
+                                                      obj['o_num'],
+                                                      rev=obj['doc_ver'])[-1]
         elif obj['o_num'] == -1:
             obj['content'] = None
         obj['mini_index'] = mini_indexes[obj['doc_ver']]

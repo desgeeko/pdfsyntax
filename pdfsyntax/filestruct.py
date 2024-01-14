@@ -107,7 +107,14 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
                 xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_ver})
             table.append((line, o_num))
             o_num += 1
-    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': general_offset + trailer_pos, 'xref_table_pos':general_offset + start_pos, 'xref_table':table })
+    trailer = {
+        'o_num': 0,
+        'o_gen': 0,
+        'abs_pos': general_offset + trailer_pos,
+        'xref_table_pos':general_offset + start_pos,
+        'xref_table':table,
+    }
+    xref.insert(0, trailer)
     return xref
 
 
@@ -139,7 +146,8 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
         ppr = b''
         for col in cols:
             x = xref_stream['stream'][i:i+int(col)]
-            params.append(int.from_bytes(x, byteorder='big')) # struct.unpack cannot work with 3-byte words
+            #struct.unpack cannot work with 3-byte words
+            params.append(int.from_bytes(x, byteorder='big'))
             i += int(col)
             ppr += asciihex(x) + b' '
         table.append((ppr, obj_num))
@@ -148,14 +156,23 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
         elif params[0] == 2:
             xref.append({'env_num': params[1], 'o_num': obj_num, 'o_gen': 0, 'o_pos': params[2]})
         obj_num += 1
-    xref.insert(0, {'o_num': 0, 'o_gen': 0, 'abs_pos': trailer_pos, 'xref_stream_pos': trailer_pos ,'xref_stream': table, 'xref_stream_num': o_num})
+    trailer = {
+        'o_num': 0,
+        'o_gen': 0,
+        'abs_pos': trailer_pos,
+        'xref_stream_pos': trailer_pos,
+        'xref_stream': table,
+        'xref_stream_num': o_num,
+    }
+    xref.insert(0, trailer)
     return xref
     
 
 def build_chrono_from_xref(fdata: Callable) -> list:
     """Return a merged list of all entries sequentially found in xref tables or xref streams.
 
-    Chrono means that the sequence goes from the oldest (first revision) to the newest (last revision) entries.
+    Chrono means that the sequence goes from the oldest (first revision)
+    to the newest (last revision) entries.
     An xref+trailer or an /Xref is seen as a virtual object #0
     An EOF is seen as a virtual object #-1
     """
@@ -447,7 +464,9 @@ def finalize_stream(envelope):
     return envelope
 
 
-def build_fragment_and_xref(changes: list, current_index: list, cache: list, starting_pos: int, use_xref_stream: bool) -> tuple:
+def build_fragment_and_xref(
+        changes: list, current_index: list, cache: list,
+        starting_pos: int, use_xref_stream: bool) -> tuple:
     """List the sequence of byte blocks that make the update."""
     fragments = []
     xref_table = []

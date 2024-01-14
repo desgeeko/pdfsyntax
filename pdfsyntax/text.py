@@ -154,7 +154,8 @@ def apply_tounicode(cmap: list, string: bytes, simple: bool = False) -> tuple:
                     target = cmap[i+2]
                     if type(target) == list:
                         target = cmap[i+2]
-                        tokens[k] = bytes.fromhex(target[token - r_a][1:-1].decode('ascii')).decode('utf-16be')
+                        temp = target[token - r_a][1:-1]
+                        tokens[k] = bytes.fromhex(temp.decode('ascii')).decode('utf-16be')
                     else:
                         target = cmap[i+2][1:-1]
                         x = int(target, 16) + (token - r_a)

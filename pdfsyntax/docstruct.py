@@ -60,7 +60,8 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
             indexes = index
         obj = {}
         for index in indexes:
-            bdata, a0, _, _ = fdata(index['abs_pos'], index['abs_next'] - index['abs_pos'])
+            bdata, a0, _, _ = fdata(index['abs_pos'],
+                                    index['abs_next'] - index['abs_pos'])
             i, j, _ = next_token(bdata, a0)
             if bdata[i:j] == b'trailer':
                 i, j, _ = next_token(bdata, j)
@@ -75,7 +76,8 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
             obj.update(i_obj)
         cache[key] = obj    
     elif 'env_num' not in idx[rev][key]:
-        bdata, a0, _, _ = fdata(idx[rev][key]['abs_pos'], idx[rev][key]['abs_next'] - idx[rev][key]['abs_pos'])
+        bdata, a0, _, _ = fdata(idx[rev][key]['abs_pos'],
+                                idx[rev][key]['abs_next'] - idx[rev][key]['abs_pos'])
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
@@ -87,7 +89,8 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
         cache[key] = obj    
     else:
         container = idx[rev][key]['env_num']
-        bdata, a0, _, _ = fdata(idx[rev][container]['abs_pos'], idx[rev][container]['abs_next'] - idx[rev][container]['abs_pos'])
+        bdata, a0, _, _ = fdata(idx[rev][container]['abs_pos'],
+                                idx[rev][container]['abs_next'] - idx[rev][container]['abs_pos'])
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
@@ -361,10 +364,14 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
     """Update object in the current revision."""
     ver = len(doc.index)
     old_i = doc.index[-1][num]
+    new_i = {
+        'o_num': num,
+        'o_gen': old_i['o_gen'],
+        'o_ver': old_i['o_ver']+1,
+        'doc_ver': ver-1,
+    }
     if new_o is None:
-        new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1, 'DELETED': True}
-    else:
-        new_i = {'o_num': num, 'o_gen': old_i['o_gen'], 'o_ver': old_i['o_ver']+1, 'doc_ver': ver-1}
+        new_i['DELETED'] = True
     new_doc = copy_doc(doc, revision='SAME')
     new_doc.index[-1][num] = new_i
     new_doc.cache[num] = new_o
@@ -465,7 +472,7 @@ def flatten(doc: Doc) -> Doc:
     for i in range(1, len(new_index)):
         old_ref = new_index[i]['OLD_REF']
         obj = get_object(doc, old_ref)
-        obj = rename_ref(obj, mapping)
+        obj = deep_ref_retarget(obj, mapping)
         new_cache[i] = obj
     new_doc = Doc([new_index], new_cache, new_data)
     chg = changes(new_doc)
@@ -478,7 +485,11 @@ def flatten(doc: Doc) -> Doc:
         use_xref_stream = True
     del new_doc.cache[0]['/Prev']
     header = f"%PDF-{v}".encode('ascii')
-    new_bdata, new_i = build_fragment_and_xref(chg, new_doc.index[0], new_doc.cache, len(header), use_xref_stream)
+    new_bdata, new_i = build_fragment_and_xref(chg,
+                                               new_doc.index[0],
+                                               new_doc.cache,
+                                               len(header),
+                                               use_xref_stream)
     #new_data[-1]['bdata'] = new_bdata
     new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
     new_data[-1]['eof_cut'] = len(header + new_bdata)

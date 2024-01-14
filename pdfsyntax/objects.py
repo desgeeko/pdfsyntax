@@ -110,7 +110,9 @@ def next_token(text: bytes, i=0) -> tuple:
                 else:
                     return (h, i, 'INTEGER')
         elif search == "STREAM":
-            if text[i:i+11] == b'\r\nendstream' or text[i:i+10] == b'\nendstream' or text[i:i+10] == b'\rendstream':
+            if (text[i:i+11] == b'\r\nendstream' or
+                text[i:i+10] == b'\nendstream' or
+                text[i:i+10] == b'\rendstream'):
                 return (h, i, 'STREAM')
         elif search == "ARRAY":
             if single == b'(':
@@ -248,7 +250,8 @@ def serialize(obj, depth=0) -> bytes:
             content = obj['stream']
             obj = obj['entries']
             encoded_content = encode_stream(content, obj)
-            obj['/Length'] = len(encoded_content) + 1 #TODO Handle case when Length is an indirect object
+            #TODO Handle case when Length is an indirect object
+            obj['/Length'] = len(encoded_content) + 1
         ret += b'<< '
         keys = list(obj.keys())
         for i in keys:
@@ -277,16 +280,16 @@ def serialize(obj, depth=0) -> bytes:
     return ret
 
 
-def rename_ref(obj: Any, mapping: dict) -> Any:
+def deep_ref_retarget(obj: Any, mapping: dict) -> Any:
     """Recursively replace an indirect reference in object tree.""" 
     if type(obj) == complex:
         if obj in mapping:
             return mapping[obj]
     elif type(obj) == dict:
         for k in obj:
-            obj[k] = rename_ref(obj[k], mapping)
+            obj[k] = deep_ref_retarget(obj[k], mapping)
     elif type(obj) == list:
         for k in range(len(obj)):
-            obj[k] = rename_ref(obj[k], mapping)
+            obj[k] = deep_ref_retarget(obj[k], mapping)
     return obj
 
