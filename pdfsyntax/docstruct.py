@@ -171,21 +171,19 @@ def changes(doc: Doc, rev: int=-1):
     return res
 
 
-def group_obj_into_stream(doc: Doc):
-    """Provision a ObjStm object and tag all changes to target this envelope."""
-    doc2, _ = add_object(doc, b'')
-    current = doc2.index[-1]
-    o_num = current[-2]['o_num']
-    chgs = changes(doc)
-    for i, _ in chgs:
-        if i == o_num:
-            #print("continue")
-            continue
-        current[i]['env_num'] = o_num
-    d = {'/Type': '/ObjStm', '/Length': 0, '/N': 0, '/First': 0, '/FirstLine': []}
-    #doc2.cache[o_num] = Stream(d, b'', b'')
-    doc2.cache[o_num] = stream_constructor(d, b'', b'')
-    return doc2
+#def group_obj_into_stream(doc: Doc):
+#    """Provision a ObjStm object and tag all changes to target this envelope."""
+#    doc2, _ = add_object(doc, b'')
+#    current = doc2.index[-1]
+#    o_num = current[-2]['o_num']
+#    chgs = changes(doc)
+#    for i, _ in chgs:
+#        if i == o_num:
+#            continue
+#        current[i]['env_num'] = o_num
+#    d = {'/Type': '/ObjStm', '/Length': 0, '/N': 0, '/First': 0, '/FirstLine': []}
+#    doc2.cache[o_num] = Stream(d, b'', b'')
+#    return doc2
 
 
 def version(doc: Doc) -> str:
@@ -330,7 +328,7 @@ def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
         use_xref_stream = False
     else:
         use_xref_stream = True
-    fragments, new_index = build_fragment_and_xref(chg, doc.index[rev], doc.cache, idx, use_xref_stream)
+    fragments, new_index = build_revision_byte_stream(chg, doc.index[rev], doc.cache, idx, use_xref_stream)
     return fragments, new_index
 
 
@@ -486,7 +484,7 @@ def flatten(doc: Doc) -> Doc:
         use_xref_stream = True
     del new_doc.cache[0]['/Prev']
     header = f"%PDF-{v}".encode('ascii')
-    new_bdata, new_i = build_fragment_and_xref(chg,
+    new_bdata, new_i = build_revision_byte_stream(chg,
                                                new_doc.index[0],
                                                new_doc.cache,
                                                len(header),

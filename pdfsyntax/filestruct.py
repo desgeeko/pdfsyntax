@@ -379,6 +379,7 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
     index = []
     o_num = trailer['/Size'] - 1
     trailer['/Type'] = '/XRef'
+    trailer['/Length'] = -1
     trailer['/Filter'] = '/ASCIIHexDecode'
     trailer['/W'] = [1, 3, 3]
     for use, num, o_gen, counter, env_num in elems:
@@ -409,8 +410,11 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
     st = b''
     for x, _ in xref_stream:
         st += x
-    #ser0 = serialize(Stream(trailer, st, encode_stream(st, trailer)))
-    ser0 = serialize(stream_constructor(trailer, st, b''))
+    #encoded = encode_stream(st, trailer)
+    #s = Stream(trailer, st, encoded)
+    #update_internal_stream_length(s)
+    s, _ = forge_stream(trailer, st)
+    ser0 = serialize(s)
     build_xref_stream = b''
     build_xref_stream += f'{o_num}'.encode('ascii')
     build_xref_stream += b' 0 obj\n'
@@ -438,8 +442,8 @@ def append_to_stream_fragment(num, obj, envelope):
     entries['/FirstLine'].append(num)
     entries['/FirstLine'].append(len(envelope['stream']))
     new_ser = envelope['stream'] + ser
-    #envelope = Stream(entries, new_ser, encode_stream(new_ser, entries))
-    envelope = stream_constructor(entries, new_ser, b'')
+    #Do not encode/forge this temporary Stream yet
+    envelope = Stream(entries, new_ser, None)
     return envelope
 
 
@@ -461,13 +465,16 @@ def finalize_stream(envelope):
     entries['/First'] = len(header)
     entries['/N'] = len(tokens) // 2
     del entries['/FirstLine']
+    entries['/Length'] = -1
     new_ser = header + envelope['stream']
-    #envelope = Stream(entries, new_ser, encode_stream(new_ser, entries))
-    envelope = stream_constructor(entries, new_ser, b'')
+    #encoded = encode_stream(new_ser, entries)
+    #envelope = Stream(entries, new_ser, encoded)
+    #update_internal_stream_length(envelope)
+    envelope, _ = forge_stream(entries, new_ser)
     return envelope
 
 
-def build_fragment_and_xref(
+def build_revision_byte_stream(
         changes: list, current_index: list, cache: list,
         starting_pos: int, use_xref_stream: bool) -> tuple:
     """List the sequence of byte blocks that make the update."""

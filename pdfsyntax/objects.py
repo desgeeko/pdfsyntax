@@ -29,17 +29,22 @@ class Stream:
         return res
 
 
-def stream_constructor(entries: dict, stream: bytes, encoded: bytes) -> Stream:
-    """Build a Stream while adjusting its Length if necessary"""
-    if stream:
-        encoded = encode_stream(stream, entries)
-        entries['/Length'] = len(encoded) + 1
-        return Stream(entries, stream, encoded)
-    elif encoded:
-        stream = decode_stream(encoded, entries)
-        return Stream(entries, stream, encoded)
-    else:
-        return Stream(entries, b'', b'')
+def update_internal_stream_length(stream: Stream):
+    """Calculate and apply /Length"""
+    entries = stream['entries']
+    encoded = stream['encoded']
+    length = len(encoded) + 1
+    if '/Length' in entries and type(entries['/Length']) == int:
+        entries['/Length'] = length
+    return length
+
+
+def forge_stream(entries: dict, content: bytes) -> tuple:
+    """Encode stream and calculate its length"""
+    encoded = encode_stream(content, entries)
+    envelope = Stream(entries, content, encoded)
+    length = update_internal_stream_length(envelope)
+    return envelope, length
 
 
 def next_token(text: bytes, i=0) -> tuple:
@@ -184,9 +189,8 @@ def parse_obj(text: bytes, start=0) -> Any:
         following_obj = text[h2:j2]
         if t2 == 'STREAM': 
             stream_def =  parse_obj(obj)
-            #stream_content = decode_stream(following_obj, stream_def)
-            #res = Stream(stream_def, stream_content, following_obj)
-            res = stream_constructor(stream_def, b'', following_obj)
+            stream_content = decode_stream(following_obj, stream_def)
+            res = Stream(stream_def, stream_content, following_obj)
             return res
 
         i = start + 2
@@ -262,11 +266,12 @@ def serialize(obj, depth=0) -> bytes:
     content = None
     if type(obj) == dict or type(obj) == Stream:
         if type(obj) == Stream:
-            content = obj['stream']
+            #content = obj['stream']
             obj = obj['entries']
-            encoded_content = encode_stream(content, obj)
+            encoded_content = obj['encoded']
+            #encoded_content = encode_stream(content, obj)
             #TODO Handle case when Length is an indirect object
-            obj['/Length'] = len(encoded_content) + 1
+            #obj['/Length'] = len(encoded_content) + 1
         ret += b'<< '
         keys = list(obj.keys())
         for i in keys:
