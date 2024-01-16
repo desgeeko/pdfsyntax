@@ -266,12 +266,8 @@ def serialize(obj, depth=0) -> bytes:
     content = None
     if type(obj) == dict or type(obj) == Stream:
         if type(obj) == Stream:
-            #content = obj['stream']
+            content = obj['encoded']
             obj = obj['entries']
-            encoded_content = obj['encoded']
-            #encoded_content = encode_stream(content, obj)
-            #TODO Handle case when Length is an indirect object
-            #obj['/Length'] = len(encoded_content) + 1
         ret += b'<< '
         keys = list(obj.keys())
         for i in keys:
@@ -286,7 +282,7 @@ def serialize(obj, depth=0) -> bytes:
         ret += b'>>'
         if content:
             ret += b'\nstream\n'
-            ret += encoded_content
+            ret += content
             ret += b'\nendstream'
     elif type(obj) == list:
         ret += b'[ '
