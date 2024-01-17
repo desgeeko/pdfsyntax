@@ -27,7 +27,7 @@ class Doc(Doc):
             res += f", current update/revision containing {len(changes(self))} modifications"
         if self.cache:
             present = 0
-            for i in range(1, len(self.index[-1])-1):
+            for i in range(1, len(self.index[-1])):
                 if self.cache[i] is not None:
                     present += 1 
             res += f", cache loaded with {present} / {len(self.cache)-1} objects>\n"
@@ -462,9 +462,11 @@ def defragment_map(current_index: list) -> tuple:
     return new_index, mapping
 
 
-def flatten(doc: Doc) -> Doc:
-    """ """
+def squash(doc: Doc) -> Doc:
+    """Group all revisions into a single one"""
     new_index, mapping = defragment_map(doc.index[-1])
+    if new_index[0] is None:
+        new_index[0] = {}
     new_cache = len(new_index) * [None]
     new_data = [doc.data[0]]
     new_cache[0] = trailer(doc)
@@ -484,12 +486,12 @@ def flatten(doc: Doc) -> Doc:
         use_xref_stream = True
     del new_doc.cache[0]['/Prev']
     header = f"%PDF-{v}".encode('ascii')
+    
     new_bdata, new_i = build_revision_byte_stream(chg,
                                                new_doc.index[0],
                                                new_doc.cache,
                                                len(header),
                                                use_xref_stream)
-    #new_data[-1]['bdata'] = new_bdata
     new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
     new_data[-1]['eof_cut'] = len(header + new_bdata)
     new_doc.index[0] = new_i

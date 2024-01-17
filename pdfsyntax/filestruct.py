@@ -514,13 +514,11 @@ def build_revision_byte_stream(
     cache[0]['/Size'] = len(current_index)
     if not use_xref_stream:
         built_xref = format_xref_table(xref_table, cache[0], next_free)
-        #new_index[0] = {}
         new_index[0]['xref_table_pos'] = counter
         new_index[0]['abs_pos'] = starting_pos + built_xref.rfind(b'trailer')
         new_index[0]['abs_next'] = starting_pos + len(built_xref)
     else:
         built_xref = format_xref_stream(xref_table, cache[0], next_free)
-        #new_index[0] = {}
         new_index[0]['xref_stream_pos'] = counter
         new_index[0]['abs_pos'] = starting_pos
         new_index[0]['abs_next'] = starting_pos + len(built_xref)
