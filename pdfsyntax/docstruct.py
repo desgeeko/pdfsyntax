@@ -338,8 +338,10 @@ def rewind(doc: Doc) -> Doc:
         return doc
     new_doc = copy_doc(doc, revision='PREVIOUS')
     new_doc.index.pop()
-    new_doc.cache = build_cache(doc.data[-2]['fdata'], new_index)
     new_doc.data.pop()
+    if 'eof_cut' in new_doc.data[-1]:
+        del new_doc.data[-1]['eof_cut']
+    new_doc.cache.extend(build_cache(doc.data[-1]['fdata'], new_doc.index))
     return new_doc
 
 
@@ -349,8 +351,9 @@ def copy_doc(doc: Doc, revision='SAME') -> Doc:
         new_doc = Doc(doc.index.copy(), doc.cache.copy(), doc.data.copy())
         new_doc.index[-1] = new_doc.index[-1].copy()
     elif revision == 'PREVIOUS':
-        new_doc = Doc(doc.index.copy(), None, doc.data.copy())
+        new_doc = Doc(doc.index.copy(), [], doc.data.copy())
         new_doc.index[-2] = new_doc.index[-2].copy()
+        new_doc.data[-2] = new_doc.data[-2].copy()
     elif revision == 'NEXT':
         new_doc = Doc(doc.index.copy(), len(doc.index[-1]) * [None], doc.data.copy())
         new_doc.data[-1] = new_doc.data[-1].copy()
