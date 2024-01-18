@@ -161,6 +161,23 @@ def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
     return doc
 
 
+def flate_compress(doc: Doc) -> Doc:
+    """Squash doc and apply FlateDecode filter on all streams."""
+    doc = squash(doc)
+    cache = doc.cache
+    for i, o in enumerate(cache):
+        if type(o) == Stream:
+            entries = o['entries']
+            if '/Filter' in entries and entries['/Filter'] == '/FlateDecode':
+                continue
+            else:
+                entries = deepcopy(entries)
+                entries['/Filter'] = '/FlateDecode'
+                s, length = forge_stream(entries, o['stream'])
+                doc = update_object(doc, i, s)
+    return doc
+
+
 def add_text_annotation(doc: Doc, page_num: int, text: str, rect: list, opened: bool = False) -> Doc:
     """Add simple text annotation."""
     annot = {

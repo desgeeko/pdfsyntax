@@ -455,7 +455,7 @@ def defragment_map(current_index: list) -> tuple:
         else:
             nb += 1
             old_ref = complex(o['o_gen'], o['o_num']) 
-            new_index.append({'o_num': nb, 'o_gen': 0, 'doc_ver': 0, 'OLD_REF': old_ref})
+            new_index.append({'o_num': nb, 'o_gen': 0, 'o_ver': 0, 'doc_ver': 0, 'OLD_REF': old_ref})
             new_ref = complex(0, nb) 
             if old_ref != new_ref:
                 mapping[old_ref] = new_ref
