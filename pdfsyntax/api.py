@@ -87,10 +87,10 @@ def writefile(doc: Doc, filename: str) -> Doc:
         prov = doc.data[0]['fdata'](0, eof_cut)
         bdata += prov[0][prov[1]:eof_cut]
         idx += len(bdata)
-    else:
-        FILE_HEADER = b'%PDF-' + version(doc).encode('ascii') + b'\n'
-        bdata += FILE_HEADER
-        idx += len(FILE_HEADER)
+    #else:
+        #FILE_HEADER = b'%PDF-' + version(doc).encode('ascii') + b'\n'
+        #bdata += FILE_HEADER
+        #idx += len(FILE_HEADER)
     for i in range(eof_rev+1, nb_rev-1):
         fragment = doc.data[i]['bdata']
         bdata += fragment

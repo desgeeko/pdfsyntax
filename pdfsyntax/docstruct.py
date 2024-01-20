@@ -295,15 +295,25 @@ def commit(doc: Doc) -> Doc:
     """Add new index for incremental update."""
     if len(changes(doc)) == 0:
         return doc
-    ver = len(doc.index)
-    new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': ver, 'doc_ver': ver}
+    nb_rev = len(doc.index)
+    new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev}
     new_doc = copy_doc(doc, revision='NEXT')
     if 'eof_cut' not in new_doc.data[-1]:
-        idx = revision_index(doc)
-        new_bdata, new_i = prepare_revision(doc, idx=idx)
+        if nb_rev == 1:
+            v = version(doc)
+            header = f"%PDF-{v}".encode('ascii')
+            idx = len(header)
+            new_bdata, new_i = prepare_revision(doc, idx=idx)
+            new_bdata = header + new_bdata
+            new_prov = bdata_dummy(new_bdata)
+        else:
+            header = b''
+            idx = revision_index(doc)
+            new_bdata, new_i = prepare_revision(doc, idx=idx)
+            new_prov = merge_fdata(new_doc.data[-1]['fdata'], idx, new_bdata)
         if new_bdata:
             new_doc.data[-1]['bdata'] = new_bdata
-            new_doc.data[-1]['fdata'] = merge_fdata(new_doc.data[-1]['fdata'], idx, new_bdata)
+            new_doc.data[-1]['fdata'] = new_prov
         new_doc.index[-1] = new_i
     new_doc.data.append({'fdata': new_doc.data[-1]['fdata']})
     new_v = [new_index0] + [new_doc.index[-1][i] for i in range(1,len(new_doc.index[-1]))] 
@@ -471,7 +481,7 @@ def squash(doc: Doc) -> Doc:
     if new_index[0] is None:
         new_index[0] = {}
     new_cache = len(new_index) * [None]
-    new_data = [doc.data[0]]
+    new_data = [{}]
     new_cache[0] = trailer(doc)
     for i in range(1, len(new_index)):
         old_ref = new_index[i]['OLD_REF']
@@ -496,7 +506,6 @@ def squash(doc: Doc) -> Doc:
                                                len(header),
                                                use_xref_stream)
     new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
-    new_data[-1]['eof_cut'] = len(header + new_bdata)
     new_doc.index[0] = new_i
     return new_doc
 
