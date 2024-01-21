@@ -2,6 +2,7 @@
 
 import zlib
 import binascii
+import base64
 
 
 def decode_predictor(bdata: bytes, predictor, columns): #TODO handle more PNG predictors
@@ -45,24 +46,52 @@ def decode_stream(stream, stream_def):
                     res = decode_predictor(res, predictor, columns)
             except:
                 return b'#PDFSyntaxException: cannot decode Flate'
+        elif f == '/ASCIIHexDecode':
+            try:
+                res = binascii.unhexlify(res)
+            except:
+                return b'#PDFSyntaxException: cannot decode ASCIIHex'
+        elif f == '/ASCII85Decode':
+            try:
+                res = base64.a85decode(res, adobe=True)
+            except:
+                return b'#PDFSyntaxException: cannot decode ASCII85'
         else:
             return b'#PDFSyntaxException: unsupported filter'
     return res
 
 
 def encode_stream(stream, stream_def):
-    """ """
+    """Apply all specified filters in order to encode stream."""
     if '/Filter' not in stream_def:
         return stream
-    if stream_def['/Filter'] == '/FlateDecode':
-        return zlib.compress(stream)
-    elif stream_def['/Filter'] == '/ASCIIHexDecode':
-        return asciihex(stream)
-    return stream
+    filters = stream_def['/Filter']
+    if type(filters) == str:
+        filters = [filters]
+    res = stream
+    for _, f in enumerate(filters):
+        if f == '/FlateDecode':
+            try:
+                res = zlib.compress(res)
+            except:
+                return b'#PDFSyntaxException: cannot encode Flate'
+        elif f == '/ASCIIHexDecode':
+            try:
+                res = asciihex(res)
+            except:
+                return b'#PDFSyntaxException: cannot encode ASCIIHex'
+        elif f == '/ASCII85Decode':
+            try:
+                res = base64.a85encode(res, adobe=True)
+            except:
+                return b'#PDFSyntaxException: cannot encode ASCII85'
+        else:
+            return b'#PDFSyntaxException: unsupported filter'
+    return res
 
 
 def asciihex(stream, columns = None):
-    """ """
+    """ASCIIHex encoder augmented with a beautifier (colums and newlines) for DEBUG ONLY."""
     if columns is None:
         return (binascii.hexlify(stream)).upper()
     else:
