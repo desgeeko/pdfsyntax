@@ -8,21 +8,56 @@
     <style>
         body {
             font-family: sans-serif;
+        }
+        header, footer {
+	    margin-top: 0;
             text-align: center;
         }
+	section {
+	    width: 80%;
+	    max-width: 700px;
+	    margin: 0.5em auto;
+	    display: flex;
         h1 {
             font-size: 3em;
             margin-top: 0;
         }
+	.icon {
+	    font-size: 1.5em;
+	    margin-right: 0.5em;
+	}
     </style>
 </head>
 <body>
-    <br/>
+  <header>
     <img src="logo.svg" width="150" height="150"/>
     <h1>pdfsyntax</h1>
-    <br/><br/><br/><br/>
-    <p>Home page under construction, please visit project <a href="https://github.com/desgeeko/pdfsyntax">README</a> on GitHub</p>
-    <br/><br/><br/><br/>
+    <em> A Python library to inspect and transform PDF files</em>
+  </header>
+  <br/>
+  <section>
+    <p><a class="icon">&#x1F9F0</a></p>
+    <p>implements all the detailed document structure management down to the byte level (the PDF Syntax) and offers a higher level API for inspection and transformation use cases (access to metadata, rotation,...)</p>
+  </section>
+  <section>
+    <p><a class="icon">&#x1F388</a></p>
+    <p>is written from scratch in pure Python with a focus on simplicity and immutability, a lightweight package without dependency that you can install </p>
+  </section>
+  <section>
+    <p><a class="icon">&#x23EE</a></p>
+    <p>favors non-destructive edits allowed by the PDF Specification: by default incremental updates are added at the end of the original file (you may rewind or squash all revisions into a single one)</p>
+  </section>
+  <section>
+    <p><a class="icon">&#x267B</a></p>
+    <p>allows efficient transformation of files by parsing only the necessary objects/blocks (lazy loading, memoization) and writing only the changes (incremental updates)</p>
+  </section>
+  <section>
+    <p><a class="icon">&#x2696</a></p>
+    <p>is free and Open Source (MIT licence)</p>
+  </section>
+  <footer>
+    <p>For more information, please visit project <a href="https://github.com/desgeeko/pdfsyntax">README</a> on GitHub</p>
     <footer>&copy; 2024 <a href="mailto:desgeeko@gmail.com">Martin D.</a> &lt;desgeeko@gmail.com&gt;</footer>
+  </footer>
 </body>
 </html>
