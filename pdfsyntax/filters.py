@@ -22,14 +22,31 @@ def decode_predictor(bdata: bytes, predictor, columns): #TODO handle more PNG pr
 
 
 def decode_stream(stream, stream_def):
-    """ """
+    """Apply all specified filters in order to decode stream."""
+    if '/Filter' not in stream_def:
+        return stream
+    filters = stream_def['/Filter']
+    if type(filters) == str:
+        filters = [filters]
+    if '/DecodeParms' not in stream_def:
+        parms = [None] * len(filters)
+    else:
+        parms = stream_def['/DecodeParms']
+        if type(parms) == str:
+            parms = [parms]
     res = stream
-    if '/Filter' in stream_def and stream_def['/Filter'] == '/FlateDecode':
-        res = zlib.decompress(stream)
-    if '/DecodeParms' in stream_def and '/Predictor' in stream_def['/DecodeParms']:
-        predictor = int(stream_def['/DecodeParms']['/Predictor'])
-        columns = int(stream_def['/DecodeParms']['/Columns'])
-        res = decode_predictor(res, predictor, columns)
+    for i, f in enumerate(filters):
+        if f == '/FlateDecode':
+            try:
+                res = zlib.decompress(res)
+                if parms[i] and '/Predictor' in parms[i]:
+                    predictor = int(parms[i]['/Predictor'])
+                    columns = int(parms[i]['/Columns'])
+                    res = decode_predictor(res, predictor, columns)
+            except:
+                return b'#PDFSyntaxException: cannot decode Flate'
+        else:
+            return b'#PDFSyntaxException: unsupported filter'
     return res
 
 
