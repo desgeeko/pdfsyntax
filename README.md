@@ -19,6 +19,7 @@ Next on TO-DO list:
 - Cut & append pages
 - Lossless compression
 - More filters
+- Improve text extraction
 - Augment text extraction with layout detection
 
 ## Design
