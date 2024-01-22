@@ -85,7 +85,9 @@ The `page` function goes further by merging inherited attributes with local attr
 
 ### Incremental updates
 
-PDFSyntax tracks document incremental updates made possible by appending new or updated objects at the end of an original PDF file (and the matching XREF section). The `Revisions` entry of the `structure` function result, if greater than 1, indicates that incremental updates have been appended. By default, a newly opened document by PDFSyntax is ready to write modifications in the next revision. The `rewind` function rolls back to the previous revision. 
+PDFSyntax tracks document incremental updates made possible by appending new or updated objects at the end of an original PDF file (and the matching XREF section). The `Revisions` entry of the `structure` function result, if greater than 1, indicates that incremental updates have been appended.
+By default, a newly opened document by PDFSyntax is ready to write modifications in the next revision.
+The `rewind` function rolls back to the previous revision. The `commit` function closes the current revision and open the next one.
 
 ```Python
 >>> import pdfsyntax as pdf
