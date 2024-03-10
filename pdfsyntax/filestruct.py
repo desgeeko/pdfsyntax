@@ -423,9 +423,6 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
     st = b''
     for x, _ in xref_stream:
         st += x
-    #encoded = encode_stream(st, trailer)
-    #s = Stream(trailer, st, encoded)
-    #update_internal_stream_length(s)
     s, _ = forge_stream(trailer, st)
     ser0 = serialize(s)
     build_xref_stream = b''
@@ -480,9 +477,6 @@ def finalize_stream(envelope):
     del entries['/FirstLine']
     entries['/Length'] = -1
     new_ser = header + envelope['stream']
-    #encoded = encode_stream(new_ser, entries)
-    #envelope = Stream(entries, new_ser, encoded)
-    #update_internal_stream_length(envelope)
     envelope, _ = forge_stream(entries, new_ser)
     return envelope
 
@@ -524,13 +518,14 @@ def build_revision_byte_stream(
                 new_index[num]['abs_pos'] = counter
                 new_index[num]['abs_next'] = counter + len(block)
             counter += len(block)
-    cache[0]['/Size'] = len(current_index)
     if not use_xref_stream:
+        cache[0]['/Size'] = len(current_index)
         built_xref = format_xref_table(xref_table, cache[0], next_free)
         new_index[0]['xref_table_pos'] = counter
         new_index[0]['abs_pos'] = starting_pos + built_xref.rfind(b'trailer')
         new_index[0]['abs_next'] = starting_pos + len(built_xref)
     else:
+        cache[0]['/Size'] = len(current_index) + 1
         built_xref = format_xref_stream(xref_table, cache[0], next_free)
         new_index[0]['xref_stream_pos'] = counter
         new_index[0]['abs_pos'] = starting_pos
