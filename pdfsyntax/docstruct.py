@@ -323,6 +323,8 @@ def commit(doc: Doc) -> Doc:
         new_trailer['/Prev'] = new_doc.index[-2][1].get('xref_table_pos') or new_doc.index[-2][1].get('xref_stream_pos')
     else:
         new_trailer['/Prev'] = new_doc.index[-2][0].get('xref_table_pos') or new_doc.index[-2][0].get('xref_stream_pos')
+    if '/XRefStm' in new_trailer:
+        del new_trailer['/XRefStm']
     new_doc.cache[0] = new_trailer
     return new_doc
 
