@@ -118,6 +118,20 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
     return xref
 
 
+def expand_xref_index(xref_index: list) -> list:
+    """Transform index section pairs into a flat list of object numbers."""
+    res = []
+    i = 0
+    while i < len(xref_index):
+        o_num = xref_index[i]
+        res.append(o_num)
+        i += 1
+        for j in range(xref_index[i]-1):
+            res.append(o_num+j+1)
+        i += 1
+    return res
+
+
 def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     """Return a list of dicts indexing indirect objects.
 
@@ -139,11 +153,11 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
         obj_range = xref_stream['entries']['/Index']
     else:
         obj_range = [0, xref_stream['entries']['/Size']]
-    start_obj, nb_obj = int(obj_range[0]), int(obj_range[1])
-    obj_num = start_obj
+    obj_nums = expand_xref_index(obj_range)
     while i < len(xref_stream['stream']):
         params = []
         ppr = b''
+        obj_num = obj_nums.pop(0)
         for col in cols:
             x = xref_stream['stream'][i:i+int(col)]
             #struct.unpack cannot work with 3-byte words
@@ -155,7 +169,6 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
             xref.append({'abs_pos': params[1], 'o_num': obj_num, 'o_gen': params[2]})
         elif params[0] == 2:
             xref.append({'env_num': params[1], 'o_num': obj_num, 'o_gen': 0, 'o_pos': params[2]})
-        obj_num += 1
     trailer = {
         'o_num': 0,
         'o_gen': 0,
