@@ -186,6 +186,11 @@ def changes(doc: Doc, rev: int=-1):
 #    return doc2
 
 
+def envelope_objects(doc: Doc):
+    """List objects streams that envelope other objects."""
+    return {o.get('env_num') for o in doc.index[-1] if o.get('env_num')}
+
+
 def version(doc: Doc) -> str:
     """Return PDF version."""
     fdata = doc.data[0]['fdata']
@@ -457,7 +462,17 @@ def delete_pages(doc: Doc, del_pages) -> Doc:
     return doc
 
 
-def defragment_map(current_index: list) -> tuple:
+#def detect_unused(doc: Doc) -> dict:
+#    """ WORK IN PROGRESS """
+#    current_index = doc.index[-1]
+#    for i in range(1, len(current_index)):
+#        ref = complex(current_index[i]['o_ver'], current_index[i]['o_num'])
+#        obj = get_object(doc, ref)
+#        refs = deep_ref_detect(obj, set())
+#    return
+
+
+def defragment_map(current_index: list, excluded={}) -> tuple:
     """Build new index without empty slots (ie deleted objects)."""
     new_index = [None]
     mapping = {}
@@ -465,7 +480,7 @@ def defragment_map(current_index: list) -> tuple:
     for i, o in enumerate(current_index):
         if i == 0: #trailer
             continue
-        if 'DELETED' in o:
+        if 'DELETED' in o or i in excluded:
             continue
         else:
             nb += 1
@@ -478,8 +493,10 @@ def defragment_map(current_index: list) -> tuple:
 
 
 def squash(doc: Doc) -> Doc:
-    """Group all revisions into a single one"""
-    new_index, mapping = defragment_map(doc.index[-1])
+    """Group all revisions into a single one."""
+    obj_stms = envelope_objects(doc)
+    old_index = doc.index[-1]
+    new_index, mapping = defragment_map(old_index, obj_stms)
     if new_index[0] is None:
         new_index[0] = {}
     new_cache = len(new_index) * [None]
