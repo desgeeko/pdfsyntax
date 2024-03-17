@@ -33,7 +33,7 @@ def decode_stream(stream, stream_def):
         parms = [None] * len(filters)
     else:
         parms = stream_def['/DecodeParms']
-        if type(parms) == str:
+        if type(parms) == dict:
             parms = [parms]
     res = stream
     for i, f in enumerate(filters):
