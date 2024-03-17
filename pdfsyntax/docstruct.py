@@ -128,7 +128,7 @@ def flat_page_tree(doc: Doc, num=None, inherited={}, max_nb=None) -> list:
     if num:
         node = get_object(doc, num)
     else:
-        node = get_object(doc, catalog(doc)['/Pages'])
+        node = get_object(doc, catalog(doc)[0]['/Pages'])
     if node['/Type'] == '/Pages':
         for kid in node['/Kids']:
             e = {k: node.get(k) for k in INHERITABLE_ATTRS if node.get(k) is not None}
@@ -196,10 +196,24 @@ def version(doc: Doc) -> str:
     fdata = doc.data[0]['fdata']
     bdata, a0, _, _ = fdata(5, 3)
     ver = bdata[a0:a0+3]
-    cat = catalog(doc)
-    if '/Version' in cat and cat['/Version'] > ver.decode('ascii'):
-            return cat['/Version'].decode('ascii')
+    cat, _ = catalog(doc)
+    if '/Version' in cat and cat['/Version'][1:] > ver.decode('ascii'):
+            return cat['/Version'][1:]
     return ver.decode('ascii')
+
+
+def update_version(doc: Doc, ver: str) -> Doc:
+    """Upgrade PDF version in incremental update."""
+    cat, i_ref = catalog(doc)
+    if '/Version' in cat:
+        if cat['/Version'][1:] < ver:
+            cat['/Version'] = '/' + ver
+            return update_object(doc, int(i_ref.imag), cat)
+        else:
+            return doc
+    else:
+        cat['/Version'] = '/' + ver
+        return update_object(doc, int(i_ref.imag), cat)
 
 
 def updates(doc: Doc) -> int:
@@ -233,7 +247,8 @@ def hybrid(doc: Doc) -> bool:
 
 def catalog(doc: Doc):
     """Return doc Root/Catalog dictionary."""
-    return get_object(doc, trailer(doc)['/Root'])
+    root = trailer(doc)['/Root']
+    return get_object(doc, root), root
 
 
 def info(doc: Doc):
@@ -246,7 +261,7 @@ def info(doc: Doc):
 
 def number_pages(doc: Doc):
     """Return doc number of pages."""
-    p = get_object(doc, catalog(doc)['/Pages'])
+    p = get_object(doc, catalog(doc)[0]['/Pages'])
     return p['/Count']
 
 
