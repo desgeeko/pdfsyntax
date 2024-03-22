@@ -4,6 +4,7 @@ from typing import Callable
 from typing import IO
 from .objects import *
 import os
+import math
 from copy import deepcopy
 from .filters import *
 
@@ -394,17 +395,19 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
     trailer['/Type'] = '/XRef'
     trailer['/Length'] = -1
     trailer['/Filter'] = '/ASCIIHexDecode'
-    trailer['/W'] = [1, 3, 3]
+    max_counter = max([e[3] for e in elems if e[3] is not None])
+    b = (int(math.log2(max_counter+1)) // 8) + 1
+    trailer['/W'] = [1, b, b]
     for use, num, o_gen, counter, env_num in elems:
         if use == 'f':
-            ref = b'\x00' + (next_free[num]).to_bytes(3, "big") + (o_gen+1).to_bytes(3, "big")
+            ref = b'\x00' + (next_free[num]).to_bytes(b, "big") + (o_gen+1).to_bytes(b, "big")
             xref_stream.append((ref, num))
         else:
             if env_num:
-                ref = b'\x02' + (env_num).to_bytes(3, "big") + (counter).to_bytes(3, "big")
+                ref = b'\x02' + (env_num).to_bytes(b, "big") + (counter).to_bytes(b, "big")
                 xref_stream.append((ref, num))
             else:
-                ref = b'\x01' + (counter).to_bytes(3, "big") + (o_gen).to_bytes(3, "big")
+                ref = b'\x01' + (counter).to_bytes(b, "big") + (o_gen).to_bytes(b, "big")
                 xref_stream.append((ref, num))
     # Index 
     i = len(xref_stream) - 1
