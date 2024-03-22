@@ -526,6 +526,7 @@ def build_revision_byte_stream(
         new_index[0]['abs_next'] = starting_pos + len(built_xref)
     else:
         cache[0]['/Size'] = len(current_index) + 1
+        xref_table.append(('n', len(current_index), 0, counter, None))
         built_xref = format_xref_stream(xref_table, cache[0], next_free)
         new_index[0]['xref_stream_pos'] = counter
         new_index[0]['abs_pos'] = starting_pos
