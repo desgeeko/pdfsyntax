@@ -394,7 +394,7 @@ def copy_doc(doc: Doc, revision='SAME') -> Doc:
     return new_doc
 
 
-def update_object(doc: Doc, num: int, new_o) -> Doc:
+def update_object(doc: Doc, num: int, new_o, immut=True) -> Doc:
     """Update object in the current revision."""
     ver = len(doc.index)
     old_i = doc.index[-1][num]
@@ -406,18 +406,24 @@ def update_object(doc: Doc, num: int, new_o) -> Doc:
     }
     if new_o is None:
         new_i['DELETED'] = True
-    new_doc = copy_doc(doc, revision='SAME')
+    if immut:
+        new_doc = copy_doc(doc, revision='SAME')
+    else:
+        new_doc = doc
     new_doc.index[-1][num] = new_i
     new_doc.cache[num] = new_o
     return new_doc
 
 
-def add_object(doc: Doc, new_o) -> tuple:
+def add_object(doc: Doc, new_o, immut=True) -> tuple:
     """Add new object at the end of current index."""
     ver = len(doc.index)
     num = len(doc.index[-1])
     new_i = {'o_num': num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': ver-1}
-    new_doc = copy_doc(doc, revision='SAME')
+    if immut:
+        new_doc = copy_doc(doc, revision='SAME')
+    else:
+        new_doc = doc
     new_doc.index[-1].append(None)
     new_doc.index[-1][num] = new_i
     new_doc.cache.append(None)
@@ -449,32 +455,33 @@ def dependencies(doc: Doc, obj: Any) -> set:
 
 def delete_pages(doc: Doc, del_pages) -> Doc:
     """Delete one (an int) or more (an array of int) pages."""
+    new_doc = copy_doc(doc, revision='SAME')
     if type(del_pages) != list:
         del_pages = [del_pages]
-    pages = flat_page_tree(doc)
+    pages = flat_page_tree(new_doc)
     del_ref = {pages[p][0] for p in del_pages}
     keep_ref = {p[0] for p in pages} - del_ref
     del_dep = set()
     keep_dep = set()
     for i in del_ref:
-        del_dep = del_dep | dependencies(doc, i)
+        del_dep = del_dep | dependencies(new_doc, i)
     for i in keep_ref:
-        keep_dep = keep_dep | dependencies(doc, i)
+        keep_dep = keep_dep | dependencies(new_doc, i)
     for ref in del_ref:
-        parent = get_object(doc, ref)['/Parent']
-        new_parent = get_object(doc, parent)
+        parent = get_object(new_doc, ref)['/Parent']
+        new_parent = get_object(new_doc, parent)
         kids = new_parent['/Kids']
         kids.remove(ref)
         new_parent['/Count'] = new_parent['/Count'] - 1
-        doc = update_object(doc, int(parent.imag), new_parent)
+        new_doc = update_object(new_doc, int(parent.imag), new_parent, immut=False)
         while '/Parent' in new_parent:
             p = new_parent['/Parent']
-            new_parent = get_object(doc, p)
+            new_parent = get_object(new_doc, p)
             new_parent['/Count'] = new_parent['/Count'] - 1
-            doc = update_object(doc, int(p.imag), new_parent)
+            new_doc = update_object(new_doc, int(p.imag), new_parent, immut=False)
     for ref in del_dep - keep_dep:
-        doc = update_object(doc, int(ref.imag), None)
-    return doc
+        new_doc = update_object(new_doc, int(ref.imag), None, immut=False)
+    return new_doc
 
 
 #def detect_unused(doc: Doc) -> dict:
