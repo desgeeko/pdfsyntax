@@ -343,7 +343,8 @@ def circular_deleted(changes: list) -> dict:
     """Build lookup dict to ref of next deleted object."""
     res = {}
     deleted = [x for x in changes if x[1] == 'd']
-    for i, d in enumerate([(0, 'd')] + deleted):
+    for c, d in enumerate([(0j, 'd')] + deleted):
+        i = int(c.imag)
         if i == len(deleted):
             res[d[0]] = 0
         else:
@@ -495,7 +496,8 @@ def build_revision_byte_stream(
     counter = starting_pos + len(MARGIN)
     fragments.append(MARGIN)
     next_free = circular_deleted(changes)
-    for num, action in ([(0, 'd')] + changes):
+    for c, action in ([(0j, 'd')] + changes):
+        num = int(c.imag)
         env_num = None
         if action == 'd':
             if num == 0:

@@ -149,6 +149,13 @@ def build_cache(fdata: Callable, index: list) -> list:
     return cache
 
 
+def get_iref(doc: Doc, o_num: int, rev: int=-1) -> complex:
+    """Build the relevant indirect reference for o_num in a doc revision."""
+    current = doc.index[rev]
+    o_gen = current[o_num]['o_gen']
+    return complex(o_gen, o_num)
+
+
 def changes(doc: Doc, rev: int=-1):
     """List deleted/updated/added objects."""
     res = []
@@ -158,16 +165,17 @@ def changes(doc: Doc, rev: int=-1):
     else:
         previous = doc.index[rev-1]
     for i in range(1, len(current)):
+        iref = get_iref(doc, i, rev)
         if i > len(previous)-1:
-            res.append((i, 'a'))
+            res.append((iref, 'a'))
         elif i < len(previous) and previous[i] == current[i]:
             pass
         elif previous[i] != None and 'DELETED' not in previous[i] and 'DELETED' in current[i]:
-            res.append((i, 'd'))
+            res.append((iref, 'd'))
         elif previous[i] != None and current[i] != previous[i]:
-            res.append((i, 'u'))
+            res.append((iref, 'u'))
         else:
-            res.append((i, 'a'))
+            res.append((iref, 'a'))
     return res
 
 
@@ -177,7 +185,8 @@ def changes(doc: Doc, rev: int=-1):
 #    current = doc2.index[-1]
 #    o_num = current[-2]['o_num']
 #    chgs = changes(doc)
-#    for i, _ in chgs:
+#    for c, _ in chgs:
+#        i = int(c.imag)
 #        if i == o_num:
 #            continue
 #        current[i]['env_num'] = o_num
@@ -354,7 +363,8 @@ def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
     chg = changes(doc, rev)
     if not chg:
         return b''
-    for num, _ in chg:
+    for c, _ in chg:
+        num = int(c.imag)
         memoize_obj_in_cache(doc.index, doc.data[rev]['fdata'], num, doc.cache, rev=-1)
     if version(doc) < '1.5':
         use_xref_stream = False
@@ -429,6 +439,14 @@ def add_object(doc: Doc, new_o, immut=True) -> tuple:
     new_doc.cache.append(None)
     new_doc.cache[num] = new_o
     return new_doc, complex(0, num)
+
+
+#def concatenate_pages(doc1: Doc, doc2: Doc) -> Doc:
+#    """Add pages from doc2 at the end of doc1."""
+#    WORK IN PROGRESS
+#    new_doc = copy_doc(doc1, revision='SAME')
+#    doc2 = squash(doc2)
+#    return new_doc
 
 
 def dependencies(doc: Doc, obj: Any) -> set:
