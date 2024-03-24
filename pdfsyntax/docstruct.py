@@ -156,6 +156,17 @@ def get_iref(doc: Doc, o_num: int, rev: int=-1) -> complex:
     return complex(o_gen, o_num)
 
 
+def in_use(doc: Doc, rev: int=-1) -> list:
+    """List objects in use (not deleted)."""
+    res = []
+    current = doc.index[rev]
+    for i in range(1, len(current)):
+        iref = get_iref(doc, i, rev)
+        if 'DELETED' not in current[i]:
+            res.append(iref)
+    return res
+
+
 def changes(doc: Doc, rev: int=-1):
     """List deleted/updated/added objects."""
     res = []
@@ -441,12 +452,41 @@ def add_object(doc: Doc, new_o, immut=True) -> tuple:
     return new_doc, complex(0, num)
 
 
-#def concatenate_pages(doc1: Doc, doc2: Doc) -> Doc:
-#    """Add pages from doc2 at the end of doc1."""
-#    WORK IN PROGRESS
-#    new_doc = copy_doc(doc1, revision='SAME')
-#    doc2 = squash(doc2)
-#    return new_doc
+def max_num(doc: Doc, rev: int=-1) -> int:
+    """Return the biggest object number in doc revision."""
+    return len(doc.index[rev]) - 1
+
+
+def concatenate_docs(doc1: Doc, doc2: Doc) -> Doc:
+    """Add pages from doc2 at the end of doc1."""
+    mapping = {}
+    new_doc = copy_doc(doc1, revision='SAME')
+    start_num = max_num(new_doc) + 1
+    cat, cat_iref = catalog(new_doc)
+    doc2 = squash(doc2)
+    cat2, cat_iref2 = catalog(doc2)
+    pages_iref2 = cat2['/Pages']
+    pages2 = get_object(doc2, pages_iref2)
+    pcount2 = get_object(doc2, pages2['/Count'])
+    doc2 = update_object(doc2, int(cat_iref2.imag), None) #TODO: remove xref stream
+    objs = in_use(doc2)
+    ir = complex(0, start_num)
+    for iref in objs:
+        mapping[iref] = ir
+        ir += 1j
+    for iref in objs:
+        obj = get_object(doc2, iref)
+        new_obj = deep_ref_retarget(obj, mapping)
+        new_doc, _ = add_object(new_doc, new_obj, immut=False)
+    pages_iref = cat['/Pages']
+    pages = get_object(new_doc, pages_iref)
+    pcount = get_object(new_doc, pages['/Count'])
+    kids = get_object(new_doc, pages['/Kids'])
+    kids.append(mapping[pages_iref2])
+    pages['/Kids'] = kids
+    pages['/Count'] = pcount + pcount2
+    new_doc = update_object(new_doc, int(pages_iref.imag), pages, immut=False)
+    return new_doc
 
 
 def dependencies(doc: Doc, obj: Any) -> set:
@@ -566,6 +606,7 @@ def squash(doc: Doc) -> Doc:
                                                use_xref_stream)
     new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
     new_doc.index[0] = new_i
+    new_doc = commit(new_doc) #TODO: keep?
     return new_doc
 
 

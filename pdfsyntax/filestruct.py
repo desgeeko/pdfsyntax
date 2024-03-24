@@ -343,12 +343,13 @@ def circular_deleted(changes: list) -> dict:
     """Build lookup dict to ref of next deleted object."""
     res = {}
     deleted = [x for x in changes if x[1] == 'd']
-    for c, d in enumerate([(0j, 'd')] + deleted):
-        i = int(c.imag)
+    for i, d in enumerate([(0j, 'd')] + deleted):
+        e = int(d[0].imag)
         if i == len(deleted):
-            res[d[0]] = 0
+            res[e] = 0
         else:
-            res[d[0]] = deleted[i][0]
+            t = deleted[i][0]
+            res[e] = int(t.imag)
     return res
 
 
