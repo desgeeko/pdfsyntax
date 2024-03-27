@@ -30,7 +30,7 @@ class Stream:
 
 
 def update_internal_stream_length(stream: Stream):
-    """Calculate and apply /Length"""
+    """Calculate and apply /Length."""
     entries = stream['entries']
     encoded = stream['encoded']
     length = len(encoded) + 1
@@ -40,11 +40,27 @@ def update_internal_stream_length(stream: Stream):
 
 
 def forge_stream(entries: dict, content: bytes) -> tuple:
-    """Encode stream and calculate its length"""
+    """Encode stream and calculate its length."""
     encoded = encode_stream(content, entries)
     envelope = Stream(entries, content, encoded)
     length = update_internal_stream_length(envelope)
     return envelope, length
+
+
+def next_line(bdata: bytes, start_pos: int=0) -> tuple:
+    """Advance to the next non EOL char and detect following EOL."""
+    cursor = start_pos
+    i = cursor
+    start_found = False
+    while cursor < len(bdata):
+        if not start_found and bdata[cursor] not in EOL:
+            start_found = True
+            i = cursor
+        if start_found and bdata[cursor] in EOL:
+            j = cursor
+            return i, j
+        cursor += 1
+    return None
 
 
 def next_token(text: bytes, i=0) -> tuple:
@@ -177,6 +193,7 @@ def dedicated_type(text: bytes, type: str) -> Any:
         return text.decode('ascii')
     else:
         return text
+
 
 def parse_obj(text: bytes, start=0) -> Any:
     """Recursively parse bytes into PDF objects."""

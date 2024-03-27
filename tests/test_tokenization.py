@@ -66,3 +66,9 @@ class Tokenization(unittest.TestCase):
 
     def test_comment(self):
         self.assertEqual(pdf.next_token(b' %something\n '), (1, 11, 'COMMENT'))
+
+    def test_line(self):
+        self.assertEqual(pdf.next_line(b'\n\rabc\n\rdef\n\r'), (2, 5))
+
+    def test_line2(self):
+        self.assertEqual(pdf.next_line(b'\n\rabc\n\rdef\n\r', 6), (7, 10))

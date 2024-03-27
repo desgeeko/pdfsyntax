@@ -83,6 +83,13 @@ def bdata_all(bdata: Callable) -> bytes:
     return bdata
 
 
+#def file_object_map(fdata: Callable) -> list: #TODO
+#    """."""
+#    tokens = []
+#    bdata, c, o, length = fdata(0, -1) #Read all
+#    return tokens
+
+
 def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
     """Return a list of dicts indexing indirect objects.
 
