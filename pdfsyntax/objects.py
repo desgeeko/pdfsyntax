@@ -85,10 +85,11 @@ def next_token(text: bytes, i=0) -> tuple:
                 search = "NAME"
             elif text[i:i+6] == b"stream":
                 search = "STREAM"
-                if text[i+6:i+8] == b'\r\n':
-                    offset = 8
-                else:
-                    offset = 7
+                #if text[i+6:i+8] == b'\r\n':
+                #    offset = 8
+                #else:
+                #    offset = 7
+                offset = 0
                 i += offset
             elif single in b"+-.0123456789":
                 search = "VALUE"
@@ -145,10 +146,12 @@ def next_token(text: bytes, i=0) -> tuple:
                 else:
                     return (h, i, 'INTEGER')
         elif search == "STREAM":
-            if (text[i:i+11] == b'\r\nendstream' or
-                text[i:i+10] == b'\nendstream' or
-                text[i:i+10] == b'\rendstream'):
-                return (h, i, 'STREAM')
+            if text[i:i+11] == b'\r\nendstream':
+                return (h, i+11, 'STREAM')
+            elif  text[i:i+10] == b'\nendstream':
+                return (h, i+10, 'STREAM')
+            elif  text[i:i+10] == b'\rendstream':
+                return (h, i+10, 'STREAM')
         elif search == "ARRAY":
             if single == b'(':
                 text_in_array = 1
@@ -255,6 +258,38 @@ def parse_obj(text: bytes, start=0) -> Any:
         return dedicated_type(text[h1:j1], t1)
 
 
+def parse_macro_obj(text: bytes, start=0) -> tuple:
+    """Recursively parse bytes into macro PDF objects (indirect/xref/xref table/startxref)."""
+    PERCENT = b'%'
+    STARTXREF = b'startxref'
+    OBJ = b'obj'
+    bl, el = next_line(text, start)
+    if text[bl:bl+len(PERCENT)] == PERCENT:
+        return (bl, el, 'COMMENT', text[bl:el])
+    elif text[bl:bl+len(STARTXREF)] == STARTXREF:
+        i1, j1, _ = next_token(text, bl)
+        i2, j2, _ = next_token(text, j1)
+        return (bl, el, 'STARTXREF', text[i2:j2])
+    elif text[el-len(OBJ):el] == OBJ:
+        bo = bl
+        i1, j1, _ = next_token(text, bl)
+        i2, j2, _ = next_token(text, j1)
+        o_num = text[i1:j1]
+        o_gen = text[i2:j2]
+        bl, el = next_line(text, el+1)
+        _, eo1, _ = next_token(text, bl)
+        o1 = parse_obj(text, bl)
+        bl, el = next_line(text, eo1+1)
+        bo2, eo2, t = next_token(text, bl)
+        if t == 'STREAM':
+            bl, el = next_line(text, eo2+1)
+            bo2, eo2, t = next_token(text, bl)
+            eo1 = eo2
+        _, eo1, _ = next_token(text, eo1) #endobj
+        return (bo, eo1, 'INDIRECT_OBJ', {'o_num':o_num, 'o_gen':o_gen, 'obj':o1})
+    return
+
+
 def to_str(obj) -> bytes:
     """Transform a Python basic type into bytes."""
     if type(obj) == bool:
@@ -298,9 +333,10 @@ def serialize(obj, depth=0) -> bytes:
         ret += b' ' * depth
         ret += b'>>'
         if content:
-            ret += b'\nstream\n'
+            #ret += b'\nstream\n'
+            ret += b'\n'
             ret += content
-            ret += b'\nendstream'
+            #ret += b'\nendstream'
     elif type(obj) == list:
         ret += b'[ '
         for i in obj:
