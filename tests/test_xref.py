@@ -6,9 +6,10 @@ class Xref(unittest.TestCase):
 
     xt =  b'xref\n'
     xt += b'0 2\n'
-    xt += b'0000000000 65535 f\n'
-    xt += b'0000000123 00001 n\n'
-    xt += b'0000000456 00001 n\n'
+    xt += b'0000000000 65535 f \n'
+    xt += b'0000000123 00001 n \n'
+    xt += b'0000000456 00001 n \n'
+    xt += b'trailer\n'
 
     def test_xref_table(self):
         self.assertEqual(len(pdf.parse_xref_table(self.xt, 0, 0)), 3)

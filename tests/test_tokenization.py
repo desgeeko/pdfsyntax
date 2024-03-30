@@ -62,7 +62,7 @@ class Tokenization(unittest.TestCase):
         self.assertEqual(pdf.next_token(b'<</Type/abc>>'), (0, 13, 'DICT'))
 
     def test_stream(self):
-        self.assertEqual(pdf.next_token(b'stream\n xyz \nendstream '), (7, 12, 'STREAM'))
+        self.assertEqual(pdf.next_token(b'stream\n xyz \nendstream '), (0, 22, 'STREAM'))
 
     def test_comment(self):
         self.assertEqual(pdf.next_token(b' %something\n '), (1, 11, 'COMMENT'))

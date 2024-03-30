@@ -60,7 +60,7 @@ def next_line(bdata: bytes, start_pos: int=0) -> tuple:
             j = cursor
             return i, j
         cursor += 1
-    return None
+    return None, None
 
 
 def next_token(text: bytes, i=0) -> tuple:
@@ -258,36 +258,68 @@ def parse_obj(text: bytes, start=0) -> Any:
         return dedicated_type(text[h1:j1], t1)
 
 
+def parse_indirect_obj(text: bytes, start=0) -> tuple:
+    """Recursively parse indirect object starting at X Y R."""
+    bl, el = next_line(text, start)
+    bo = bl
+    i1, j1, _ = next_token(text, start) #o_num
+    i2, j2, _ = next_token(text, j1) #o_gen
+    o_num = int(text[i1:j1])
+    o_gen = int(text[i2:j2])
+    i, j, _ = next_token(text, j2) #obj
+    i, j, _ = next_token(text, j) #object1
+    o = parse_obj(text, i)
+    i, j, t = next_token(text, j)
+    if t == 'STREAM':
+        _, j, _ = next_token(text, j) #endobj
+    return (bo, j, 'INDIRECT_OBJ', {'o_num':o_num, 'o_gen':o_gen, 'obj':o})
+
+
+def parse_xref_table_raw(bdata: bytes, start_pos: int=0) -> list:
+    """."""
+    res = []
+    XREF = b'xref'
+    if bdata[start_pos:start_pos+len(XREF)] != XREF:
+        return None
+    bl, el = next_line(bdata, start_pos+len(XREF))
+    bo = bl
+    while b'0' <= bdata[bl:bl+1] <= b'9':
+        items = bdata[bl:el].strip(b' ').split()
+        if len(items) == 2:
+            o_num, nb = int(items[0]), int(items[1])
+            res.append((o_num, nb))
+        if len(items) == 3:
+            offset = int(items[0])
+            o_ver = int(items[1])
+            keyword = items[2]
+            res.append((offset, o_num, o_ver, keyword))
+            o_num += 1
+        bl, el = next_line(bdata, el)
+    bl, bf, _l = next_token(bdata, el)
+    trailer = parse_obj(bdata, bl)
+    return (bo, bf, 'XREF_TABLE', {'table':res, 'trailer':trailer})
+
+
 def parse_macro_obj(text: bytes, start=0) -> tuple:
     """Recursively parse bytes into macro PDF objects (indirect/xref/xref table/startxref)."""
     PERCENT = b'%'
     STARTXREF = b'startxref'
     OBJ = b'obj'
+    XREF = b'xref'
     bl, el = next_line(text, start)
+    if bl is None:
+        return None
     if text[bl:bl+len(PERCENT)] == PERCENT:
         return (bl, el, 'COMMENT', text[bl:el])
     elif text[bl:bl+len(STARTXREF)] == STARTXREF:
         i1, j1, _ = next_token(text, bl)
         i2, j2, _ = next_token(text, j1)
-        return (bl, el, 'STARTXREF', text[i2:j2])
+        return (bl, j2, 'STARTXREF', text[i2:j2])
     elif text[el-len(OBJ):el] == OBJ:
-        bo = bl
-        i1, j1, _ = next_token(text, bl)
-        i2, j2, _ = next_token(text, j1)
-        o_num = text[i1:j1]
-        o_gen = text[i2:j2]
-        bl, el = next_line(text, el+1)
-        _, eo1, _ = next_token(text, bl)
-        o1 = parse_obj(text, bl)
-        bl, el = next_line(text, eo1+1)
-        bo2, eo2, t = next_token(text, bl)
-        if t == 'STREAM':
-            bl, el = next_line(text, eo2+1)
-            bo2, eo2, t = next_token(text, bl)
-            eo1 = eo2
-        _, eo1, _ = next_token(text, eo1) #endobj
-        return (bo, eo1, 'INDIRECT_OBJ', {'o_num':o_num, 'o_gen':o_gen, 'obj':o1})
-    return
+        return parse_indirect_obj(text, bl)
+    elif text[el-len(XREF):el] == XREF:
+        return parse_xref_table_raw(text, bl)
+    return None
 
 
 def to_str(obj) -> bytes:

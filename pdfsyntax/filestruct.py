@@ -90,7 +90,40 @@ def bdata_all(bdata: Callable) -> bytes:
 #    return tokens
 
 
+
 def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
+    """Return a list of dicts indexing indirect objects.
+
+    - abs_pos is the absolute position of the object
+    - o_num is the object number
+    - o_gen is the object generation number
+    """
+    xref = []
+    table = []
+    _, _, _, xref_table = parse_xref_table_raw(bdata, start_pos)
+    lines = xref_table['table']
+    trailer_pos = bdata.find(b'trailer', start_pos)
+    for line in lines:
+        if len(line) == 2:
+            table.append((f"{line[0]} {line[1]}".encode('ascii'), None))
+        elif len(line) == 4:
+            offset, o_num, o_gen, keyword = line
+            if keyword != b'f' and o_num != 0:
+                xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_gen})
+            table.append((f"{offset:010d} {o_gen:05d} {keyword.decode('ascii')} ".encode('ascii'), o_num))
+            o_num += 1
+    trailer = {
+        'o_num': 0,
+        'o_gen': 0,
+        'abs_pos': general_offset + trailer_pos,
+        'xref_table_pos':general_offset + start_pos,
+        'xref_table':table,
+    }
+    xref.insert(0, trailer)
+    return xref
+
+
+def parse_xref_table_OLD(bdata: bytes, start_pos: int, general_offset: int) -> list:
     """Return a list of dicts indexing indirect objects.
 
     - abs_pos is the absolute position of the object
