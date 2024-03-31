@@ -83,12 +83,19 @@ def bdata_all(bdata: Callable) -> bytes:
     return bdata
 
 
-#def file_object_map(fdata: Callable) -> list: #TODO
-#    """."""
-#    tokens = []
-#    bdata, c, o, length = fdata(0, -1) #Read all
-#    return tokens
-
+def file_object_map(fdata: Callable) -> list:
+    """Parse whole file in sequential order without using xref."""
+    sections = []
+    bdata, _, _, length = fdata(0, -1) #Read all
+    i = 0
+    while i < length:
+        mo = parse_macro_obj(bdata, i)
+        if mo is None:
+            break
+        _, eo, _, _ = mo
+        sections.append(mo)
+        i = eo
+    return sections
 
 
 def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:

@@ -11,16 +11,98 @@ def main():
     """Entry point."""
     parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax',
                                      description='Navigate through the structure of a PDF file')
-    parser.add_argument('command', type=str, choices=['inspect', 'overview', 'text'], help='Command')
+    parser.add_argument('command',
+                        type=str,
+                        choices=['inspect', 'map', 'overview', 'text'],
+                        help='Command')
     parser.add_argument('filename', type=str, help='PDF file name')
     args = parser.parse_args()
     if args.command == 'inspect':
         inspect(args.filename)
+    elif args.command == 'map':
+        dump_map(args.filename)
     elif args.command == 'overview':
         overview(args.filename)
     elif args.command == 'text':
         spatial(args.filename)
 
+
+def dump_map(filename: str) -> str:
+    """Log file sequence."""
+    res = ""
+    file_obj = open(filename, 'rb')
+    fdata = bdata_provider(file_obj)
+    sections = file_object_map(fdata)
+    for x in sections:
+        start_pos, end_pos, t, content = x
+        iref = ''
+        typ = ''
+        cl = ''
+        detail = ''
+        add_detail = []
+        if t == 'COMMENT':
+            if content[:4] == b'%PDF':
+                cl = 'HEADER'
+                detail = content[:8].decode('ascii')
+            elif content[:5] == b'%%EOF':
+                cl = 'EOF'
+                detail = content[:5].decode('ascii')
+            else:
+                cl = ''
+        elif t == 'STARTXREF':
+            startxref = int(content)
+            detail = f"{startxref:010d}"
+        elif t == 'INDIRECT':
+            o_num = content['o_num']
+            o_gen = content['o_gen']
+            iref = f"({o_num},{o_gen})"
+            cl = type(content['obj'])
+            if cl == dict:
+                cl = 'DICT'
+                typ = content['obj'].get('/Type')
+                if typ:
+                    detail = "/Type = " + typ
+            elif cl == Stream:
+                cl = 'STREAM'
+                typ = content['obj']['entries'].get('/Type')
+                if typ:
+                    #print(content['obj'])
+                    detail = "/Type = " + typ
+            elif cl == list:
+                cl = 'LIST'
+            else:
+                cl = 'OTHER'
+        elif t == 'XREFTABLE':
+            table = content['table']
+            #print(table)
+            trailer = content['trailer']
+            root = trailer.get('/Root')
+            if root:
+                root = f"/Root = ({int(root.imag)},{int(root.real)})"
+            prev = trailer.get('/Prev')
+            if prev:
+                prev = f"/Prev = {prev:010d}"
+            else:
+                prev = f"/Prev = None"
+            detail = f"{root}  {prev}"
+            subsection = 0
+            for a in table:
+                if len(a) == 2:
+                    subsection += 1
+                    continue
+                index, i_num, i_gen, s = a
+                a_iref = f"({i_num},{i_gen})"
+                a_detail = f"{index:010d}  subsection = {subsection}"
+                if s == b'n':
+                    s = 'inuse'
+                else:
+                    s = 'free'
+                add_detail.append(f"{start_pos:010d}  {'|_xref':<10} {a_iref:15} {s:8} {a_detail}")
+        line = f"{start_pos:010d}  {t:10} {iref:15} {cl:8} {detail}"
+        print(line)
+        for dline in add_detail:
+            print(dline)
+    return
 
 def spatial(filename: str) -> None:
     """Print text content of a file with spatial awareness."""

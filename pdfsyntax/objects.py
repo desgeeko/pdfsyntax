@@ -272,7 +272,7 @@ def parse_indirect_obj(text: bytes, start=0) -> tuple:
     i, j, t = next_token(text, j)
     if t == 'STREAM':
         _, j, _ = next_token(text, j) #endobj
-    return (bo, j, 'INDIRECT_OBJ', {'o_num':o_num, 'o_gen':o_gen, 'obj':o})
+    return (bo, j, 'INDIRECT', {'o_num':o_num, 'o_gen':o_gen, 'obj':o})
 
 
 def parse_xref_table_raw(bdata: bytes, start_pos: int=0) -> list:
@@ -297,7 +297,7 @@ def parse_xref_table_raw(bdata: bytes, start_pos: int=0) -> list:
         bl, el = next_line(bdata, el)
     bl, bf, _l = next_token(bdata, el)
     trailer = parse_obj(bdata, bl)
-    return (bo, bf, 'XREF_TABLE', {'table':res, 'trailer':trailer})
+    return (start_pos, bf, 'XREFTABLE', {'table':res, 'trailer':trailer})
 
 
 def parse_macro_obj(text: bytes, start=0) -> tuple:
@@ -307,9 +307,12 @@ def parse_macro_obj(text: bytes, start=0) -> tuple:
     OBJ = b'obj'
     XREF = b'xref'
     bl, el = next_line(text, start)
+    #bl, el, _ = next_token(text, start)
     if bl is None:
         return None
-    if text[bl:bl+len(PERCENT)] == PERCENT:
+    if bl != start:
+        return (start, bl, '_VOID', text[start:el])
+    elif text[bl:bl+len(PERCENT)] == PERCENT:
         return (bl, el, 'COMMENT', text[bl:el])
     elif text[bl:bl+len(STARTXREF)] == STARTXREF:
         i1, j1, _ = next_token(text, bl)
