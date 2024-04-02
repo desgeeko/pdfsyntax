@@ -4,7 +4,7 @@ from typing import Any
 from collections import namedtuple
 from dataclasses import dataclass
 from .filters import *
-
+#from .filestruct import expand_xref_index
 
 EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
@@ -300,6 +300,50 @@ def parse_xref_table_raw(bdata: bytes, start_pos: int=0) -> list:
     return (start_pos, bf, 'XREFTABLE', {'table':res, 'trailer':trailer})
 
 
+def expand_xref_index(xref_index: list) -> list:
+    """Transform index section pairs into a flat list of object numbers."""
+    res = []
+    i = 0
+    while i < len(xref_index):
+        o_num = xref_index[i]
+        res.append(o_num)
+        i += 1
+        for j in range(xref_index[i]-1):
+            res.append(o_num+j+1)
+        i += 1
+    return res
+
+
+def parse_xref_stream_raw(xref_stream: dict, start_pos: int, end_pos: int) -> list:
+    """."""
+    res = []
+    cols = xref_stream['entries']['/W']
+    i = 0
+    if '/Index' in xref_stream['entries']:
+        obj_range = xref_stream['entries']['/Index']
+    else:
+        obj_range = [0, xref_stream['entries']['/Size']]
+    obj_nums = expand_xref_index(obj_range)
+    while i < len(xref_stream['stream']):
+        params = []
+        ppr = b''
+        obj_num = obj_nums.pop(0)
+        for col in cols:
+            x = xref_stream['stream'][i:i+int(col)]
+            #struct.unpack cannot work with 3-byte words
+            params.append(int.from_bytes(x, byteorder='big'))
+            i += int(col)
+            ppr += asciihex(x) + b' '
+        if params[0] == 0:
+            res.append((params[1], None, obj_num, params[2], b'f', ppr))
+        elif params[0] == 1:
+            res.append((params[1], None, obj_num, params[2], b'n', ppr))
+        elif params[0] == 2:
+            env_num = params[1]
+            res.append((params[2], env_num, obj_num, 0, b'n', ppr))
+    return (start_pos, end_pos, 'XREFSTREAM', {'table':res, 'trailer': xref_stream['entries']})
+
+
 def parse_macro_obj(text: bytes, start=0) -> tuple:
     """Recursively parse bytes into macro PDF objects (indirect/xref/xref table/startxref)."""
     PERCENT = b'%'
@@ -319,7 +363,8 @@ def parse_macro_obj(text: bytes, start=0) -> tuple:
         i2, j2, _ = next_token(text, j1)
         return (bl, j2, 'STARTXREF', text[i2:j2])
     elif text[el-len(OBJ):el] == OBJ:
-        return parse_indirect_obj(text, bl)
+        ind_o = parse_indirect_obj(text, bl)
+        return ind_o
     elif text[el-len(XREF):el] == XREF:
         return parse_xref_table_raw(text, bl)
     return None

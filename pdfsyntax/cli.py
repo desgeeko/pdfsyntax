@@ -74,7 +74,6 @@ def dump_map(filename: str) -> str:
                 cl = 'OTHER'
         elif t == 'XREFTABLE':
             table = content['table']
-            #print(table)
             trailer = content['trailer']
             root = trailer.get('/Root')
             if root:
@@ -93,6 +92,32 @@ def dump_map(filename: str) -> str:
                 index, i_num, i_gen, s = a
                 a_iref = f"({i_num},{i_gen})"
                 a_detail = f"{index:010d}  subsection = {subsection}"
+                if s == b'n':
+                    s = 'inuse'
+                else:
+                    s = 'free'
+                add_detail.append(f"{start_pos:010d}  {'|_xref':<10} {a_iref:15} {s:8} {a_detail}")
+        elif t == 'XREFSTREAM':
+            table = content['table']
+            trailer = content['trailer']
+            root = trailer.get('/Root')
+            if root:
+                root = f"/Root = ({int(root.imag)},{int(root.real)})"
+            prev = trailer.get('/Prev')
+            if prev:
+                prev = f"/Prev = {prev:010d}"
+            else:
+                prev = f"/Prev = None"
+            detail = f"{root}  {prev}"
+            subsection = 0
+            for a in table:
+                if len(a) == 2:
+                    subsection += 1
+                    continue
+                index, env_num, i_num, i_gen, s, raw_line = a
+                a_iref = f"({i_num},{i_gen})"
+                #a_detail = f"{index:010d}  subsection = {subsection}"
+                a_detail = ""
                 if s == b'n':
                     s = 'inuse'
                 else:
