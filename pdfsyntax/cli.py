@@ -27,107 +27,130 @@ def main():
         spatial(args.filename)
 
 
+def keys_in_line(target, keys: list) -> str:
+    """."""
+    res = ''
+    for key in keys:
+        value = target.get(key)
+        if value is None:
+            continue
+        if type(value) == complex:
+            value = f"({int(value.imag)},{int(value.real)})"
+        res += f"{key}={value}  "
+    return res
+
 def dump_map(filename: str) -> str:
     """Log file sequence."""
     res = ""
     file_obj = open(filename, 'rb')
     fdata = bdata_provider(file_obj)
     sections = file_object_map(fdata)
-    for x in sections:
-        start_pos, end_pos, t, content = x
+    full_sections = []
+    lines = []
+    for start_pos, end_pos, t, content in sections:
+        if t == 'XREFTABLE':
+            full_sections.append((start_pos, end_pos, 'XREFTABLE', content))
+            table = content['table']
+            subsection = -1
+            for a in table:
+                if len(a) == 2:
+                    subsection += 1
+                    ln = 0
+                    continue
+                index, i_num, i_gen, s = a
+                a_pos = f"> |{subsection:02d}-{ln:04d}"
+                full_sections.append((f"{a_pos}", None, 'XREF', ('XREF_T', index, i_num, i_gen, s)))
+                ln += 1
+        elif t == 'XREFSTREAM':
+            table = content['table']
+            current_sub = -1
+            for index, env_num, i_num, i_gen, s, raw_line, subsection in table:
+                if subsection != current_sub:
+                    ln = -1
+                    current_sub = subsection
+                ln += 1
+                a_pos = f"> |{subsection:02d}-{ln:04d}"
+                full_sections.append((f"{a_pos}", None, 'XREF', ('XREF_S', index, i_num, i_gen, s, env_num, raw_line)))
+        elif t == 'OBJSTREAM':
+            for i, embedded in enumerate(content):
+                i_num, obj, env_num, theorical_pos, _ = embedded
+                seq = f"> |00-{i:04d}"
+                full_sections.append((f"{seq} {theorical_pos:10d}", None, 'IND_OBJ', {'o_num':i_num, 'o_gen':None, 'obj':obj, 'env_num':env_num}))
+        else:
+            full_sections.append((start_pos, end_pos, t, content))
+    for start_pos, end_pos, t, content in full_sections:
         iref = ''
         typ = ''
         cl = ''
-        detail = ''
-        add_detail = []
+        detail1 = ''
+        detail2 = ''
+        detail3 = ''
         if t == 'COMMENT':
             if content[:4] == b'%PDF':
-                cl = 'HEADER'
-                detail = content[:8].decode('ascii')
+                detail1 = content[:8].decode('ascii')
             elif content[:5] == b'%%EOF':
-                cl = 'EOF'
-                detail = content[:5].decode('ascii')
+                detail1 = content[:5].decode('ascii')
             else:
-                cl = ''
+                pass #TODO
+            lines.append((start_pos, t, '', '', detail1, '', ''))
         elif t == 'STARTXREF':
             startxref = int(content)
-            detail = f"{startxref:010d}"
-        elif t == 'INDIRECT':
+            detail2 = f"{startxref:010d}"
+            lines.append((start_pos, t, '', '', '', detail2, ''))
+        elif t == 'XREFTABLE':
+            trailer = content['trailer']
+            detail3 = keys_in_line(trailer, ['/Root', '/Prev'])
+            lines.append((start_pos, t, '', '', '', '', detail3))
+        elif t == 'IND_OBJ':
+            if type(start_pos) == str:
+                r = start_pos.split()
+                start_pos = r[0] + " " + r[1]
+                rel_pos = r[2]
+                detail1 = f"stm({content['env_num']},)-off"
+                detail2 = f"{rel_pos}"
+            else:
+                detail1 = f"absolute"
             o_num = content['o_num']
             o_gen = content['o_gen']
+            o_gen = '' if o_gen is None else o_gen
             iref = f"({o_num},{o_gen})"
             cl = type(content['obj'])
             if cl == dict:
-                cl = 'DICT'
-                typ = content['obj'].get('/Type')
-                if typ:
-                    detail = "/Type = " + typ
+                cl = 'dict'
+                detail3 = keys_in_line(content['obj'], ['/Type'])
             elif cl == Stream:
-                cl = 'STREAM'
-                typ = content['obj']['entries'].get('/Type')
-                if typ:
-                    #print(content['obj'])
-                    detail = "/Type = " + typ
+                cl = 'stream'
+                detail3 = keys_in_line(content['obj']['entries'], ['/Type', '/Root', '/Prev'])
             elif cl == list:
-                cl = 'LIST'
+                cl = 'list'
+            elif cl == int:
+                cl = 'int'
             else:
-                cl = 'OTHER'
-        elif t == 'XREFTABLE':
-            table = content['table']
-            trailer = content['trailer']
-            root = trailer.get('/Root')
-            if root:
-                root = f"/Root = ({int(root.imag)},{int(root.real)})"
-            prev = trailer.get('/Prev')
-            if prev:
-                prev = f"/Prev = {prev:010d}"
+                cl = 'other'
+            lines.append((start_pos, t, iref, cl, detail1, detail2, detail3))
+        elif t == 'XREF':
+            if content[0] == 'XREF_T':
+                _, index, x_num, x_gen, s = content
+                x_iref = f"({x_num},{x_gen})"
+                detail2 = f"{index:010d} "
             else:
-                prev = f"/Prev = None"
-            detail = f"{root}  {prev}"
-            subsection = 0
-            for a in table:
-                if len(a) == 2:
-                    subsection += 1
-                    continue
-                index, i_num, i_gen, s = a
-                a_iref = f"({i_num},{i_gen})"
-                a_detail = f"{index:010d}  subsection = {subsection}"
-                if s == b'n':
-                    s = 'inuse'
-                else:
-                    s = 'free'
-                add_detail.append(f"{start_pos:010d}  {'|_xref':<10} {a_iref:15} {s:8} {a_detail}")
-        elif t == 'XREFSTREAM':
-            table = content['table']
-            trailer = content['trailer']
-            root = trailer.get('/Root')
-            if root:
-                root = f"/Root = ({int(root.imag)},{int(root.real)})"
-            prev = trailer.get('/Prev')
-            if prev:
-                prev = f"/Prev = {prev:010d}"
+                _, index, x_num, x_gen, s, env_num, raw_line = content
+                x_iref = f"({x_num},{x_gen})"
+                target = 'absolute' if env_num is None else f"stm({env_num},)-idx"
+                detail2 = f"{index:010d}"
+                detail1 = f"{target}"
+            if s == b'n':
+                s = 'inuse'
             else:
-                prev = f"/Prev = None"
-            detail = f"{root}  {prev}"
-            subsection = 0
-            for a in table:
-                if len(a) == 2:
-                    subsection += 1
-                    continue
-                index, env_num, i_num, i_gen, s, raw_line = a
-                a_iref = f"({i_num},{i_gen})"
-                #a_detail = f"{index:010d}  subsection = {subsection}"
-                a_detail = ""
-                if s == b'n':
-                    s = 'inuse'
-                else:
-                    s = 'free'
-                add_detail.append(f"{start_pos:010d}  {'|_xref':<10} {a_iref:15} {s:8} {a_detail}")
-        line = f"{start_pos:010d}  {t:10} {iref:15} {cl:8} {detail}"
-        print(line)
-        for dline in add_detail:
-            print(dline)
-    return
+                s = 'free'
+            ln += 1
+            lines.append((start_pos, t, x_iref, s, detail1, detail2, ''))
+    for start_pos, typ, iref, cl, detail1, detail2, detail3 in lines:
+        if type(start_pos) == int:
+            start_pos = f"{start_pos:010d}"
+        print(f"{start_pos:10}  {typ.lower():10} {iref:10} {cl:8} {detail1:17} {detail2:12} {detail3:20}")
+    return full_sections
+
 
 def spatial(filename: str) -> None:
     """Print text content of a file with spatial awareness."""

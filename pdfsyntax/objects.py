@@ -272,10 +272,24 @@ def parse_indirect_obj(text: bytes, start=0) -> tuple:
     i, j, t = next_token(text, j)
     if t == 'STREAM':
         _, j, _ = next_token(text, j) #endobj
-    return (bo, j, 'INDIRECT', {'o_num':o_num, 'o_gen':o_gen, 'obj':o})
+    return (bo, j, 'IND_OBJ', {'o_num':o_num, 'o_gen':o_gen, 'obj':o})
 
 
-def parse_xref_table_raw(bdata: bytes, start_pos: int=0) -> list:
+def parse_object_stream(obj_stream: Stream, env_num) -> tuple:
+    """List objects embedded within an object stream (/ObjStm)."""
+    res = []
+    offset = int(obj_stream['entries']['/First'])
+    nb_obj = int(obj_stream['entries']['/N'])
+    x_array = parse_obj(b'[' + obj_stream['stream'][:offset] + b']')
+    for x in range(nb_obj):
+        o_num = int(x_array[2 * x])
+        theorical_pos = int(x_array[2 * x + 1])
+        obj = parse_obj(obj_stream['stream'], offset + theorical_pos)
+        res.append((o_num, obj, env_num, theorical_pos, None)) #TODO
+    return (None, None, 'OBJSTREAM', res)
+
+
+def parse_xref_table_raw(bdata: bytes, start_pos: int=0) -> tuple:
     """."""
     res = []
     XREF = b'xref'
@@ -285,7 +299,7 @@ def parse_xref_table_raw(bdata: bytes, start_pos: int=0) -> list:
     bo = bl
     while b'0' <= bdata[bl:bl+1] <= b'9':
         items = bdata[bl:el].strip(b' ').split()
-        if len(items) == 2:
+        if len(items) == 2: #subsection
             o_num, nb = int(items[0]), int(items[1])
             res.append((o_num, nb))
         if len(items) == 3:
@@ -301,20 +315,22 @@ def parse_xref_table_raw(bdata: bytes, start_pos: int=0) -> list:
 
 
 def expand_xref_index(xref_index: list) -> list:
-    """Transform index section pairs into a flat list of object numbers."""
+    """Transform index section pairs into a flat list of (object_number, subsection) tuples."""
     res = []
+    subsection = 0
     i = 0
     while i < len(xref_index):
         o_num = xref_index[i]
-        res.append(o_num)
         i += 1
+        res.append((o_num, subsection))
         for j in range(xref_index[i]-1):
-            res.append(o_num+j+1)
+            res.append((o_num+j+1, subsection))
         i += 1
+        subsection += 1
     return res
 
 
-def parse_xref_stream_raw(xref_stream: dict, start_pos: int, end_pos: int) -> list:
+def parse_xref_stream_raw(xref_stream: Stream) -> tuple:
     """."""
     res = []
     cols = xref_stream['entries']['/W']
@@ -327,7 +343,7 @@ def parse_xref_stream_raw(xref_stream: dict, start_pos: int, end_pos: int) -> li
     while i < len(xref_stream['stream']):
         params = []
         ppr = b''
-        obj_num = obj_nums.pop(0)
+        obj_num, subsection = obj_nums.pop(0)
         for col in cols:
             x = xref_stream['stream'][i:i+int(col)]
             #struct.unpack cannot work with 3-byte words
@@ -335,13 +351,13 @@ def parse_xref_stream_raw(xref_stream: dict, start_pos: int, end_pos: int) -> li
             i += int(col)
             ppr += asciihex(x) + b' '
         if params[0] == 0:
-            res.append((params[1], None, obj_num, params[2], b'f', ppr))
+            res.append((params[1], None, obj_num, params[2], b'f', ppr, subsection))
         elif params[0] == 1:
-            res.append((params[1], None, obj_num, params[2], b'n', ppr))
+            res.append((params[1], None, obj_num, params[2], b'n', ppr, subsection))
         elif params[0] == 2:
             env_num = params[1]
-            res.append((params[2], env_num, obj_num, 0, b'n', ppr))
-    return (start_pos, end_pos, 'XREFSTREAM', {'table':res, 'trailer': xref_stream['entries']})
+            res.append((params[2], env_num, obj_num, 0, b'n', ppr, subsection))
+    return (None, None, 'XREFSTREAM', {'table':res, 'trailer': xref_stream['entries']})
 
 
 def parse_macro_obj(text: bytes, start=0) -> tuple:

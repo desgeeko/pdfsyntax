@@ -94,21 +94,13 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
         i, j, _ = next_token(bdata, a0)
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
-        i, j, _ = next_token(bdata, j)
+        i, j, _ = next_token(bdata, j) #/ObjStm
         text = bdata
-        c_obj = parse_obj(text, i)
-        if container > key:
-            cache += (container-key) * [None]
-        cache[container] = c_obj
-        offset = int(c_obj['entries']['/First'])
-        nb_obj = int(c_obj['entries']['/N'])
-        x_array = parse_obj(b'[' + c_obj['stream'][:offset] + b']')
-        for x in range(nb_obj):
-            if int(x_array[2 * x]) >= len(cache):
-                cache += (int(x_array[2 * x])-len(cache)+1) * [None]
-            cache[int(x_array[2 * x])] = parse_obj(c_obj['stream'], offset + int(x_array[2 * x + 1]))
-        if key == 0 and type(cache[0]) == Stream:
-            cache[0] = cache[0]['entries']
+        stream_obj = parse_obj(text, i)
+        cache[container] = stream_obj
+        _, _, _, obj_list = parse_object_stream(stream_obj, container)
+        for o_num, embedded_obj, _, _, _ in obj_list:
+            cache[o_num] = embedded_obj
     return cache
 
 

@@ -21,11 +21,11 @@ class Xref(unittest.TestCase):
         self.assertEqual(pdf.parse_xref_table(self.xt, 0, 0)[2]['abs_pos'], 456)
 
     def test_xref_index_expansion(self):
-        self.assertEqual(pdf.expand_xref_index([0, 6]), [0, 1, 2, 3, 4, 5])
+        self.assertEqual(pdf.expand_xref_index([0, 6]), [(0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 0)])
 
     def test_xref_index_expansion2(self):
-        self.assertEqual(pdf.expand_xref_index([0, 1, 4, 1]), [0, 4])
+        self.assertEqual(pdf.expand_xref_index([0, 1, 4, 1]), [(0, 0), (4, 1)])
 
     def test_xref_index_expansion3(self):
-        self.assertEqual(pdf.expand_xref_index([ 0, 1, 4, 3 ]), [0, 4, 5, 6])
+        self.assertEqual(pdf.expand_xref_index([ 0, 1, 4, 3 ]), [(0, 0), (4, 1), (5, 1), (6, 1)])
 

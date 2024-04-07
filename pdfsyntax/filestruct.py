@@ -94,9 +94,13 @@ def file_object_map(fdata: Callable) -> list:
             break
         bo, eo, t, content = mo
         sections.append(mo)
-        if t == 'INDIRECT' and type(content['obj']) == Stream and content['obj']['entries'].get('/Type') == '/XRef':
-            xref_stream = parse_xref_stream_raw(content['obj'], bo, eo)
-            sections.append(xref_stream)
+        if t == 'IND_OBJ' and type(content['obj']) == Stream:
+            if content['obj']['entries'].get('/Type') == '/XRef':
+                xref_stream = parse_xref_stream_raw(content['obj'])
+                sections.append(xref_stream)
+            elif content['obj']['entries'].get('/Type') == '/ObjStm':
+                obj_stream = parse_object_stream(content['obj'], content['o_num'])
+                sections.append(obj_stream)
         i = eo
     return sections
 
@@ -133,56 +137,6 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
     return xref
 
 
-def parse_xref_table_OLD(bdata: bytes, start_pos: int, general_offset: int) -> list:
-    """Return a list of dicts indexing indirect objects.
-
-    - abs_pos is the absolute position of the object
-    - o_num is the object number
-    - o_gen is the object generation number
-    """
-    xref = []
-    table = []
-    trailer_pos = bdata.find(b'trailer', start_pos)
-    lines = bdata[start_pos:trailer_pos].splitlines()
-    for line in lines:
-        line_a = line.strip(b'\n\r ').split()
-        l = len(line_a)
-        if  l == 2:
-            o_num = int(line_a[0])
-            table.append((line, None))
-        elif l == 3:
-            offset = int(line_a[0])
-            o_ver = int(line_a[1])
-            keyword = line_a[2]
-            if keyword != b'f' and o_num != 0:
-                xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_ver})
-            table.append((line, o_num))
-            o_num += 1
-    trailer = {
-        'o_num': 0,
-        'o_gen': 0,
-        'abs_pos': general_offset + trailer_pos,
-        'xref_table_pos':general_offset + start_pos,
-        'xref_table':table,
-    }
-    xref.insert(0, trailer)
-    return xref
-
-
-def expand_xref_index_OLD(xref_index: list) -> list:
-    """Transform index section pairs into a flat list of object numbers."""
-    res = []
-    i = 0
-    while i < len(xref_index):
-        o_num = xref_index[i]
-        res.append(o_num)
-        i += 1
-        for j in range(xref_index[i]-1):
-            res.append(o_num+j+1)
-        i += 1
-    return res
-
-
 def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     """Return a list of dicts indexing indirect objects.
 
@@ -199,10 +153,10 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     xref_stream_num = o_num
     xref = []
     table = []
-    _, _, _, xref_table = parse_xref_stream_raw(xref_stream, None, None)
+    _, _, _, xref_table = parse_xref_stream_raw(xref_stream)
     lines = xref_table['table']
     for line in lines:
-        offset, env_iref, o_num, o_gen, keyword, raw_line = line
+        offset, env_iref, o_num, o_gen, keyword, raw_line, _ = line
         if o_num == 0:
             table.append((raw_line, o_num))
             continue
@@ -225,55 +179,6 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     xref.insert(0, trailer)
     return xref
 
-
-def parse_xref_stream_OLD(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
-    """Return a list of dicts indexing indirect objects.
-
-    for regular objects:
-    - abs_pos is the absolute position of the object
-    - o_num is the object number
-    - o_gen is the object generation number
-    for objects embedded in object streams:
-    - env_num is the number of the envelope object
-    - o_num is the object number
-    - o_gen is the object generation number
-    - o_pos is the position of the object within the stream
-    """
-    xref = []
-    table = []
-    cols = xref_stream['entries']['/W']
-    i = 0
-    if '/Index' in xref_stream['entries']:
-        obj_range = xref_stream['entries']['/Index']
-    else:
-        obj_range = [0, xref_stream['entries']['/Size']]
-    obj_nums = expand_xref_index_OLD(obj_range)
-    while i < len(xref_stream['stream']):
-        params = []
-        ppr = b''
-        obj_num = obj_nums.pop(0)
-        for col in cols:
-            x = xref_stream['stream'][i:i+int(col)]
-            #struct.unpack cannot work with 3-byte words
-            params.append(int.from_bytes(x, byteorder='big'))
-            i += int(col)
-            ppr += asciihex(x) + b' '
-        table.append((ppr, obj_num))
-        if params[0] == 1:
-            xref.append({'abs_pos': params[1], 'o_num': obj_num, 'o_gen': params[2]})
-        elif params[0] == 2:
-            xref.append({'env_num': params[1], 'o_num': obj_num, 'o_gen': 0, 'o_pos': params[2]})
-    trailer = {
-        'o_num': 0,
-        'o_gen': 0,
-        'abs_pos': trailer_pos,
-        'xref_stream_pos': trailer_pos,
-        'xref_stream': table,
-        'xref_stream_num': o_num,
-    }
-    xref.insert(0, trailer)
-    return xref
-    
 
 def build_chrono_from_xref(fdata: Callable) -> list:
     """Return a merged list of all entries sequentially found in xref tables or xref streams.
@@ -311,7 +216,6 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)
-            #chrono2 = parse_xref_stream_OLD(xref, xref_pos, o_num)
             chrono2 = parse_xref_stream(xref, xref_pos, o_num)
             chrono2[0]['abs_pos'] = abs_pos_trailer
             trailer = xref['entries']
@@ -324,7 +228,6 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         i, j, _ = next_token(bdata, j)
         i, j, _ = next_token(bdata, j)
         xref = parse_obj(bdata, i)
-        #chrono = parse_xref_stream_OLD(xref, xref_pos, o_num)
         chrono = parse_xref_stream(xref, xref_pos, o_num)
         trailer = xref['entries']
     chrono[0]['startxref_pos'] = startxref_pos
@@ -364,7 +267,6 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             i, j, _ = next_token(bdata, j)
             i, j, _ = next_token(bdata, j)
             xref = parse_obj(bdata, i)
-            #tmp_index = parse_xref_stream_OLD(xref, xref_pos, o_num)
             tmp_index = parse_xref_stream(xref, xref_pos, o_num)
             tmp_index[0]['startxref_pos'] = startxref_pos
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
