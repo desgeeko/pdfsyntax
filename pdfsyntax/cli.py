@@ -30,6 +30,11 @@ def main():
 def keys_in_line(target, keys: list) -> str:
     """."""
     res = ''
+    if '/Type' in keys:
+        value = target.get('/Type')
+        if value is not None:
+            res += f"{value}  "
+        keys.remove('/Type')
     for key in keys:
         value = target.get(key)
         if value is None:
@@ -38,6 +43,7 @@ def keys_in_line(target, keys: list) -> str:
             value = f"({int(value.imag)},{int(value.real)})"
         res += f"{key}={value}  "
     return res
+
 
 def dump_map(filename: str) -> str:
     """Log file sequence."""
@@ -85,6 +91,10 @@ def dump_map(filename: str) -> str:
         detail1 = ''
         detail2 = ''
         detail3 = ''
+        if start_pos is None or end_pos is None:
+            size = ''
+        else:
+            size = end_pos - start_pos
         if t == 'COMMENT':
             if content[:4] == b'%PDF':
                 detail1 = content[:8].decode('ascii')
@@ -92,15 +102,15 @@ def dump_map(filename: str) -> str:
                 detail1 = content[:5].decode('ascii')
             else:
                 pass #TODO
-            lines.append((start_pos, t, '', '', detail1, '', ''))
+            lines.append((start_pos, None, t, '', detail1, '', '', ''))
         elif t == 'STARTXREF':
             startxref = int(content)
             detail2 = f"{startxref:010d}"
-            lines.append((start_pos, t, '', '', '', detail2, ''))
+            lines.append((start_pos, None, t, '', '', detail2, '', ''))
         elif t == 'XREFTABLE':
             trailer = content['trailer']
             detail3 = keys_in_line(trailer, ['/Root', '/Prev'])
-            lines.append((start_pos, t, '', '', '', '', detail3))
+            lines.append((start_pos, None, t, '', '', '', '', detail3))
         elif t == 'IND_OBJ':
             if type(start_pos) == str:
                 r = start_pos.split()
@@ -127,7 +137,7 @@ def dump_map(filename: str) -> str:
                 cl = 'int'
             else:
                 cl = 'other'
-            lines.append((start_pos, t, iref, cl, detail1, detail2, detail3))
+            lines.append((start_pos, size, t, iref, detail1, detail2, cl, detail3))
         elif t == 'XREF':
             if content[0] == 'XREF_T':
                 _, index, x_num, x_gen, s = content
@@ -144,11 +154,15 @@ def dump_map(filename: str) -> str:
             else:
                 s = 'free'
             ln += 1
-            lines.append((start_pos, t, x_iref, s, detail1, detail2, ''))
-    for start_pos, typ, iref, cl, detail1, detail2, detail3 in lines:
+            lines.append((start_pos, None, t, x_iref, detail1, detail2, s, ''))
+    for start_pos, size, typ, iref, detail1, detail2, cl, detail3 in lines:
         if type(start_pos) == int:
             start_pos = f"{start_pos:010d}"
-        print(f"{start_pos:10}  {typ.lower():10} {iref:10} {cl:8} {detail1:17} {detail2:12} {detail3:20}")
+        if size:
+            size = f"[{size:<8}]"
+        else:
+            size = " " * 10
+        print(f"{start_pos:10} {size:10} {detail1:14} {detail2:12}  {typ.lower():10} {iref:10} {cl:8} {detail3:20}")
     return full_sections
 
 
