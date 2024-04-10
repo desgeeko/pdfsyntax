@@ -89,18 +89,44 @@ def file_object_map(fdata: Callable) -> list:
     bdata, _, _, length = fdata(0, -1) #Read all
     i = 0
     while i < length:
-        mo = parse_macro_obj(bdata, i)
+        mo = parse_region(bdata, i)
         if mo is None:
             break
         bo, eo, t, content = mo
         sections.append(mo)
-        if t == 'IND_OBJ' and type(content['obj']) == Stream:
+        if t == 'XREFTABLE':
+            table = content['table']
+            subsection = -1
+            for a in table:
+                if len(a) == 2:
+                    subsection += 1
+                    ln = 0
+                    continue
+                index, i_num, i_gen, s = a
+                a_pos = f">{subsection:04d}-{ln:04d}"
+                s = (a_pos, None, 'XREF', ('XREF_T', index, i_num, i_gen, s))
+                sections.append(s)
+                ln += 1
+        elif t == 'IND_OBJ' and type(content['obj']) == Stream:
             if content['obj']['entries'].get('/Type') == '/XRef':
-                xref_stream = parse_xref_stream_raw(content['obj'])
-                sections.append(xref_stream)
+                _, _, typ, obj = parse_xref_stream_raw(content['obj'])
+                table = obj['table']
+                current_sub = -1
+                for index, env_num, i_num, i_gen, s, raw_line, subsection in table:
+                    if subsection != current_sub:
+                        ln = -1
+                        current_sub = subsection
+                    ln += 1
+                    a_pos = f">{subsection:04d}-{ln:04d}"
+                    s = (a_pos, None, 'XREF', ('XREF_S', index, i_num, i_gen, s, env_num, raw_line))
+                    sections.append(s)
             elif content['obj']['entries'].get('/Type') == '/ObjStm':
-                obj_stream = parse_object_stream(content['obj'], content['o_num'])
-                sections.append(obj_stream)
+                _, _, typ, obj = parse_object_stream(content['obj'], content['o_num'])
+                for i, embedded in enumerate(obj):
+                    i_num, obj, env_num, theorical_pos, _ = embedded
+                    a_pos = f"{i} {theorical_pos:10d}"
+                    s = (a_pos, None, 'IND_OBJ', {'o_num':i_num, 'o_gen':None, 'obj':obj, 'env_num':env_num})
+                    sections.append(s)
         i = eo
     return sections
 

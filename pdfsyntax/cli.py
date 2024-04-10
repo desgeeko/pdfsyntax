@@ -51,40 +51,8 @@ def dump_map(filename: str) -> str:
     file_obj = open(filename, 'rb')
     fdata = bdata_provider(file_obj)
     sections = file_object_map(fdata)
-    full_sections = []
     lines = []
     for start_pos, end_pos, t, content in sections:
-        if t == 'XREFTABLE':
-            full_sections.append((start_pos, end_pos, 'XREFTABLE', content))
-            table = content['table']
-            subsection = -1
-            for a in table:
-                if len(a) == 2:
-                    subsection += 1
-                    ln = 0
-                    continue
-                index, i_num, i_gen, s = a
-                a_pos = f"> |{subsection:02d}-{ln:04d}"
-                full_sections.append((f"{a_pos}", None, 'XREF', ('XREF_T', index, i_num, i_gen, s)))
-                ln += 1
-        elif t == 'XREFSTREAM':
-            table = content['table']
-            current_sub = -1
-            for index, env_num, i_num, i_gen, s, raw_line, subsection in table:
-                if subsection != current_sub:
-                    ln = -1
-                    current_sub = subsection
-                ln += 1
-                a_pos = f"> |{subsection:02d}-{ln:04d}"
-                full_sections.append((f"{a_pos}", None, 'XREF', ('XREF_S', index, i_num, i_gen, s, env_num, raw_line)))
-        elif t == 'OBJSTREAM':
-            for i, embedded in enumerate(content):
-                i_num, obj, env_num, theorical_pos, _ = embedded
-                seq = f"> |00-{i:04d}"
-                full_sections.append((f"{seq} {theorical_pos:10d}", None, 'IND_OBJ', {'o_num':i_num, 'o_gen':None, 'obj':obj, 'env_num':env_num}))
-        else:
-            full_sections.append((start_pos, end_pos, t, content))
-    for start_pos, end_pos, t, content in full_sections:
         iref = ''
         typ = ''
         cl = ''
@@ -97,64 +65,54 @@ def dump_map(filename: str) -> str:
             size = end_pos - start_pos
         if t == 'COMMENT':
             if content[:4] == b'%PDF':
-                detail1 = content[:8].decode('ascii')
+                detail3 = content[:8].decode('ascii')
             elif content[:5] == b'%%EOF':
-                detail1 = content[:5].decode('ascii')
+                detail3 = content[:5].decode('ascii')
             else:
                 pass #TODO
-            lines.append((start_pos, None, t, '', detail1, '', '', ''))
         elif t == 'STARTXREF':
             startxref = int(content)
             detail2 = f"{startxref:010d}"
-            lines.append((start_pos, None, t, '', '', detail2, '', ''))
         elif t == 'XREFTABLE':
             trailer = content['trailer']
             detail3 = keys_in_line(trailer, ['/Root', '/Prev'])
-            lines.append((start_pos, None, t, '', '', '', '', detail3))
         elif t == 'IND_OBJ':
             if type(start_pos) == str:
                 r = start_pos.split()
-                start_pos = r[0] + " " + r[1]
-                rel_pos = r[2]
-                detail1 = f"stm({content['env_num']},)-off"
-                detail2 = f"{rel_pos}"
-            else:
-                detail1 = f"absolute"
+                detail2 = f"idx {int(r[0]):6d}"
+                rel_pos = int(r[1])
+                env_n = f">{content['env_num']}"
+                start_pos = f"{env_n},{rel_pos:0{10-len(env_n)-1}d}"
             o_num = content['o_num']
             o_gen = content['o_gen']
             o_gen = '' if o_gen is None else o_gen
-            iref = f"({o_num},{o_gen})"
+            iref = f"{o_num},{o_gen}"
             cl = type(content['obj'])
             if cl == dict:
                 cl = 'dict'
                 detail3 = keys_in_line(content['obj'], ['/Type'])
             elif cl == Stream:
                 cl = 'stream'
-                detail3 = keys_in_line(content['obj']['entries'], ['/Type', '/Root', '/Prev'])
+                detail3 = keys_in_line(content['obj']['entries'], ['/Type', '/Root', '/Prev', '/N', '/First'])
             elif cl == list:
                 cl = 'list'
             elif cl == int:
                 cl = 'int'
             else:
                 cl = 'other'
-            lines.append((start_pos, size, t, iref, detail1, detail2, cl, detail3))
         elif t == 'XREF':
             if content[0] == 'XREF_T':
                 _, index, x_num, x_gen, s = content
-                x_iref = f"({x_num},{x_gen})"
+                iref = f"{x_num},{x_gen}"
                 detail2 = f"{index:010d} "
             else:
                 _, index, x_num, x_gen, s, env_num, raw_line = content
-                x_iref = f"({x_num},{x_gen})"
-                target = 'absolute' if env_num is None else f"stm({env_num},)-idx"
-                detail2 = f"{index:010d}"
+                iref = f"{x_num},{x_gen}"
+                target = 'abs' if env_num is None else f"{env_num},"
+                detail2 = f"{index:010d}" if env_num is None else f"idx {index:6d}"
                 detail1 = f"{target}"
-            if s == b'n':
-                s = 'inuse'
-            else:
-                s = 'free'
-            ln += 1
-            lines.append((start_pos, None, t, x_iref, detail1, detail2, s, ''))
+            cl = 'inuse' if s == b'n' else 'free'
+        lines.append((start_pos, size, t, iref, detail1, detail2, cl, detail3))
     for start_pos, size, typ, iref, detail1, detail2, cl, detail3 in lines:
         if type(start_pos) == int:
             start_pos = f"{start_pos:010d}"
@@ -162,8 +120,8 @@ def dump_map(filename: str) -> str:
             size = f"[{size:<8}]"
         else:
             size = " " * 10
-        print(f"{start_pos:10} {size:10} {detail1:14} {detail2:12}  {typ.lower():10} {iref:10} {cl:8} {detail3:20}")
-    return full_sections
+        print(f"{start_pos:10} {size:10} {detail1:10} {detail2:12} {typ.lower():10} {iref:10} {cl:8} {detail3:20}")
+    return sections
 
 
 def spatial(filename: str) -> None:

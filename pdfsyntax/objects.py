@@ -360,27 +360,35 @@ def parse_xref_stream_raw(xref_stream: Stream) -> tuple:
     return (None, None, 'XREFSTREAM', {'table':res, 'trailer': xref_stream['entries']})
 
 
-def parse_macro_obj(text: bytes, start=0) -> tuple:
+def parse_region(text: bytes, start=0) -> tuple:
     """Recursively parse bytes into macro PDF objects (indirect/xref/xref table/startxref)."""
     PERCENT = b'%'
     STARTXREF = b'startxref'
     OBJ = b'obj'
     XREF = b'xref'
-    bl, el = next_line(text, start)
-    #bl, el, _ = next_token(text, start)
+    #bl, el = next_line(text, start)
+    bl, el, typ = next_token(text, start)
     if bl is None:
         return None
     if bl != start:
-        return (start, bl, '_VOID', text[start:el])
+        return (start, bl, '_VOID', text[start:bl])
+    elif typ is None:
+        return (start, el, '_VOID', text[start:el])
     elif text[bl:bl+len(PERCENT)] == PERCENT:
         return (bl, el, 'COMMENT', text[bl:el])
     elif text[bl:bl+len(STARTXREF)] == STARTXREF:
         i1, j1, _ = next_token(text, bl)
         i2, j2, _ = next_token(text, j1)
         return (bl, j2, 'STARTXREF', text[i2:j2])
-    elif text[el-len(OBJ):el] == OBJ:
-        ind_o = parse_indirect_obj(text, bl)
-        return ind_o
+    elif typ == 'INTEGER':
+        i1, j1, _ = next_token(text, bl)
+        i2, j2, _ = next_token(text, j1)
+        i3, j3, t = next_token(text, j2)
+        if t == 'KEYWORD' and text[i3:j3] == OBJ:
+            ind_o = parse_indirect_obj(text, bl)
+            return ind_o
+        else:
+            return None
     elif text[el-len(XREF):el] == XREF:
         return parse_xref_table_raw(text, bl)
     return None
