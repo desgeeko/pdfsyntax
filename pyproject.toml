@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pdfsyntax"
-version = "0.0.8"
+version = "0.1.0"
 authors = [ 
     { name="Martin D.", email="desgeeko@gmail.com" } 
 ]
@@ -18,7 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries",
     "Topic :: Utilities"
