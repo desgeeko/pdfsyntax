@@ -97,9 +97,13 @@ def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-
         i, j, _ = next_token(bdata, j) #/ObjStm
         text = bdata
         stream_obj = parse_obj(text, i)
+        if container >= len(cache):
+            cache += (container-len(cache)+1) * [None]
         cache[container] = stream_obj
         _, _, _, obj_list = parse_object_stream(stream_obj, container)
         for o_num, embedded_obj, _, _, _ in obj_list:
+            if o_num >= len(cache):
+                cache += (o_num-len(cache)+1) * [None]
             cache[o_num] = embedded_obj
     return cache
 

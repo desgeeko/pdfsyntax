@@ -88,6 +88,7 @@ def file_object_map(fdata: Callable) -> list:
     sections = []
     bdata, _, _, length = fdata(0, -1) #Read all
     i = 0
+    j = 0
     while i < length:
         mo = parse_region(bdata, i)
         if mo is None:
@@ -103,7 +104,7 @@ def file_object_map(fdata: Callable) -> list:
                     ln = 0
                     continue
                 index, i_num, i_gen, s = a
-                a_pos = f">{subsection:04d}-{ln:04d}"
+                a_pos = subsection, ln
                 s = (a_pos, None, 'XREF', ('XREF_T', index, i_num, i_gen, s))
                 sections.append(s)
                 ln += 1
@@ -117,14 +118,18 @@ def file_object_map(fdata: Callable) -> list:
                         ln = -1
                         current_sub = subsection
                     ln += 1
-                    a_pos = f">{subsection:04d}-{ln:04d}"
+                    a_pos = subsection, ln
                     s = (a_pos, None, 'XREF', ('XREF_S', index, i_num, i_gen, s, env_num, raw_line))
                     sections.append(s)
             elif content['obj']['entries'].get('/Type') == '/ObjStm':
                 _, _, typ, obj = parse_object_stream(content['obj'], content['o_num'])
-                for i, embedded in enumerate(obj):
-                    i_num, obj, env_num, theorical_pos, _ = embedded
-                    a_pos = f"{i} {theorical_pos:10d}"
+                for embedded in obj:
+                    i_num, obj, env_num, theorical_pos, actual_pos = embedded
+                    if theorical_pos:
+                        a_pos = j, actual_pos
+                        j += 1
+                    else:
+                        a_pos = -1, actual_pos
                     s = (a_pos, None, 'IND_OBJ', {'o_num':i_num, 'o_gen':None, 'obj':obj, 'env_num':env_num})
                     sections.append(s)
         i = eo

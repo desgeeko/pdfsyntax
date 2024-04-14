@@ -209,8 +209,9 @@ def parse_obj(text: bytes, start=0) -> Any:
         following_obj = text[h2:j2]
         if t2 == 'STREAM': 
             stream_def =  parse_obj(obj)
-            stream_content = decode_stream(following_obj, stream_def)
-            res = Stream(stream_def, stream_content, following_obj)
+            stream_encoded =  parse_obj(following_obj)
+            stream_content = decode_stream(stream_encoded, stream_def)
+            res = Stream(stream_def, stream_content, stream_encoded)
             return res
 
         i = start + 2
@@ -236,7 +237,6 @@ def parse_obj(text: bytes, start=0) -> Any:
                 toggle = True
             j -= 1
         return res
-
     elif t1 == 'ARRAY':
         res = []
         i = start + 1
@@ -250,10 +250,30 @@ def parse_obj(text: bytes, start=0) -> Any:
                 res.append(obj)
         res = replace_ref(res)
         return res
-    
+    elif t1 == 'STREAM':
+        b1 = b'stream' + b'\r\n'
+        b2 = b'stream' + b'\n'
+        e1 = b'\r\n' + b'endstream'
+        e2 = b'\n' + b'endstream'
+        e3 = b'\r' + b'endstream'
+        if obj[:len(b1)] == b1:
+            b = len(b1)
+        elif obj[:len(b2)] == b2:
+            b = len(b2)
+        else:
+            return None
+        if obj[-len(e1):] == e1:
+            e = len(e1)
+        elif obj[-len(e2):] == e2:
+            e = len(e2)
+        elif obj[-len(e3):] == e3:
+            e = len(e3)
+        else:
+            return None
+        s = obj[b:-e]
+        return s
     elif t1 == 'COMMENT':
         return ''
-
     else:
         return dedicated_type(text[h1:j1], t1)
 
@@ -278,14 +298,25 @@ def parse_indirect_obj(text: bytes, start=0) -> tuple:
 def parse_object_stream(obj_stream: Stream, env_num) -> tuple:
     """List objects embedded within an object stream (/ObjStm)."""
     res = []
+    data = obj_stream['stream']
     offset = int(obj_stream['entries']['/First'])
-    nb_obj = int(obj_stream['entries']['/N'])
-    x_array = parse_obj(b'[' + obj_stream['stream'][:offset] + b']')
-    for x in range(nb_obj):
-        o_num = int(x_array[2 * x])
-        theorical_pos = int(x_array[2 * x + 1])
-        obj = parse_obj(obj_stream['stream'], offset + theorical_pos)
-        res.append((o_num, obj, env_num, theorical_pos, None)) #TODO
+    theorical_nb_obj = int(obj_stream['entries']['/N'])
+    i = 0
+    tokens = []
+    while i < len(data):
+        bo, eo, typ = next_token(data, i)
+        tokens.append(bo)
+        i = eo
+    actual_nb_obj = len(tokens) // 3
+    actual_offset = tokens[2 * actual_nb_obj]
+    y_array = parse_obj(b'[' + data[:offset] + b']')
+    y_pos = [y+offset for j, y in enumerate(y_array) if j % 2]
+    for x in range(actual_nb_obj):
+        actual_pos = tokens[2 * actual_nb_obj + x]
+        o_num = parse_obj(data, tokens[2 * x])
+        obj = parse_obj(data, actual_pos)
+        theorical_pos = actual_pos if actual_pos in y_pos else None
+        res.append((o_num, obj, env_num, theorical_pos, actual_pos))
     return (None, None, 'OBJSTREAM', res)
 
 
@@ -371,9 +402,9 @@ def parse_region(text: bytes, start=0) -> tuple:
     if bl is None:
         return None
     if bl != start:
-        return (start, bl, '_VOID', text[start:bl])
+        return (start, bl, 'VOID', text[start:bl])
     elif typ is None:
-        return (start, el, '_VOID', text[start:el])
+        return (start, el, 'VOID', text[start:el])
     elif text[bl:bl+len(PERCENT)] == PERCENT:
         return (bl, el, 'COMMENT', text[bl:el])
     elif text[bl:bl+len(STARTXREF)] == STARTXREF:
@@ -437,10 +468,10 @@ def serialize(obj, depth=0) -> bytes:
         ret += b' ' * depth
         ret += b'>>'
         if content:
-            #ret += b'\nstream\n'
+            ret += b'\nstream\n'
             ret += b'\n'
             ret += content
-            #ret += b'\nendstream'
+            ret += b'\nendstream'
     elif type(obj) == list:
         ret += b'[ '
         for i in obj:

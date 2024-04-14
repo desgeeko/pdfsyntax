@@ -24,26 +24,27 @@ def decode_predictor(bdata: bytes, predictor, columns): #TODO handle more PNG pr
 
 def decode_stream(stream, stream_def):
     """Apply all specified filters in order to decode stream."""
-    b1 = b'stream' + b'\r\n'
-    b2 = b'stream' + b'\n'
-    e1 = b'\r\n' + b'endstream'
-    e2 = b'\n' + b'endstream'
-    e3 = b'\r' + b'endstream'
-    if stream[:len(b1)] == b1:
-        b = len(b1)
-    elif stream[:len(b2)] == b2:
-        b = len(b2)
-    else:
-        return None
-    if stream[-len(e1):] == e1:
-        e = len(e1)
-    elif stream[-len(e2):] == e2:
-        e = len(e2)
-    elif stream[-len(e3):] == e3:
-        e = len(e3)
-    else:
-        return None
-    s = stream[b:-e]
+#    b1 = b'stream' + b'\r\n'
+#    b2 = b'stream' + b'\n'
+#    e1 = b'\r\n' + b'endstream'
+#    e2 = b'\n' + b'endstream'
+#    e3 = b'\r' + b'endstream'
+#    if stream[:len(b1)] == b1:
+#        b = len(b1)
+#    elif stream[:len(b2)] == b2:
+#        b = len(b2)
+#    else:
+#        return None
+#    if stream[-len(e1):] == e1:
+#        e = len(e1)
+#    elif stream[-len(e2):] == e2:
+#        e = len(e2)
+#    elif stream[-len(e3):] == e3:
+#        e = len(e3)
+#    else:
+#        return None
+#    s = stream[b:-e]
+    s = stream
     if '/Filter' not in stream_def:
         return s
     filters = stream_def['/Filter']
@@ -83,8 +84,8 @@ def decode_stream(stream, stream_def):
 
 def encode_stream(stream, stream_def):
     """Apply all specified filters in order to encode stream."""
-    b = b'stream\n'
-    e = b'\nendstream'
+    #b = b'stream\n'
+    #e = b'\nendstream'
     if '/Filter' not in stream_def:
         return stream
     filters = stream_def['/Filter']
@@ -94,17 +95,20 @@ def encode_stream(stream, stream_def):
     for _, f in enumerate(filters):
         if f == '/FlateDecode':
             try:
-                res = b + zlib.compress(res) + e
+                #res = b + zlib.compress(res) + e
+                res = zlib.compress(res)
             except:
                 return b'#PDFSyntaxException: cannot encode Flate'
         elif f == '/ASCIIHexDecode':
             try:
-                res = b + asciihex(res) + e
+                #res = b + asciihex(res) + e
+                res = asciihex(res)
             except:
                 return b'#PDFSyntaxException: cannot encode ASCIIHex'
         elif f == '/ASCII85Decode':
             try:
-                res = b + base64.a85encode(res, adobe=True) + e
+                #res = b + base64.a85encode(res, adobe=True) + e
+                res = base64.a85encode(res, adobe=True)
             except:
                 return b'#PDFSyntaxException: cannot encode ASCII85'
         else:
