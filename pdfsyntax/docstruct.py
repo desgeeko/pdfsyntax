@@ -39,6 +39,28 @@ EOL = b'\r\n'
 SPACE = EOL + b'\x00\x09\x0c\x20'
 
 
+def pprint_cache(doc: Doc):
+    """."""
+    idx = {}
+    for iref, action in changes(doc):
+        idx[int(iref.imag)] = action
+    markers = '0123456789'
+    header = ' ' * 6 + markers
+    print(header)
+    line = ''
+    for i, x in enumerate(doc.cache):
+        status = idx.get(i, 'x')
+        if status == 'x' and doc.cache[i] is None:
+            status = '-'
+        line += status
+        if i % 10 == 9 or i == len(doc.cache) - 1:
+            prefix = f"{(i-i%10)//10}_"
+            line = f"{prefix:>5} " + line
+            print(line)
+            line = ''
+    print(line)
+
+
 def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-1) -> list:
     """Parse indirect object whose number is [key] and return a cache filled at index [key].
 
