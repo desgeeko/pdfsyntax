@@ -118,6 +118,14 @@ def get_object(doc: Doc, obj):
         return deepcopy(obj)
 
 
+def object(doc: Doc, o_num, o_gen = None):
+    """For direct access to an indirect object without reference resolution (see get_object)."""
+    if o_gen is None:
+        o_gen = doc.index[-1][o_num]['o_gen']
+    iref = complex(o_gen, o_num)
+    return get_object(doc, iref)
+
+
 def flat_page_tree(doc: Doc, num=None, inherited={}, max_nb=None) -> list:
     """Recursively list the pages of a node."""
     accu = []
