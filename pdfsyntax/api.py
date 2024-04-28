@@ -7,6 +7,7 @@ from .objects import *
 from .text import *
 from .graphics import *
 from .layout import *
+from .markdown import *
 
 
 METADATA_ATTRS = '/Title /Author /Subject /Keywords /Creator /Producer'.split()
