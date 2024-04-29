@@ -2,7 +2,7 @@
 
 
 
-def first_token_before_space(string: str):
+def indentation_and_first_token(string: str):
     """."""
     i = 0
     indent = 0
@@ -66,7 +66,8 @@ def parse_markdown(md: str) -> list:
     lines = md.split('\n')
     for i, line in enumerate(lines):
         ln = line.strip('\r')
-        indent, bs = first_token_before_space(ln)
+        indent, bs = indentation_and_first_token(ln)
+        ln_break = True if ln[-2:] == '  ' else False
         if b and not ln:
             blocks.append(('P', indent, text_style(b)))
             b = ''
@@ -86,9 +87,11 @@ def parse_markdown(md: str) -> list:
             blocks.append(("OLI", indent, text_style(line[indent+len(bs)+1:])))
             b = ''
         else:
-            if line:
-                line += '\n'
+            #if line:
+            #    line += '\n'
             b += line
+            if ln_break:
+                b += "<br>"
     return blocks
 
 
@@ -110,8 +113,23 @@ def html_span(item: tuple):
 def assemble_html(blocks: list) -> str:
     """."""
     html = ''
+    prev_typ = ''
+    prev_indent = -1
     for typ, indent, items in blocks:
         s = ''
+        if prev_typ[1:] != 'LI' and typ[1:] == 'LI':
+            html += f"<{typ[:2].lower()}>\n"
+        elif prev_typ[1:] == 'LI' and typ[1:] == 'LI':
+            if prev_indent < indent:
+                html += f"\n<{typ[:2].lower()}>\n"
+            else:
+                html += "</li>\n"
+        if prev_typ[1:] == 'LI' and typ[1:] != 'LI':
+            html += f"</li>\n"
+            html += f"</{prev_typ[:2].lower()}>\n"
+        elif prev_typ[1:] == 'LI' and typ[1:] == 'LI':
+            if prev_indent > indent:
+                html += f"</{typ[:2].lower()}>\n"
         for t in items:
             s += html_span(t)
         if typ == 'P':
@@ -119,6 +137,16 @@ def assemble_html(blocks: list) -> str:
         elif typ[0] == 'H':
             html += f"<{typ.lower()}>{s}</{typ.lower()}>\n"
         elif typ[1:] == 'LI':
-            html += f"<{typ[1:].lower()}>{s}</{typ[1:].lower()}>\n"
+            html += f"<{typ[1:].lower()}>{s}"
+        prev_typ = typ
+        prev_indent = indent
     return html
+
+
+def md2html(md: str):
+    """."""
+    p = parse_markdown(md)
+    html = assemble_html(p)
+    return html
+
 
