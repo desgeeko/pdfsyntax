@@ -63,15 +63,26 @@ def parse_markdown(md: str) -> list:
     """."""
     blocks = []
     b = ''
+    code = False
     lines = md.split('\n')
     for i, line in enumerate(lines):
         ln = line.strip('\r')
         indent, bs = indentation_and_first_token(ln)
         ln_break = True if ln[-2:] == '  ' else False
-        if b and not ln:
+        if bs[:3] == "```":
+            if code == False:
+                code = True
+            else:
+                blocks.append(("PRE", indent, [('RAW', b)]))
+                code = False
+                b = ''
+        elif code:
+            line += '\n'
+            b += line
+        elif b and not ln:
             blocks.append(('P', indent, text_style(b)))
             b = ''
-        if ln and ln == '=' * len(ln):
+        elif ln and ln == '=' * len(ln):
             blocks.append(('H1', indent, text_style(b)))
             b = ''
         elif ln and ln == '-' * len(ln):
@@ -86,9 +97,15 @@ def parse_markdown(md: str) -> list:
         elif bs and bs[-1] == '.' and bs[0] >= '0' and bs[0] <= '9':
             blocks.append(("OLI", indent, text_style(line[indent+len(bs)+1:])))
             b = ''
+        elif bs and bs[0] == '>':
+            blocks.append(("BLOCKQUOTE", indent, text_style(ln[2:])))
+            b = ''
+        elif bs and indent >= 4:
+            blocks.append(("PRE", indent, [('RAW', ln)]))
+            #b = ''
         else:
-            #if line:
-            #    line += '\n'
+            if code:
+                line += '\n'
             b += line
             if ln_break:
                 b += "<br>"
@@ -102,6 +119,8 @@ def html_span(item: tuple):
         return text
     elif typ == 'CODE':
         return f"<code>{text}</code>"
+    elif typ == 'RAW':
+        return text
     elif len(typ) == 1:
         return f"<em>{text}</em>"
     elif len(typ) == 2:
@@ -134,6 +153,10 @@ def assemble_html(blocks: list) -> str:
             s += html_span(t)
         if typ == 'P':
             html += f"<p>{s}</p>\n"
+        if typ == 'PRE':
+            html += f"<pre><code>{s}</code></pre>\n"
+        elif typ == 'BLOCKQUOTE':
+            html += f"<blockquote>{s}</blockquote>\n"
         elif typ[0] == 'H':
             html += f"<{typ.lower()}>{s}</{typ.lower()}>\n"
         elif typ[1:] == 'LI':
