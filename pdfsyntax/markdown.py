@@ -3,21 +3,55 @@
 
 
 def indentation_and_first_token(string: str):
-    """."""
+    """Count indentation for spaces & blockquotes and detect first token."""
     i = 0
     indent = 0
+    blockquote = False
     while i < len(string):
         c = string[i]
-        if c in ' \t':
+        if c == ' ':
             i += 1
+        elif c == '>':
+            blockquote = True
+            i += 1
+        elif c == '\t':
+            i += 4
         else:
+            if blockquote:
+                i -= 1
             break
     return i, string[i:].split(' ')[0]
 
 
-def text_style(string: str) -> list:
-    """."""
-    res = []
+def link(string: str) -> str:
+    """Turn link into HTML tag."""
+    res = ''
+    i = 0
+    j = 0
+    while i < len(string):
+        f = string.find('](', i)
+        if f == -1:
+            break
+        b1 = string.rfind('[', i) + 1
+        b2 = f
+        p1 = f + 2
+        p2 = string.find(')', f) + 1
+        if string[b1-2] == '!':
+            j = p2
+            res += string[i:b1-2]
+            res += f"<img src='{string[p1:p2-1]}' alt='{string[b1:b2]}'>"
+        else:
+            j = p2
+            res += string[i:b1-1]
+            res += f"<a href='{string[p1:p2-1]}'>{string[b1:b2]}</a>"
+        i = p2
+    res += string[j:]
+    return res
+
+
+def style(string: str) -> str:
+    """Apply HTML spans for emphasis and code."""
+    res = ''
     i = 0
     current = 0
     accu = False
@@ -27,17 +61,17 @@ def text_style(string: str) -> list:
         if search == 'TBD':
             if c == '`':
                 search = c
-                res.append(('TEXT', string[current:i]))
+                res += string[current:i]
                 current = i
             if c in '*_':
                 accu = True
                 search = c
-                res.append(('TEXT', string[current:i]))
+                res += string[current:i]
                 current = i
         else:
             if search == '`':
                 if c == '`':
-                    res.append(('CODE', string[current+1:i]))
+                    res += f"<code>{string[current+1:i]}</code>"
                     current = i+1
                     search = 'TBD'
             elif accu:
@@ -47,7 +81,13 @@ def text_style(string: str) -> list:
                     accu = False
             elif '*' in search or '_' in search:
                 if c in '*_':
-                    res.append((search, string[current+len(search):i]))
+                    text = string[current+len(search):i]
+                    if len(search) == 1:
+                        res += f"<em>{text}</em>"
+                    elif len(search) == 2:
+                        res +=  f"<strong>{text}</strong>"
+                    elif len(search) == 3:
+                        res +=  f"<em><strong>{text}</strong></em>"
                     current = i+len(search)
                     search = 'TBD'
                     i += (len(search)-1)
@@ -55,120 +95,181 @@ def text_style(string: str) -> list:
                 accu = False
         i += 1
         if i == len(string):
-            res.append(('TEXT', string[current:i]))
+            res += string[current:i]
     return res
 
 
-def parse_markdown(md: str) -> list:
-    """."""
+def parse_code_block(lines: list, start_pos = 0, mode = 'indented'):
+    """Parse consecutive lines for code block."""
+    res = []
+    i = start_pos
+    while i < len(lines):
+        ln = lines[i].strip('\r')
+        indent, bs = indentation_and_first_token(ln)
+        ln += '\n'
+        if mode == 'indented':
+            if indent == 4:
+                res.append(ln)
+            else:
+                break
+        elif mode == 'fenced':
+            if ln[:3] == "```":
+                break
+            else:
+                res.append(ln)
+        i += 1
+    return ("PRE", i, res)
+
+
+def parse_title(lines: list, start_pos = 0, mode = 'underlined'):
+    """Parse header line."""
+    res = []
+    typ = ''
+    i = start_pos
+    ln = lines[i].strip('\r')
+    indent, bs = indentation_and_first_token(ln)
+    if mode == 'underlined':
+        if lines[i+1][:2] == '==':
+            typ = "H1"
+        elif lines[i+1][:2] == '--':
+            typ = "H2"
+        res.append(ln)
+        i += 1
+    elif mode == 'prefixed':
+        typ = f"H{len(bs)}"
+        res.append(ln[len(bs)+1:])
+    return (typ, i, res)
+
+
+def parse_list(lines: list, start_pos = 0, mode = 'unordered'):
+    """Parse consecutive lines for items list."""
+    res = []
+    if mode == 'unordered':
+        typ = 'UL'
+    elif mode == 'ordered':
+        typ = 'OL'
+    ref_indent, _ = indentation_and_first_token(lines[start_pos])
+    i = start_pos
+    while i < len(lines):
+        ln = lines[i].strip('\r')
+        indent, bs = indentation_and_first_token(ln)
+        if mode == 'unordered':
+            if bs != '*' and bs != '+' and bs != '-':
+                break
+        elif mode == 'ordered':
+            if bs[-1] != '.':
+                break
+        if indent != ref_indent:
+            break
+        res.append(('LI' ,[ln[indent+len(bs)+1:]]))
+        i += 1
+    return (typ, i, res)
+
+
+def parse_table(lines: list, start_pos = 0):
+    """Parse consecutive lines for table."""
+    res = []
+    ref_indent, _ = indentation_and_first_token(lines[start_pos])
+    i = start_pos
+    header = True
+    tbody = []
+    while i < len(lines):
+        ln = lines[i].strip('\r')
+        indent, bs = indentation_and_first_token(ln)
+        if not bs or bs[0] != '|':
+            break
+        if indent != ref_indent:
+            break
+        if header:
+            header = False
+            row = [('TH', [td]) for td in ln[indent:].split('|')[1:-1]]
+            res.append(('THEAD', [('TR', row)]))
+        else:
+            row = [('TD', [td]) for td in ln[indent:].split('|')[1:-1]]
+            if row[0][1][0][1:3] != '--':
+                tbody.append(('TR' ,row))
+        i += 1
+    res.append(('TBODY', tbody))
+    return ('TABLE', i, res)
+
+
+def parse_markdown(lines: list, start_pos = 0, start_indent = 0) -> tuple:
+    """Recursively parse lines of markdown and return a tree of ('TYPE', [CONTENT]) tuples."""
     blocks = []
     b = ''
-    code = False
-    lines = md.split('\n')
-    for i, line in enumerate(lines):
+    i = start_pos
+    while i < len(lines):
+        line = lines[i]
         ln = line.strip('\r')
         indent, bs = indentation_and_first_token(ln)
         ln_break = True if ln[-2:] == '  ' else False
-        if bs[:3] == "```":
-            if code == False:
-                code = True
-            else:
-                blocks.append(("PRE", indent, [('RAW', b)]))
-                code = False
-                b = ''
-        elif code:
-            line += '\n'
-            b += line
-        elif b and not ln:
-            blocks.append(('P', indent, text_style(b)))
+        if indent + 1 < start_indent:
+            blocks.append(('P', [b]))
             b = ''
-        elif ln and ln == '=' * len(ln):
-            blocks.append(('H1', indent, text_style(b)))
+            return blocks, i
+        elif not bs and indent > 0 and indent + 1 > start_indent:
+            blocks.append(('P', [b]))
             b = ''
-        elif ln and ln == '-' * len(ln):
-            blocks.append(('H2', indent, text_style(b)))
+            sub, i = parse_markdown(lines, i, indent + 1)
+            blocks.append(('BLOCKQUOTE', sub))
+        elif bs[:3] == "```":
+            typ, i, res = parse_code_block(lines, i+1, 'fenced')
+            blocks.append((typ, res))
+        elif bs and indent >= 4:
+            typ, i, res = parse_code_block(lines, i, 'indented')
+            blocks.append((typ, res))
+        elif ln and (ln == '=' * len(ln) or ln == '-' * len(ln)):
+            typ, i, res = parse_title(lines, i-1, 'underlined')
+            blocks.append((typ, res))
             b = ''
         elif bs and bs == '#' * len(bs):
-            blocks.append((f"H{len(bs)}", indent, text_style(line[len(bs)+1:])))
-            b = ''
+            typ, i, res = parse_title(lines, i, 'prefixed')
+            blocks.append((typ, res))
         elif bs == '*' or bs == '+' or bs == '-':
-            blocks.append(("ULI", indent, text_style(line[indent+len(bs)+1:])))
-            b = ''
+            typ, i, res = parse_list(lines, i, 'unordered')
+            blocks.append((typ, res))
         elif bs and bs[-1] == '.' and bs[0] >= '0' and bs[0] <= '9':
-            blocks.append(("OLI", indent, text_style(line[indent+len(bs)+1:])))
+            typ, i, res = parse_list(lines, i, 'ordered')
+            blocks.append((typ, res))
+        elif bs and bs == '|':
+            typ, i, res = parse_table(lines, i)
+            blocks.append((typ, res))
+        elif b and not ln:
+            blocks.append(('P', [b]))
             b = ''
-        elif bs and bs[0] == '>':
-            blocks.append(("BLOCKQUOTE", indent, text_style(ln[2:])))
-            b = ''
-        elif bs and indent >= 4:
-            blocks.append(("PRE", indent, [('RAW', ln)]))
-            #b = ''
         else:
-            if code:
-                line += '\n'
-            b += line
+            b += line[indent:]
             if ln_break:
                 b += "<br>"
-    return blocks
+        i += 1
+    return blocks, i
 
 
-def html_span(item: tuple):
-    """."""
-    typ, text = item
-    if typ == 'TEXT':
-        return text
-    elif typ == 'CODE':
-        return f"<code>{text}</code>"
-    elif typ == 'RAW':
-        return text
-    elif len(typ) == 1:
-        return f"<em>{text}</em>"
-    elif len(typ) == 2:
-        return f"<strong>{text}</strong>"
-    elif len(typ) == 3:
-        return f"<em><strong>{text}</strong></em>"
+def tags(string: str) -> str:
+    """Tranform both style & links."""
+    return style(link(string))
 
 
-def assemble_html(blocks: list) -> str:
-    """."""
-    html = ''
-    prev_typ = ''
-    prev_indent = -1
-    for typ, indent, items in blocks:
-        s = ''
-        if prev_typ[1:] != 'LI' and typ[1:] == 'LI':
-            html += f"<{typ[:2].lower()}>\n"
-        elif prev_typ[1:] == 'LI' and typ[1:] == 'LI':
-            if prev_indent < indent:
-                html += f"\n<{typ[:2].lower()}>\n"
+def assemble_html(blocks: list, html = '') -> str:
+    """Recusively build HTML string for parsed markdown."""
+    for typ, items in blocks:
+        html += f"<{typ.lower()}>"
+        for x in items:
+            if type(x) == tuple:
+                html += assemble_html([x])
             else:
-                html += "</li>\n"
-        if prev_typ[1:] == 'LI' and typ[1:] != 'LI':
-            html += f"</li>\n"
-            html += f"</{prev_typ[:2].lower()}>\n"
-        elif prev_typ[1:] == 'LI' and typ[1:] == 'LI':
-            if prev_indent > indent:
-                html += f"</{typ[:2].lower()}>\n"
-        for t in items:
-            s += html_span(t)
-        if typ == 'P':
-            html += f"<p>{s}</p>\n"
-        if typ == 'PRE':
-            html += f"<pre><code>{s}</code></pre>\n"
-        elif typ == 'BLOCKQUOTE':
-            html += f"<blockquote>{s}</blockquote>\n"
-        elif typ[0] == 'H':
-            html += f"<{typ.lower()}>{s}</{typ.lower()}>\n"
-        elif typ[1:] == 'LI':
-            html += f"<{typ[1:].lower()}>{s}"
-        prev_typ = typ
-        prev_indent = indent
+                if typ != 'PRE':
+                    html += tags(x)
+                else:
+                    html += x
+        html += f"</{typ.lower()}>\n"
     return html
 
 
-def md2html(md: str):
-    """."""
-    p = parse_markdown(md)
+def render_html(md: str):
+    """Render HTML from markdown string."""
+    lines = md.split('\n')
+    p, _ = parse_markdown(lines)
     html = assemble_html(p)
     return html
 

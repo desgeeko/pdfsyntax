@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDFSyntax</title>
+</head>
+<body>
+<h2>A PDF Disassembler</h2>
+<h3>Introduction</h3>
+<p>PDFSyntax is built from the ground up to become a PDF inspection and transformation library/tool. On this path, while debugging,  it is sometimes useful to directly dump the <strong>structure</strong> - and <strong>not the content</strong> - of PDF files on the command line (either files to transform or file produced by a transformation).</p>
+<p>This <em>"Disassembler"</em> function is exposed on the command line interface of the library. By design its output is terse and greppable.</p>
+<p>As stated by the PDF Specification, <em>PDF is not a programming language, and a PDF file is not a program.</em> But there is an analogy: cross-references allow to jump to different portions of a file with absolute (regular indirect objects) or relative addressing (indirect objects embedded in object streams).</p>
+<h3>Usage</h3>
+<p>PDFSyntax can be installed from the GitHub repo (no dependency) or from PyPI:</p>
+<pre>    pip install pdfsyntax
+</pre>
+<p>Then the following command prints a dump on the standard output:</p>
+<pre>    python3 -m pdfsyntax disasm FILE
+</pre>
+<h3>Example</h3>
+<p>Here is the output produced for the <a href='https://github.com/desgeeko/pdfsyntax/raw/main/samples/simple<em>text</em>string.pdf'><em>Simple Text String</em></a> example file from the PDF Specification:</p>
+<pre>$ python3 -m pdfsyntax disasm samples/simple_text_string.pdf
++ 0000 [8  ]            comment                           %PDF-1.4            
++ 0008 [1  ]            void                                                  
++ 0009 [70 ]            ind_obj   1,0            dict     /Catalog            
++ 0079 [1  ]            void                                                  
++ 0080 [48 ]            ind_obj   2,0            dict     /Outlines           
++ 0128 [1  ]            void                                                  
++ 0129 [62 ]            ind_obj   3,0            dict     /Pages              
++ 0191 [1  ]            void                                                  
++ 0192 [183]            ind_obj   4,0            dict     /Page               
++ 0375 [1  ]            void                                                  
++ 0376 [121] 100% _     ind_obj   5,0            stream                       
++ 0497 [1  ]            void                                                  
++ 0498 [27 ]            ind_obj   6,0            array                        
++ 0525 [1  ]            void                                                  
++ 0526 [119]            ind_obj   7,0            dict     /Font               
++ 0645 [1  ]            void                                                  
+- 0646 [198]            xreftable                         /Root=1,0           
+-                       xref      0,65535   0000 free                         
+-                       xref      1,0       0009 inuse                        
+-                       xref      2,0       0080 inuse                        
+-                       xref      3,0       0129 inuse                        
+-                       xref      4,0       0192 inuse                        
+-                       xref      5,0       0376 inuse                        
+-                       xref      6,0       0498 inuse                        
+-                       xref      7,0       0526 inuse                        
++ 0844 [1  ]            void                                                  
++ 0845 [13 ]            startxref           0646                              
++ 0858 [1  ]            void                                                  
++ 0859 [5  ]            comment                           %%EOF               
++ 0864 [1  ]            void                                                  
++ 0865 [1  ]            void                                                  
+$ 
+</pre>
+<p>This example is very basic because of its xref table and single uncompressed (100%) content stream. Inside a more complex file you would probably find something like this:</p>
+<pre>+ 053123 [461  ] 86%  _Flate        ind_obj   52,0               stream   /XRef  /Root=50,0   
+</pre>
+<h3>Grep examples</h3>
+<p>Ignore void spaces (separators) and focus on real objects:</p>
+<pre>    python3 -m pdfsyntax disasm FILE | grep -v void
+</pre>
+<p>List all xref entries of all tables or streams:</p>
+<pre>    python3 -m pdfsyntax disasm FILE | grep xref
+</pre>
+<p>Ignore detail lines:</p>
+<pre>    python3 -m pdfsyntax disasm FILE | grep "^+"
+</pre>
+<p>Search all mentions of an indirect object, both in itself and in xref:</p>
+<pre>    python3 -m pdfsyntax disasm FILE | grep 52,
+</pre>
+<h3>Columns</h3>
+<p>Most of the columns are collapsable in order to save horizontal space. For example the position (<code>#2</code>) may have a maximum width of 10 digits but for small files the unecessary leading zeros are removed.</p>
+<table><thead><tr><th> Column </th>
+<th> Description </th>
+</tr>
+</thead>
+<tbody><tr><td> <code>1</code>     </td>
+<td> <code>+</code> for a region with absolute positionning, <code>-</code> for a detail line (xref, /XRef, /ObjStm)</td>
+</tr>
+<tr><td> <code>2</code>     </td>
+<td> Position, absolute (<code>+</code>) or relative (<code>-</code>)</td>
+</tr>
+<tr><td> <code>3</code>     </td>
+<td> Size in bytes</td>
+</tr>
+<tr><td> <code>4</code>     </td>
+<td> Percentage compressed size / plain size</td>
+</tr>
+<tr><td> <code>5</code>     </td>
+<td> Applied filter(s)</td>
+</tr>
+<tr><td> <code>6</code>     </td>
+<td> Sequence number of embedded object</td>
+</tr>
+<tr><td> <code>7</code>     </td>
+<td> Indirect reference of <strong>envelope</strong> object</td>
+</tr>
+<tr><td> <code>8</code>     </td>
+<td> Region type</td>
+</tr>
+<tr><td> <code>9</code>     </td>
+<td> Indirect reference of <strong>this</strong> object</td>
+</tr>
+<tr><td> <code>10</code>    </td>
+<td> Addressing mode of xref, envelope or absolute</td>
+</tr>
+<tr><td> <code>11</code>    </td>
+<td> Address of xref</td>
+</tr>
+<tr><td> <code>12</code>    </td>
+<td> Type of PDF object</td>
+</tr>
+<tr><td> <code>13</code>    </td>
+<td> Some detail : most important keys for dict, excerpt for comment</td>
+</tr>
+</tbody>
+</table>
+<p></p>
+<blockquote><p> Warning: Encrypted files are not supported yet. </p>
+</blockquote>
+
+</body>

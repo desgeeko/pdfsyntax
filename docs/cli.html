@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDFSyntax</title>
+</head>
+<body>
+<h2>CLI</h2>
+<h3>Usage</h3>
+<p>The general form of the CLI usage is:</p>
+<pre>    python3 -m pdfsyntax COMMAND FILE
+</pre>
+<ul><li><code>overview</code> outputs text data about the structure and the metadata. </li>
+<li><code>text</code> spatially extracts text content on all pages, as if it was a kind of scan.</li>
+<li><code>browse</code> outputs static html data that lets you browse the internal structure of the PDF file: the PDF source is pretty-printed and augmented with hyperlinks.</li>
+</ul>
+<h3><code>overview</code></h3>
+<ul><li>the structure : Version, Pages, Revisions, etc...</li>
+<li>the metadata : Title, Author, Subject, etc...</li>
+</ul>
+<h3><code>text</code></h3>
+<p>You can get quick insights on a PDF file with these commands:The output shows information about:The output shows a full extract of the text content, with a spatial awareness: the algorithm <em>tries</em> to respect the original layout, as if characters of all sizes were approximately rendered on a fixed-size grid.</p>
+<h3><code>browse</code></h3>
+<ul><li>Pretty-print dictionary object</li>
+<li>Extract an object contained in an object stream and insert it in the flow like a regular object</li>
+<li>Decompress stream and display a small part of it</li>
+<li>Turn indirect object reference into hyperlink</li>
+<li>Turn offset reference (for example a /Prev entry) into hyperlink</li>
+<li>Put some color on key names (for example /Type)</li>
+<li>Display offset of an object</li>
+</ul>
+<p>The generated HTML looks like the raw PDF file with the following additions:The command writes on the standard output so you need to redirect to a file that you can open in your browser:</p>
+<pre>    python3 -m pdfsyntax browse file.pdf > inspection_file.pdf
+</pre>
+<p><a href='https://pdfsyntax.dev/simple<em>text</em>string.html'>This is a link to an EXAMPLE</a> of a full inspection output that you can browse.</p>
+<p>Here is another example, as a partial screenshot:<img src='https://raw.githubusercontent.com/desgeeko/pdfsyntax/main/docs/screenshot.png' alt='PDFSyntax screenshot'></p>
+<p></p>
+<blockquote><p> TO BE CONTINUED</p>
+</blockquote>
+
+</body>
