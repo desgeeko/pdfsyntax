@@ -178,8 +178,11 @@ def build_cache(fdata: Callable, index: list) -> list:
 def get_iref(doc: Doc, o_num: int, rev: int=-1) -> complex:
     """Build the relevant indirect reference for o_num in a doc revision."""
     current = doc.index[rev]
-    o_gen = current[o_num]['o_gen']
-    return complex(o_gen, o_num)
+    if current[o_num]:
+        o_gen = current[o_num]['o_gen']
+        return complex(o_gen, o_num)
+    else:
+        return None
 
 
 def in_use(doc: Doc, rev: int=-1) -> list:
@@ -203,6 +206,8 @@ def changes(doc: Doc, rev: int=-1):
         previous = doc.index[rev-1]
     for i in range(1, len(current)):
         iref = get_iref(doc, i, rev)
+        if not iref:
+            continue
         if i > len(previous)-1:
             res.append((iref, 'a'))
         elif i < len(previous) and previous[i] == current[i]:

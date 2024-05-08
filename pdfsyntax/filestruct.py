@@ -582,9 +582,10 @@ def linearized(fdata: Callable) -> dict:
     i, j, _ = next_token(bdata, j)  #o_num
     i, j, _ = next_token(bdata, j)  #gen_num
     i, j, _ = next_token(bdata, j)  #obj keyword
-    i, _, t = next_token(bdata, j)  #dict ?
+    i, j, t = next_token(bdata, j)  #dict ?
     if t == 'DICT':
-        first_obj = parse_obj(bdata, i)
+        o = bdata[i:j]
+        first_obj = parse_obj(o)
         if type(first_obj) == dict and '/Linearized' in first_obj:
             return first_obj
     return None

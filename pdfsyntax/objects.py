@@ -152,6 +152,8 @@ def next_token(text: bytes, i=0) -> tuple:
                 return (h, i+10, 'STREAM')
             elif  text[i:i+10] == b'\rendstream':
                 return (h, i+10, 'STREAM')
+            elif  text[i:i+9] == b'endstream':
+                return (h, i+9, 'STREAM')
         elif search == "ARRAY":
             if single == b'(':
                 text_in_array = 1
@@ -256,6 +258,7 @@ def parse_obj(text: bytes, start=0) -> Any:
         e1 = b'\r\n' + b'endstream'
         e2 = b'\n' + b'endstream'
         e3 = b'\r' + b'endstream'
+        e4 = b'endstream'
         if obj[:len(b1)] == b1:
             b = len(b1)
         elif obj[:len(b2)] == b2:
@@ -268,6 +271,8 @@ def parse_obj(text: bytes, start=0) -> Any:
             e = len(e2)
         elif obj[-len(e3):] == e3:
             e = len(e3)
+        elif obj[-len(e4):] == e4:
+            e = len(e4)
         else:
             return None
         s = obj[b:-e]
