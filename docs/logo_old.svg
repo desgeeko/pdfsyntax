@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="-72 -72 144 144"
+>
+   <!-- background -->
+   <rect x="-72" y="-72" width="100%" height="100%" fill="white" />
+  
+   <g transform="rotate(-45)" >
+      <!-- page is 72*92 with a 22*22 cut in the corner -->
+      <path d="M 14 -46 h -50 v 92 h 72 v -70 Z" fill="#fbb" stroke="grey" stroke-width="0" />
+
+      <!-- red fold -->
+      <path d="M 14 -46 v 22 h 22 Z" fill="red" />
+
+      <!-- double angle brackets -->
+      <g fill="transparent" stroke="black" stroke-width="4" >
+         <path d="M -36 -46 m  0  0 m 0  25 v -25 h  25" />
+         <path d="M -36 -46 m -8 -8 m 0  25 v -25 h  25" />
+         <path d="M  36  46 m  0  0 m 0 -25 v  25 h -25" />
+         <path d="M  36  46 m  8  8 m 0 -25 v  25 h -25" />
+      </g>
+
+      <!-- text lines -->
+      <g fill="transparent" stroke="grey" stroke-width="2" >
+         <path d="M -20   0 h 40" stroke="black" stroke-width="4"/>
+         <path d="M -20  14 h 40" />
+         <path d="M -20  20 h 40" />
+         <path d="M -20  26 h 40" />
+      </g>
+
+   </g>
+
+</svg>
