@@ -3,22 +3,26 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="pdfsyntax.css">
     <title>PDFSyntax</title>
 </head>
 <body>
 <h2>API</h2>
+<p></p>
 <h3>Usage</h3>
-<p>Most functions are pure and are exposed both as basic functions and as instance methods of a Doc object: in the function signatures found in the following sections, a <code>doc</code> first argument can read as <code>self</code>.For example both samples are equivalent:</p>
+<p>Most functions are pure and are exposed both as basic functions and as instance methods of a Doc object: in the function signatures found in the following sections, a <code>doc</code> first argument can read as <code>self</code>. For example both samples are equivalent:</p>
 <pre>>>> #Function pattern
 >>> from pdfsyntax import readfile, metadata
 >>> doc = readfile("samples/simple_text_string.pdf")
 >>> m = metadata(doc)
 </pre>
+<p></p>
 <pre>>>> #Method pattern
 >>> import pdfsyntax as pdf
 >>> doc = pdf.readfile("samples/simple_text_string.pdf")
 >>> m = doc.metadata()
 </pre>
+<p></p>
 <h3>File information</h3>
 <p><code>structure</code> and <code>metadata</code> are functions showing general information about the document.</p>
 <pre>>>> #File structure
@@ -29,6 +33,7 @@
 >>> metadata(doc)
 {'Title': None, 'Author': None, 'Subject': None, 'Keywords': None, 'Creator': None, 'Producer': None, 'CreationDate': None, 'ModDate': None}
 </pre>
+<p></p>
 <h3>Low-level access to object tree</h3>
 <p><code>trailer</code> and <code>catalog</code> give access to the starting point of the object tree. </p>
 <pre>>>> #Access to document trailer
@@ -46,6 +51,7 @@
 >>> doc.get_object(1j)
 {'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
 </pre>
+<p></p>
 <h3>Pages</h3>
 <p>Page index is a tree structure where attributes can be inherited from parent nodes. For convenience <code>flat_page_tree</code> returns an ordered list of document pages and specifies inherited attributes that should apply to each page.</p>
 <pre>>>> #Each item of the list is a tuple with the page object reference and its inherited attributes
@@ -63,6 +69,7 @@
   '/Parent': 3j,
   '/Type': '/Page'}]
 </pre>
+<p></p>
 <h3>Incremental updates</h3>
 <p>PDFSyntax tracks document incremental updates made possible by appending new or updated objects at the end of an original PDF file (and the matching XREF section). The <code>Revisions</code> entry of the <code>structure</code> function result, if greater than 1, indicates that incremental updates have been appended.By default, a newly opened document by PDFSyntax is ready to write modifications in the next revision.The <code>rewind</code> function rolls back to the previous revision. The <code>commit</code> function closes the current revision and open the next one.</p>
 <pre>>>> import pdfsyntax as pdf
@@ -86,6 +93,7 @@
 
 >>> #The annotation was not present in the initial revision of the file
 </pre>
+<p></p>
 <h3>High-level transformation</h3>
 <p><code>add_text_annotation</code> inserts a simple text annotation in a page.</p>
 <pre>>>> annotated_doc = add_text_annotation(doc, 0, "abcdefg", [100, 100, 100, 100])

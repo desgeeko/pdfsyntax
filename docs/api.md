@@ -2,8 +2,7 @@
 
 ### Usage
 
-Most functions are pure and are exposed both as basic functions and as instance methods of a Doc object: in the function signatures found in the following sections, a `doc` first argument can read as `self`.
-For example both samples are equivalent:
+Most functions are pure and are exposed both as basic functions and as instance methods of a Doc object: in the function signatures found in the following sections, a `doc` first argument can read as `self`. For example both samples are equivalent:
 
 ```Python
 >>> #Function pattern

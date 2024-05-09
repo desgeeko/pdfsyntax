@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="pdfsyntax.css">
     <title>PDFSyntax</title>
 </head>
 <body>
 <h2>A PDF Disassembler</h2>
+<p></p>
 <h3>Introduction</h3>
 <p>PDFSyntax is built from the ground up to become a PDF inspection and transformation library/tool. On this path, while debugging,  it is sometimes useful to directly dump the <strong>structure</strong> - and <strong>not the content</strong> - of PDF files on the command line (either files to transform or file produced by a transformation).</p>
 <p>This <em>"Disassembler"</em> function is exposed on the command line interface of the library. By design its output is terse and greppable.</p>
@@ -57,6 +59,7 @@ $
 <p>This example is very basic because of its xref table and single uncompressed (100%) content stream. Inside a more complex file you would probably find something like this:</p>
 <pre>+ 053123 [461  ] 86%  _Flate        ind_obj   52,0               stream   /XRef  /Root=50,0   
 </pre>
+<p></p>
 <h3>Grep examples</h3>
 <p>Ignore void spaces (separators) and focus on real objects:</p>
 <pre>    python3 -m pdfsyntax disasm FILE | grep -v void
@@ -70,6 +73,7 @@ $
 <p>Search all mentions of an indirect object, both in itself and in xref:</p>
 <pre>    python3 -m pdfsyntax disasm FILE | grep 52,
 </pre>
+<p></p>
 <h3>Columns</h3>
 <p>Most of the columns are collapsable in order to save horizontal space. For example the position (<code>#2</code>) may have a maximum width of 10 digits but for small files the unecessary leading zeros are removed.</p>
 <table><thead><tr><th> Column </th>

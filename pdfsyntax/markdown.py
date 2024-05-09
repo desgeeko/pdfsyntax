@@ -193,10 +193,18 @@ def parse_table(lines: list, start_pos = 0):
     return ('TABLE', i, res)
 
 
+def flush_p(blocks: list, b: list):
+    """Flush paragraph into blocks buffer."""
+    if b:
+        blocks.append(('P', [''.join(b)]))
+        b.clear()
+    return
+
+
 def parse_markdown(lines: list, start_pos = 0, start_indent = 0) -> tuple:
     """Recursively parse lines of markdown and return a tree of ('TYPE', [CONTENT]) tuples."""
     blocks = []
-    b = ''
+    b = []
     i = start_pos
     while i < len(lines):
         line = lines[i]
@@ -204,43 +212,46 @@ def parse_markdown(lines: list, start_pos = 0, start_indent = 0) -> tuple:
         indent, bs = indentation_and_first_token(ln)
         ln_break = True if ln[-2:] == '  ' else False
         if indent + 1 < start_indent:
-            blocks.append(('P', [b]))
-            b = ''
+            flush_p(blocks, b)
             return blocks, i
         elif not bs and indent > 0 and indent + 1 > start_indent:
-            blocks.append(('P', [b]))
-            b = ''
+            flush_p(blocks, b)
             sub, i = parse_markdown(lines, i, indent + 1)
             blocks.append(('BLOCKQUOTE', sub))
         elif bs[:3] == "```":
+            flush_p(blocks, b)
             typ, i, res = parse_code_block(lines, i+1, 'fenced')
             blocks.append((typ, res))
         elif bs and indent >= 4:
+            flush_p(blocks, b)
             typ, i, res = parse_code_block(lines, i, 'indented')
             blocks.append((typ, res))
         elif ln and (ln == '=' * len(ln) or ln == '-' * len(ln)):
             typ, i, res = parse_title(lines, i-1, 'underlined')
             blocks.append((typ, res))
-            b = ''
+            b = []
         elif bs and bs == '#' * len(bs):
+            flush_p(blocks, b)
             typ, i, res = parse_title(lines, i, 'prefixed')
             blocks.append((typ, res))
         elif bs == '*' or bs == '+' or bs == '-':
+            flush_p(blocks, b)
             typ, i, res = parse_list(lines, i, 'unordered')
             blocks.append((typ, res))
         elif bs and bs[-1] == '.' and bs[0] >= '0' and bs[0] <= '9':
+            flush_p(blocks, b)
             typ, i, res = parse_list(lines, i, 'ordered')
             blocks.append((typ, res))
         elif bs and bs == '|':
+            flush_p(blocks, b)
             typ, i, res = parse_table(lines, i)
             blocks.append((typ, res))
         elif b and not ln:
-            blocks.append(('P', [b]))
-            b = ''
+            flush_p(blocks, b)
         else:
-            b += line[indent:]
+            b.append(line[indent:])
             if ln_break:
-                b += "<br>"
+                b.append("<br>")
         i += 1
     return blocks, i
 

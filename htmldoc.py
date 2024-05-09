@@ -7,6 +7,7 @@ html_header = '''<!DOCTYPE html>
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="pdfsyntax.css">
     <title>PDFSyntax</title>
 </head>
 '''

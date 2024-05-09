@@ -1,0 +1,26 @@
+body {
+    font-family: sans-serif;
+    font-size: 1.2em;
+    max-width: 700px;
+    margin: 0.5em auto;
+}
+h2 {
+    font-size: 2em;
+    border-bottom-style: solid;
+    border-bottom-color: black;
+}
+h3 {
+    font-size: 1.5em;
+}
+code {
+    background-color: #eeeeee;
+}
+pre {
+    padding-top: 1em;
+    padding-bottom: 1em;
+    background-color: #eeeeee;
+    overflow-y: auto;
+}
+img {
+    max-width: 100%;
+}
