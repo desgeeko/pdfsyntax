@@ -613,6 +613,7 @@ def squash(doc: Doc) -> Doc:
     new_cache = len(new_index) * [None]
     new_data = [{}]
     new_cache[0] = trailer(doc)
+    new_cache[0] = deep_ref_retarget(new_cache[0], mapping)
     for i in range(1, len(new_index)):
         old_ref = new_index[i]['OLD_REF']
         obj = get_object(doc, old_ref)
