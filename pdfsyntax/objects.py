@@ -474,7 +474,7 @@ def serialize(obj, depth=0) -> bytes:
         ret += b'>>'
         if content:
             ret += b'\nstream\n'
-            ret += b'\n'
+            #ret += b'\n'
             ret += content
             ret += b'\nendstream'
     elif type(obj) == list:

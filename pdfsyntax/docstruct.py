@@ -186,12 +186,12 @@ def get_iref(doc: Doc, o_num: int, rev: int=-1) -> complex:
 
 
 def in_use(doc: Doc, rev: int=-1) -> list:
-    """List objects in use (not deleted)."""
+    """List objects in use (not empty from the start and not deleted)."""
     res = []
     current = doc.index[rev]
     for i in range(1, len(current)):
         iref = get_iref(doc, i, rev)
-        if 'DELETED' not in current[i]:
+        if iref and 'DELETED' not in current[i]:
             res.append(iref)
     return res
 

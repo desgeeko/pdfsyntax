@@ -163,10 +163,9 @@ def rotate(doc: Doc, degrees: int = 90, pages: list = []) -> Doc:
 
 
 def flate_compress(doc: Doc) -> Doc:
-    """Squash doc and apply FlateDecode filter on all streams."""
-    doc = squash(doc)
-    cache = doc.cache
-    for i, o in enumerate(cache):
+    """Apply FlateDecode filter on all streams and squash doc."""
+    for iref in in_use(doc):
+        o = get_object(doc, iref)
         if type(o) == Stream:
             entries = o['entries']
             if '/Filter' in entries and entries['/Filter'] == '/FlateDecode':
@@ -175,7 +174,9 @@ def flate_compress(doc: Doc) -> Doc:
                 entries = deepcopy(entries)
                 entries['/Filter'] = '/FlateDecode'
                 s, length = forge_stream(entries, o['stream'])
+                i = int(iref.imag)
                 doc = update_object(doc, i, s)
+    doc = squash(doc)
     return doc
 
 
