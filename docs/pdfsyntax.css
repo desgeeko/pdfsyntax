@@ -1,16 +1,16 @@
 body {
     font-family: sans-serif;
-    font-size: 1.2em;
+    font-size: 1em;
     max-width: 700px;
     margin: 0.5em auto;
 }
 h2 {
-    font-size: 2em;
+    font-size: 1.5em;
     border-bottom-style: solid;
     border-bottom-color: black;
 }
 h3 {
-    font-size: 1.5em;
+    font-size: 1.2em;
 }
 code {
     background-color: #eeeeee;

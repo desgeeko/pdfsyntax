@@ -1,32 +1,28 @@
 PDFSyntax
 =========
 
-*A Python library to inspect and modify the internal structure of a PDF file*
+*A Python library to inspect and transform the internal structure of PDF files*
 
 ## Introduction
 
-The project is focused on chapter 7 ("Syntax") of the Portable Document Format (PDF) Specification.
+The project is focused on chapter 7 ("Syntax") of the Portable Document Format (PDF) Specification. It implements all the detailed document structure management down to the byte level for inspection and transformation use cases (access to metadata, rotation,...).
 
-PDFSyntax is lightweight (no dependencies) and written from scratch in pure Python. 
+- Internal functions are being exposed as an API toolkit for PDF read/write operations,
+- Some specific functions are additionally exposed as a command line interface for use in a terminal or a  browser.
 
-1. CLI: It started as a command-line interface to inspect the internal structure of a PDF file.
-2. API: Now the internal functions are being exposed as a toolkit for PDF read/write operations.
+PDFSyntax is lightweight (no dependencies) and written from scratch in pure Python, with a focus on simplicity and immutability.
+
+It favors non-destructive edits allowed by the PDF Specification: by default incremental updates are added at the end of the original file (you may rewind or squash all revisions into a single one).
 
 ## Project status
 
-WORK IN PROGRESS! This is ALPHA quality software. The API may change anytime.
+WORK IN PROGRESS! This is BETA quality software. The API may change anytime.
 Next on TO-DO list:
 - Cut & append pages
 - Lossless compression
 - More filters
 - Improve text extraction
 - Augment text extraction with layout detection
-
-## Design
-
-PDFSyntax favors non-destructive edits allowed by the PDF Specification: by default incremental updates are added at the end of the original file.
-
-It is mostly made of simple functions working on built-in types and named tuples. Shallow copying of the Doc object structure performed by pure functions offers some kind of - *experimental* - immutability.
 
 ## Installation
 

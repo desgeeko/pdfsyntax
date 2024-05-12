@@ -7,7 +7,8 @@ SPL_DIR = ./samples
 DOC_DIR = ./docs
 MD_DOCS = $(wildcard $(DOC_DIR)/*.md)
 HT_DOCS = $(MD_DOCS:.md=.html)
-
+MD_READ = ./README.md
+HT_READ = $(DOC_DIR)/README.html
 
 clean:
 	rm -rf $(SRC_DIR)/__pycache__
@@ -15,6 +16,7 @@ clean:
 	rm -rf $(EGG_DIR)
 	rm -rf $(BLD_DIR)
 	rm -f $(HT_DOCS)
+	rm -f docs/README.html
 
 test:
 	python3 -m unittest discover $(TST_DIR) -v
@@ -31,6 +33,11 @@ inspect:
 doc: $(HT_DOCS)
 
 %.html: %.md
+	python3 htmldoc.py $< > $@
+
+readme: $(HT_READ)
+
+$(HT_READ): $(MD_READ)
 	python3 htmldoc.py $< > $@
 
 .PHONY: clean test build upload

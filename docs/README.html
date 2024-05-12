@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="pdfsyntax.css">
+    <title>PDFSyntax</title>
+</head>
+<body>
+<h1>PDFSyntax</h1>
+<p><em>A Python library to inspect and transform the internal structure of PDF files</em></p>
+<h2>Introduction</h2>
+<p>The project is focused on chapter 7 ("Syntax") of the Portable Document Format (PDF) Specification. It implements all the detailed document structure management down to the byte level for inspection and transformation use cases (access to metadata, rotation,...).</p>
+<ul><li>Internal functions are being exposed as an API toolkit for PDF read/write operations,</li>
+<li>Some specific functions are additionally exposed as a command line interface for use in a terminal or a  browser.</li>
+</ul>
+<p>PDFSyntax is lightweight (no dependencies) and written from scratch in pure Python, with a focus on simplicity and immutability.</p>
+<p>It favors non-destructive edits allowed by the PDF Specification: by default incremental updates are added at the end of the original file (you may rewind or squash all revisions into a single one).</p>
+<h2>Project status</h2>
+<p>WORK IN PROGRESS! This is BETA quality software. The API may change anytime.Next on TO-DO list:</p>
+<ul><li>Cut & append pages</li>
+<li>Lossless compression</li>
+<li>More filters</li>
+<li>Improve text extraction</li>
+<li>Augment text extraction with layout detection</li>
+</ul>
+<h2>Installation</h2>
+<p>You can install from PyPI:</p>
+<pre>    pip install pdfsyntax
+</pre>
+<h2>CLI overview</h2>
+<p>Please refer to the <a href='https://github.com/desgeeko/pdfsyntax/blob/main/docs/cli.md'>CLI README</a> for details.</p>
+<p>The general form of the CLI usage is:</p>
+<pre>    python3 -m pdfsyntax COMMAND FILE
+</pre>
+<p>You can get quick insights on a PDF file with these commands:</p>
+<ul><li><code>overview</code> outputs text data about the structure and the metadata. </li>
+<li><code>browse</code> outputs static html data that lets you browse the internal structure of the PDF file: the PDF source is pretty-printed and augmented with hyperlinks.</li>
+<li><code>text</code> outputs extracted text spatially, as if it was a kind of scan.</li>
+</ul>
+<h2>API overview</h2>
+<p>Please refer to the <a href='https://github.com/desgeeko/pdfsyntax/blob/main/docs/api.md'>API README</a> for details.</p>
+<p>PDFSyntax is mostly made of simple functions. Example:</p>
+<pre>>>> from pdfsyntax import readfile, metadata
+>>> doc = readfile("samples/simple_text_string.pdf")
+>>> metadata(doc) #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
+</pre>
+<p>The Doc object is probably the only dedicated class you will need to handle. It is a black box that stores all the internal states of a document:</p>
+<ul><li>content that is cached/memoized from an original file,</li>
+<li>modifications that add/modifiy/delete content and that are tracked as incremental updates.</li>
+</ul>
+<pre>>>> doc
+<PDF Doc with 1 revisions(s), ready to start update/revision 2, cache loaded with 0 / 7 objects>
+</pre>
+<p>This object exposes as a method the same metadata function, therefore you can get the same result with:</p>
+<pre>>>> doc.metadata() #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
+</pre>
+<p>Low-level functions like <code>get_object</code> or <code>update_object</code> allow you to directly access and manipulate the inner objects of the document structure.You may also use higher-level functions like <code>rotate</code>:</p>
+<pre>>>> from pdfsyntax import rotate, writefile
+>>> doc180 = rotate(doc, 180) #rotate pages by 180°
+</pre>
+<p>The orignal object is unchanged and a new object is created with an incremental update (revision 2) that encloses the ongoing orientation modification:</p>
+<pre>>>> doc180
+<PDF Doc with 2 revisions(s), current update/revision containing 1 modifications, cache loaded with 3 / 7 objects>
+</pre>
+<p>You then can write the modified PDF to disk. Note that the resulting file contains a new section appended to the original content. You may cut this section to revert the change.</p>
+<pre>>>> writefile(doc180, "rotated_doc.pdf")
+</pre>
+<p></p>
+<h2>Open-Source, not Open-Contribution yet</h2>
+<p>PDFSyntax is <a href='https://github.com/desgeeko/pdfsyntax/blob/main/LICENCE'>MIT licensed</a> but is currently closed to contributions.</p>
+<blockquote><p> Personal note: this is a pet projet of mine and my time is limited. First I need to focus on my roadmap (new features and refactoring) and then I will happily accept contributions when everything is a little more stabilised. </p>
+</blockquote>
+<p></p>
+
+</body>

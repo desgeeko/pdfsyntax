@@ -157,7 +157,7 @@ def parse_list(lines: list, start_pos = 0, mode = 'unordered'):
             if bs != '*' and bs != '+' and bs != '-':
                 break
         elif mode == 'ordered':
-            if bs[-1] != '.':
+            if not bs or bs[-1] != '.':
                 break
         if indent != ref_indent:
             break
