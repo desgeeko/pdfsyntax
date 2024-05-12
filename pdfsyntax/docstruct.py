@@ -584,7 +584,7 @@ def delete_pages(doc: Doc, del_pages) -> Doc:
 
 
 def defragment_map(current_index: list, excluded={}) -> tuple:
-    """Build new index without empty slots (ie deleted objects)."""
+    """Build new index without excluded slots (ie deleted objects)."""
     new_index = [None]
     mapping = {}
     nb = 0
@@ -606,6 +606,10 @@ def defragment_map(current_index: list, excluded={}) -> tuple:
 def squash(doc: Doc) -> Doc:
     """Group all revisions into a single one."""
     obj_stms = envelope_objects(doc)
+    for rev in range(len(doc.index)-1):
+        xref_stream_num = doc.index[rev][0].get('xref_stream_num')
+        if xref_stream_num:
+            obj_stms.add(xref_stream_num)
     old_index = doc.index[-1]
     new_index, mapping = defragment_map(old_index, obj_stms)
     if new_index[0] is None:
