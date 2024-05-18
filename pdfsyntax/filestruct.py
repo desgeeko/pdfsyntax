@@ -425,8 +425,8 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
     o_num = trailer['/Size'] - 1
     trailer['/Type'] = '/XRef'
     trailer['/Length'] = -1
-    trailer['/Filter'] = '/ASCIIHexDecode' #TODO: switch to flate
-    #trailer['/Filter'] = '/FlateDecode'
+    #trailer['/Filter'] = '/ASCIIHexDecode'
+    trailer['/Filter'] = '/FlateDecode'
     max_counter = max([e[3] for e in elems if e[3] is not None])
     b = (int(math.log2(max_counter+1)) // 8) + 1
     trailer['/W'] = [1, b, b]
@@ -561,6 +561,8 @@ def build_revision_byte_stream(
         new_index[0]['abs_pos'] = starting_pos + built_xref.rfind(b'trailer')
         new_index[0]['abs_next'] = starting_pos + len(built_xref)
     else:
+        if cache[0].get('/DecodeParms'):
+            del cache[0]['/DecodeParms']
         cache[0]['/Size'] = len(current_index) + 1
         xref_table.append(('n', len(current_index), 0, counter, None))
         built_xref = format_xref_stream(xref_table, cache[0], next_free)
