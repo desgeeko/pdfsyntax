@@ -8,6 +8,9 @@ from collections import namedtuple
 from copy import deepcopy
 
 
+EOL = b'\r\n'
+SPACE = EOL + b'\x00\x09\x0c\x20'
+
 INHERITABLE_ATTRS = '/Resources /MediaBox /CropBox /Rotate'.split()
 
 
@@ -35,12 +38,9 @@ class Doc(Doc):
             res += f", cache=None>\n"
         return res
 
-EOL = b'\r\n'
-SPACE = EOL + b'\x00\x09\x0c\x20'
-
 
 def pprint_cache(doc: Doc):
-    """."""
+    """Pretty print cache content as a matrix."""
     idx = {}
     for iref, action in changes(doc):
         idx[int(iref.imag)] = action
@@ -59,6 +59,22 @@ def pprint_cache(doc: Doc):
             print(line)
             line = ''
     print(line)
+
+
+def pprint_data_history(doc: Doc):
+    """Pretty print data history across all revisions."""
+    for i, x in enumerate(doc.data):
+        fd = doc.data[i].get('fdata')
+        bd = doc.data[i].get('bdata')
+        cut = doc.data[-i].get('eof_cut')
+        if fd:
+            _, _, _, sz = fd(None, -1)
+        else:
+            sz = 0
+        bdata = len(bd) if bd else "None"
+        eof_cut = cut if cut else "None"
+        line = f"[{i}] Source: {fd.__name__:16} | Length: {sz:12} | EOF cut: {eof_cut:>12} | Append: {bdata:>12}"
+        print(line)
 
 
 def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-1) -> list:
@@ -345,10 +361,14 @@ def revision_index(doc: Doc, rev=-1) -> int:
 def merge_fdata(fdata: Callable, index: int, bdata: bytes):
     """Merge a data provider and bytes into a new composite data provider."""
     def composite_fdata(start_pos: int, length: int) -> tuple:
+        if start_pos == None and length == -1:
+            #_, _, _, sz = fdata(None, -1)
+            sz = index
+            return (None, None, None, sz + len(bdata))
         if start_pos > index:
             start_pos = start_pos - index
-            if start_pos == -1 and length == 0:
-                return (None, None, None, len(bdata))
+            #if start_pos == -1 and length == 0:
+            #    return (None, None, None, len(bdata))
             if length == -1:
                 length = len(bdata) - start_pos
             if start_pos == -1:
