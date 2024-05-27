@@ -7,62 +7,63 @@
     <title>PDFSyntax</title>
 </head>
 <body>
+<main>
 <h2>API</h2>
 <p></p>
 <h3>Usage</h3>
 <p>Most functions are pure and are exposed both as basic functions and as instance methods of a Doc object: in the function signatures found in the following sections, a <code>doc</code> first argument can read as <code>self</code>. For example both samples are equivalent:</p>
-<pre>>>> #Function pattern
->>> from pdfsyntax import readfile, metadata
->>> doc = readfile("samples/simple_text_string.pdf")
->>> m = metadata(doc)
+<pre>&gt;&gt;&gt; #Function pattern
+&gt;&gt;&gt; from pdfsyntax import readfile, metadata
+&gt;&gt;&gt; doc = readfile("samples/simple_text_string.pdf")
+&gt;&gt;&gt; m = metadata(doc)
 </pre>
 <p></p>
-<pre>>>> #Method pattern
->>> import pdfsyntax as pdf
->>> doc = pdf.readfile("samples/simple_text_string.pdf")
->>> m = doc.metadata()
+<pre>&gt;&gt;&gt; #Method pattern
+&gt;&gt;&gt; import pdfsyntax as pdf
+&gt;&gt;&gt; doc = pdf.readfile("samples/simple_text_string.pdf")
+&gt;&gt;&gt; m = doc.metadata()
 </pre>
 <p></p>
 <h3>File information</h3>
 <p><code>structure</code> and <code>metadata</code> are functions showing general information about the document.</p>
-<pre>>>> #File structure
->>> structure(doc)
+<pre>&gt;&gt;&gt; #File structure
+&gt;&gt;&gt; structure(doc)
 {'Version': '1.4', 'Pages': 1, 'Revisions': 1, 'Encrypted': False, 'Paper of 1st page': '215x279mm or 8.5x11.0in (US Letter)'}
 
->>> #File metadata
->>> metadata(doc)
+&gt;&gt;&gt; #File metadata
+&gt;&gt;&gt; metadata(doc)
 {'Title': None, 'Author': None, 'Subject': None, 'Keywords': None, 'Creator': None, 'Producer': None, 'CreationDate': None, 'ModDate': None}
 </pre>
 <p></p>
 <h3>Low-level access to object tree</h3>
 <p><code>trailer</code> and <code>catalog</code> give access to the starting point of the object tree. </p>
-<pre>>>> #Access to document trailer
->>> doc.trailer()
+<pre>&gt;&gt;&gt; #Access to document trailer
+&gt;&gt;&gt; doc.trailer()
 {'/Root': 1j, '/Size': 8, '/Prev': 603}
 
->>> #Access to document catalog as specified in the /Root entry of the trailer
->>> doc.catalog()
+&gt;&gt;&gt; #Access to document catalog as specified in the /Root entry of the trailer
+&gt;&gt;&gt; doc.catalog()
 {'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
 </pre>
 <p><code>1j</code> is a complex number (!) representing indirect reference <code>1 0 R</code>. Why? Because the approach is to map PDF object types to Python basic built-in types as much as possible, and it is a concise way to show both the object number (as the imaginary part) and the generation number (as the real part). Moreover the generation is very often equal to zero, so the real part is not shown.You may think of the <code>j</code> as a "jump" to another object :)</p>
 <p><code>get_object</code> gives direct access to indirect objects.</p>
-<pre>>>> #Access to document catalog, given that the trailer redirects to 1j for root
->>> #(equivalent to catalog fonction)
->>> doc.get_object(1j)
+<pre>&gt;&gt;&gt; #Access to document catalog, given that the trailer redirects to 1j for root
+&gt;&gt;&gt; #(equivalent to catalog fonction)
+&gt;&gt;&gt; doc.get_object(1j)
 {'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
 </pre>
 <p></p>
 <h3>Pages</h3>
 <p>Page index is a tree structure where attributes can be inherited from parent nodes. For convenience <code>flat_page_tree</code> returns an ordered list of document pages and specifies inherited attributes that should apply to each page.</p>
-<pre>>>> #Each item of the list is a tuple with the page object reference and its inherited attributes
->>> doc = pdf.readfile("samples/simple_text_string.pdf")
->>> pdf.flat_page_tree(doc)
+<pre>&gt;&gt;&gt; #Each item of the list is a tuple with the page object reference and its inherited attributes
+&gt;&gt;&gt; doc = pdf.readfile("samples/simple_text_string.pdf")
+&gt;&gt;&gt; pdf.flat_page_tree(doc)
 [(4j, {})]
->>> #(In this example, nothing is inherited from upper nodes)
+&gt;&gt;&gt; #(In this example, nothing is inherited from upper nodes)
 </pre>
 <p>The <code>page</code> function goes further by merging inherited attributes with local attributes of each page and giving the result in a list.</p>
-<pre>>>> #Equivalent list with computed page attribues
->>> pdf.pages(doc)
+<pre>&gt;&gt;&gt; #Equivalent list with computed page attribues
+&gt;&gt;&gt; pdf.pages(doc)
 [{'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j},
   '/Contents': 5j,
   '/MediaBox': [0, 0, 612, 792],
@@ -72,41 +73,42 @@
 <p></p>
 <h3>Incremental updates</h3>
 <p>PDFSyntax tracks document incremental updates made possible by appending new or updated objects at the end of an original PDF file (and the matching XREF section). The <code>Revisions</code> entry of the <code>structure</code> function result, if greater than 1, indicates that incremental updates have been appended.By default, a newly opened document by PDFSyntax is ready to write modifications in the next revision.The <code>rewind</code> function rolls back to the previous revision. The <code>commit</code> function closes the current revision and open the next one.</p>
-<pre>>>> import pdfsyntax as pdf
->>> doc = pdf.readfile("samples/add_text_annotation.pdf")
->>> doc.structure()
+<pre>&gt;&gt;&gt; import pdfsyntax as pdf
+&gt;&gt;&gt; doc = pdf.readfile("samples/add_text_annotation.pdf")
+&gt;&gt;&gt; doc.structure()
 {'Version': '1.4', 'Pages': 1, 'Revisions': 2, 'Encrypted': False, 'Paper of 1st page': '215x279mm or 8.5x11.0in (US Letter)'}
 
->>> #This file contains 2 revisions and PDFSyntax has initialized the doc object for a future revision 3
+&gt;&gt;&gt; #This file contains 2 revisions and PDFSyntax has initialized the doc object for a future revision 3
 
->>> doc.get_object(4j)
+&gt;&gt;&gt; doc.get_object(4j)
 {'/Annots': 8j, '/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j}, '/Contents': 5j, '/MediaBox': [0, 0, 612, 792], '/Parent': 3j, '/Type': '/Page'}
 
->>> #In its current state, the page (object 4) contains an annotation
->>> #Let's rewind to revision 1
+&gt;&gt;&gt; #In its current state, the page (object 4) contains an annotation
+&gt;&gt;&gt; #Let's rewind to revision 1
 
->>> doc = doc.rewind() # to revision 2
->>> doc = doc.rewind() # to revision 1
+&gt;&gt;&gt; doc = doc.rewind() # to revision 2
+&gt;&gt;&gt; doc = doc.rewind() # to revision 1
 
->>> doc.get_object(4j)
+&gt;&gt;&gt; doc.get_object(4j)
 {'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j}, '/Contents': 5j, '/MediaBox': [0, 0, 612, 792], '/Parent': 3j, '/Type': '/Page'}
 
->>> #The annotation was not present in the initial revision of the file
+&gt;&gt;&gt; #The annotation was not present in the initial revision of the file
 </pre>
 <p></p>
 <h3>High-level transformation</h3>
 <p><code>add_text_annotation</code> inserts a simple text annotation in a page.</p>
-<pre>>>> annotated_doc = add_text_annotation(doc, 0, "abcdefg", [100, 100, 100, 100])
+<pre>&gt;&gt;&gt; annotated_doc = add_text_annotation(doc, 0, "abcdefg", [100, 100, 100, 100])
 </pre>
 <p><code>rotate</code> turns pages relatively to their current position by multiples of 90 degrees clockwise. NB: It takes into account the inherited attributes from the page hierarchy.</p>
-<pre>>>> #Default rotation applies 90 degrees to all pages
->>> doc90 = rotate(doc)
+<pre>&gt;&gt;&gt; #Default rotation applies 90 degrees to all pages
+&gt;&gt;&gt; doc90 = rotate(doc)
 
->>> #Apply 180 degrees to first two page
->>> doc180 = doc.rotate(180, [1, 2])
+&gt;&gt;&gt; #Apply 180 degrees to first two page
+&gt;&gt;&gt; doc180 = doc.rotate(180, [1, 2])
 </pre>
 <p></p>
 <blockquote><p> TO BE CONTINUED</p>
 </blockquote>
 
+</main>
 </body>

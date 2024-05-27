@@ -261,6 +261,13 @@ def tags(string: str) -> str:
     return style(link(string))
 
 
+def entities(string: str) -> str:
+    """Turn special chars into HTML entities."""
+    string = string.replace('<', '&lt;')
+    string = string.replace('>', '&gt;')
+    return string
+
+
 def assemble_html(blocks: list, html = '') -> str:
     """Recusively build HTML string for parsed markdown."""
     for typ, items in blocks:
@@ -272,7 +279,7 @@ def assemble_html(blocks: list, html = '') -> str:
                 if typ != 'PRE':
                     html += tags(x)
                 else:
-                    html += x
+                    html += entities(x)
         html += f"</{typ.lower()}>\n"
     return html
 

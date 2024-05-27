@@ -7,6 +7,7 @@
     <title>PDFSyntax</title>
 </head>
 <body>
+<main>
 <h1>PDFSyntax</h1>
 <p><em>A Python library to inspect and transform the internal structure of PDF files</em></p>
 <h2>Introduction</h2>
@@ -41,30 +42,30 @@
 <h2>API overview</h2>
 <p>Please refer to the <a href='https://github.com/desgeeko/pdfsyntax/blob/main/docs/api.md'>API README</a> for details.</p>
 <p>PDFSyntax is mostly made of simple functions. Example:</p>
-<pre>>>> from pdfsyntax import readfile, metadata
->>> doc = readfile("samples/simple_text_string.pdf")
->>> metadata(doc) #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
+<pre>&gt;&gt;&gt; from pdfsyntax import readfile, metadata
+&gt;&gt;&gt; doc = readfile("samples/simple_text_string.pdf")
+&gt;&gt;&gt; metadata(doc) #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
 </pre>
 <p>The Doc object is probably the only dedicated class you will need to handle. It is a black box that stores all the internal states of a document:</p>
 <ul><li>content that is cached/memoized from an original file,</li>
 <li>modifications that add/modifiy/delete content and that are tracked as incremental updates.</li>
 </ul>
-<pre>>>> doc
-<PDF Doc with 1 revisions(s), ready to start update/revision 2, cache loaded with 0 / 7 objects>
+<pre>&gt;&gt;&gt; doc
+&lt;PDF Doc with 1 revisions(s), ready to start update/revision 2, cache loaded with 0 / 7 objects&gt;
 </pre>
 <p>This object exposes as a method the same metadata function, therefore you can get the same result with:</p>
-<pre>>>> doc.metadata() #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
+<pre>&gt;&gt;&gt; doc.metadata() #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
 </pre>
 <p>Low-level functions like <code>get_object</code> or <code>update_object</code> allow you to directly access and manipulate the inner objects of the document structure.You may also use higher-level functions like <code>rotate</code>:</p>
-<pre>>>> from pdfsyntax import rotate, writefile
->>> doc180 = rotate(doc, 180) #rotate pages by 180°
+<pre>&gt;&gt;&gt; from pdfsyntax import rotate, writefile
+&gt;&gt;&gt; doc180 = rotate(doc, 180) #rotate pages by 180°
 </pre>
 <p>The orignal object is unchanged and a new object is created with an incremental update (revision 2) that encloses the ongoing orientation modification:</p>
-<pre>>>> doc180
-<PDF Doc with 2 revisions(s), current update/revision containing 1 modifications, cache loaded with 3 / 7 objects>
+<pre>&gt;&gt;&gt; doc180
+&lt;PDF Doc with 2 revisions(s), current update/revision containing 1 modifications, cache loaded with 3 / 7 objects&gt;
 </pre>
 <p>You then can write the modified PDF to disk. Note that the resulting file contains a new section appended to the original content. You may cut this section to revert the change.</p>
-<pre>>>> writefile(doc180, "rotated_doc.pdf")
+<pre>&gt;&gt;&gt; writefile(doc180, "rotated_doc.pdf")
 </pre>
 <p></p>
 <h2>Open-Source, not Open-Contribution yet</h2>
@@ -73,4 +74,5 @@
 </blockquote>
 <p></p>
 
+</main>
 </body>

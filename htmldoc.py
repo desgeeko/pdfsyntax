@@ -17,5 +17,5 @@ filename = sys.argv[1]
 f = open(filename, 'r')
 md = f.read()
 
-print(f"{html_header}<body>\n{markdown.render_html(md)}\n</body>")
+print(f"{html_header}<body>\n<main>\n{markdown.render_html(md)}\n</main>\n</body>")
 

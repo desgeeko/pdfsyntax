@@ -1,11 +1,21 @@
 body {
-    font-family: sans-serif;
+    font-family: system-ui, sans-serif;
+}
+header, main, footer {
     font-size: 1em;
-    max-width: 700px;
+    max-width: 720px;
+    padding: 1em;
     margin: 0.5em auto;
 }
+header, footer {
+    text-align: center;
+}
+h1 {
+    font-size: 2.5em;
+    margin-top: 0;
+}
 h2 {
-    font-size: 1.5em;
+    font-size: 1.4em;
     border-bottom-style: solid;
     border-bottom-color: black;
 }
