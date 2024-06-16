@@ -19,23 +19,9 @@ Doc = namedtuple('Doc', 'index cache data')
 class Doc(Doc):
     def __repr__(self):
         res = "<PDF Doc"
-        res += f" with "
-        i = len(self.index)
-        if not changes(self):
-            i -= 1
-        res += f"{i} revisions(s)"
-        if not changes(self):
-            res += f", ready to start update/revision {len(self.index)}"
-        else:
-            res += f", current update/revision containing {len(changes(self))} modifications"
-        if self.cache:
-            present = 0
-            for i in range(1, len(self.index[-1])):
-                if self.cache[i] is not None:
-                    present += 1 
-            res += f", cache loaded with {present} / {len(self.cache)-1} objects>\n"
-        else:
-            res += f", cache=None>\n"
+        rev = len(self.index) - 1
+        mods = len(changes(self))
+        res += f" in revision {rev} with {mods} modified object(s)>"
         return res
 
 
@@ -156,7 +142,7 @@ def get_object(doc: Doc, obj):
         return deepcopy(obj)
 
 
-def object(doc: Doc, o_num, o_gen = None):
+def obj(doc: Doc, o_num, o_gen = None):
     """For direct access to an indirect object without reference resolution (see get_object)."""
     if o_gen is None:
         o_gen = doc.index[-1][o_num]['o_gen']
@@ -508,7 +494,7 @@ def max_num(doc: Doc, rev: int=-1) -> int:
     return len(doc.index[rev]) - 1
 
 
-def concatenate_docs(doc1: Doc, doc2: Doc) -> Doc:
+def concatenate(doc1: Doc, doc2: Doc) -> Doc:
     """Add pages from doc2 at the end of doc1."""
     mapping = {}
     new_doc = copy_doc(doc1, revision='SAME')
@@ -562,8 +548,8 @@ def dependencies(doc: Doc, obj: Any) -> set:
         return set()
 
 
-def delete_pages(doc: Doc, del_pages) -> Doc:
-    """Delete one (an int) or more (an array of int) pages."""
+def remove_pages(doc: Doc, del_pages) -> Doc:
+    """Remove one (an int) or more (an array of int) pages."""
     new_doc = copy_doc(doc, revision='SAME')
     if type(del_pages) != list:
         del_pages = [del_pages]
@@ -654,7 +640,6 @@ def squash(doc: Doc) -> Doc:
         use_xref_stream = True
     del new_doc.cache[0]['/Prev']
     header = f"%PDF-{v}".encode('ascii')
-    
     new_bdata, new_i = build_revision_byte_stream(chg,
                                                new_doc.index[0],
                                                new_doc.cache,

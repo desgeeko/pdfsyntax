@@ -292,6 +292,7 @@ Doc.catalog = catalog
 Doc.metadata = metadata
 Doc.structure = structure
 Doc.get_object = get_object
+Doc.obj = obj
 Doc.rewind = rewind
 Doc.rotate = rotate
 Doc.page_layouts = page_layouts

@@ -7,6 +7,7 @@ The general form of the CLI usage is:
 
 You can get quick insights on a PDF file with these commands:
 - `overview` outputs text data about the structure and the metadata. 
+- `disasm` outputs a dump of the file structure on the terminal.
 - `text` spatially extracts text content on all pages, as if it was a kind of scan.
 - `browse` outputs static html data that lets you browse the internal structure of the PDF file: the PDF source is pretty-printed and augmented with hyperlinks.
 
@@ -14,6 +15,11 @@ You can get quick insights on a PDF file with these commands:
 The output shows information about:
 - the structure : Version, Pages, Revisions, etc...
 - the metadata : Title, Author, Subject, etc...
+
+### `disasm`
+The output shows a terse and greppable view of the file internal structure.
+Please refer to the [Disassembler article](https://github.com/desgeeko/pdfsyntax/blob/main/docs/disassembler.md) for details.
+
 
 ### `text`
 The output shows a full extract of the text content, with a spatial awareness: the algorithm *tries* to respect the original layout, as if characters of all sizes were approximately rendered on a fixed-size grid.

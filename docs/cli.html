@@ -16,6 +16,7 @@
 </pre>
 <p>You can get quick insights on a PDF file with these commands:</p>
 <ul><li><code>overview</code> outputs text data about the structure and the metadata. </li>
+<li><code>disasm</code> outputs a dump of the file structure on the terminal.</li>
 <li><code>text</code> spatially extracts text content on all pages, as if it was a kind of scan.</li>
 <li><code>browse</code> outputs static html data that lets you browse the internal structure of the PDF file: the PDF source is pretty-printed and augmented with hyperlinks.</li>
 </ul>
@@ -24,6 +25,9 @@
 <ul><li>the structure : Version, Pages, Revisions, etc...</li>
 <li>the metadata : Title, Author, Subject, etc...</li>
 </ul>
+<h3><code>disasm</code></h3>
+<p>The output shows a terse and greppable view of the file internal structure.Please refer to the <a href='https://github.com/desgeeko/pdfsyntax/blob/main/docs/disassembler.md'>Disassembler article</a> for details.</p>
+<p></p>
 <h3><code>text</code></h3>
 <p>The output shows a full extract of the text content, with a spatial awareness: the algorithm <em>tries</em> to respect the original layout, as if characters of all sizes were approximately rendered on a fixed-size grid.</p>
 <h3><code>browse</code></h3>

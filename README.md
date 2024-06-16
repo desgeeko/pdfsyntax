@@ -39,9 +39,10 @@ The general form of the CLI usage is:
     python3 -m pdfsyntax COMMAND FILE
 
 You can get quick insights on a PDF file with these commands:
-- `overview` outputs text data about the structure and the metadata. 
-- `browse` outputs static html data that lets you browse the internal structure of the PDF file: the PDF source is pretty-printed and augmented with hyperlinks.
+- `overview` outputs text data about the structure and the metadata.
+- `disasm` outputs a dump of the file structure on the terminal.
 - `text` outputs extracted text spatially, as if it was a kind of scan.
+- `browse` outputs static html data that lets you browse the internal structure of the PDF file: the PDF source is pretty-printed and augmented with hyperlinks.
 
 ## API overview
 
@@ -52,7 +53,7 @@ PDFSyntax is mostly made of simple functions. Example:
 ```Python
 >>> from pdfsyntax import readfile, metadata
 >>> doc = readfile("samples/simple_text_string.pdf")
->>> metadata(doc) #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
+>>> metadata(doc) #returns a Python dict whose keys are 'Title', 'Author', etc...
 ```
 
 The Doc object is probably the only dedicated class you will need to handle. It is a black box that stores all the internal states of a document:
@@ -61,13 +62,13 @@ The Doc object is probably the only dedicated class you will need to handle. It 
 
 ```Python
 >>> doc
-<PDF Doc with 1 revisions(s), ready to start update/revision 2, cache loaded with 0 / 7 objects>
+<PDF Doc in revision 1 with 0 modified object(s)>
 ```
 
 This object exposes as a method the same metadata function, therefore you can get the same result with:
 
 ```Python
->>> doc.metadata() #returns a Python dict whose keys are 'Title', 'Author', 'Subject', etc...
+>>> doc.metadata() #returns a Python dict whose keys are 'Title', 'Author', etc...
 ```
 
 Low-level functions like `get_object` or `update_object` allow you to directly access and manipulate the inner objects of the document structure.
@@ -78,11 +79,11 @@ You may also use higher-level functions like `rotate`:
 >>> doc180 = rotate(doc, 180) #rotate pages by 180°
 ```
 
-The orignal object is unchanged and a new object is created with an incremental update (revision 2) that encloses the ongoing orientation modification:
+The original object is unchanged and a new object is created with an incremental update (revision 2) that encloses the ongoing orientation modification:
 
 ```Python
 >>> doc180
-<PDF Doc with 2 revisions(s), current update/revision containing 1 modifications, cache loaded with 3 / 7 objects>
+<PDF Doc in revision 1 with 1 modified object(s)>
 ```
 
 You then can write the modified PDF to disk. Note that the resulting file contains a new section appended to the original content. You may cut this section to revert the change.
