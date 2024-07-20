@@ -122,9 +122,12 @@ def next_token(text: bytes, i=0) -> tuple:
         elif search == "LSTRING":
             if double == b'\\(' or double == b'\\)':
                 i += 1
-            else:    
-                if single in b')':
-                    return (h, i + 1, 'STRING')
+            elif single == b'(':
+                nested += 1
+            elif single == b')':
+                nested -= 1
+            if nested == 0:
+                return (h, i + 1, 'STRING')
         elif search == "HSTRING":
             if double == b'\\<' or double == b'\\>':
                 i += 1

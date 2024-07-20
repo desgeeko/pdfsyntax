@@ -37,6 +37,9 @@ class Tokenization(unittest.TestCase):
     def test_literal_string_with_bracket(self):
         self.assertEqual(pdf.next_token(b'(ab>c)'), (0, 6,'STRING'))
 
+    def test_literal_string_with_parentheses(self):
+        self.assertEqual(pdf.next_token(b'(a(b)c)'), (0, 7,'STRING'))
+
     def test_hexadecimal_string(self):
         self.assertEqual(pdf.next_token(b'<414243> '), (0, 8,'STRING'))
 
