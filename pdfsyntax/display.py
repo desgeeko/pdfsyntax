@@ -184,6 +184,8 @@ def build_xref_table(table: list, index: list) -> str:
             start, size = x
             ret += f'{start}  {size}'
         elif len(x) == 4:
+            if st == b'f':
+                continue
             pos, o_num, o_gen, st = x
             _, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
             ret += f'{pos:010} {o_gen:05} {st.decode('ascii')}'
