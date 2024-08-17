@@ -3,8 +3,8 @@
 >
 
   <defs>
-      <rect id="sq" rx="2" ry="2" width="22" height="22" fill="grey"/>    
-      <rect id="lnk" width="16" height="16" fill="grey"/>    
+      <rect id="sq" rx="2" ry="2" width="22" height="22" fill="#772222"/>
+      <rect id="lnk" width="16" height="16" fill="#772222"/>
   </defs>
 
   <!-- plain background -->
