@@ -29,14 +29,15 @@ def text_string(string: bytes) -> str:
     """Transform a fundamental string into a text string."""
     if string is None: return None
     res = ''
+    string = unescape_literal_string(string)
     if string[0:1] == b'(': # Literal string
         if string[1:3] == b'\xfe\xff': 
             res = string[3:-1].decode('utf-16be')
         else:
             s = string[1:-1]
-            s = s.replace(b'\x5c\x5c', b'\x5c') # x5c is backslash
-            s = s.replace(b'\x5c(', b'(')
-            s = s.replace(b'\x5c)', b')')
+            # = s.replace(b'\x5c\x5c', b'\x5c') # x5c is backslash
+            # = s.replace(b'\x5c(', b'(')
+            # = s.replace(b'\x5c)', b')')
             res = decode_pdfdoc(s)
     elif string[0:1] == b'<': # Hexadecimal string
         if string[1:5] == b'FEFF':
@@ -48,41 +49,32 @@ def text_string(string: bytes) -> str:
     return res
 
 
-def unespace_literal_string(string: bytes) -> bytes:
+def unescape_literal_string(string: bytes) -> bytes:
     """ """
+    sequences = {
+        b'(': b'(',
+        b')': b')',
+        b'n': b'\n',
+        b'r': b'\r',
+        b't': b'\t',
+        b'b': b'\b',
+        b'f': b'\f',
+        b'\\': b'\\'
+    }
     ret = b''
     i = 0
-    while i < len(string) :
-        if string[i:i+1] == b'\x5c':
-            if string[i+1:i+2] > b'0' and string[i+1:i+2] < b'9':
+    while i < len(string):
+        first = string[i:i+1]
+        second = string[i+1:i+2]
+        if first == b'\x5c': # or b'\\'
+            if second in b'0123456789':
                 ret += bytes([int(string[i+1:i+4], 8)])
                 i += 3
-            elif string[i+1:i+2] == b'(':
-                ret += b'('
-                i += 1
-            elif string[i+1:i+2] == b')':
-                ret += b')'
-                i += 1
-            elif string[i+1:i+2] == b'n':
-                ret += b'\n'
-                i += 1
-            elif string[i+1:i+2] == b'r':
-                ret += b'\r'
-                i += 1
-            elif string[i+1:i+2] == b't':
-                ret += b'\t'
-                i += 1
-            elif string[i+1:i+2] == b'b':
-                ret += b'\b'
-                i += 1
-            elif string[i+1:i+2] == b'f':
-                ret += b'\f'
-                i += 1
-            elif string[i+1:i+2] == b'\\':
-                ret += b'\\'
+            elif second in sequences :
+                ret += sequences[second]
                 i += 1
         else:
-            ret += string[i:i+1]
+            ret += first
         i += 1
     return ret
 
@@ -91,7 +83,7 @@ def tokenize_string(string: bytes, word_l: int) -> list:
     """ """
     s_string = string[1:-1]
     if string[:1] == b'(':
-        s_string = unespace_literal_string(s_string)
+        s_string = unescape_literal_string(s_string)
         return [int.from_bytes(s_string[j:j+word_l], "big") for j in range(0, len(s_string), word_l)]
     else:
         return [int(s_string[j:j+word_l*2], 16) for j in range(0, len(s_string), word_l*2)]
@@ -100,7 +92,7 @@ def tokenize_string(string: bytes, word_l: int) -> list:
 def apply_encoding(encoding: str, string: bytes) -> tuple:
     """ """
     s = string[1:-1]
-    s = unespace_literal_string(s)
+    s = unescape_literal_string(s)
     if encoding == '/MacRomanEncoding':
         us = s.decode('mac_roman')
     else:

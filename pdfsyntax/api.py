@@ -36,7 +36,7 @@ PAPER_SIZES = {
     (mm2pt(  52), mm2pt(  74)): "A8",
     (mm2pt(  37), mm2pt(  52)): "A9",
     (mm2pt(  26), mm2pt(  37)): "A10",
-    }
+}
 
 
 def doc_constructor(fdata: Callable) -> Doc:

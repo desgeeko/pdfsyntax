@@ -19,6 +19,9 @@ class Unicode(unittest.TestCase):
     def test_literal_utf16be(self):
         self.assertEqual(pdf.text_string(b'(\xfe\xff\x00M\x00a\x00r\x00t\x00i\x00n\x00 \x00D\x00.)'), 'Martin D.')
 
+    def test_literal_utf16be_octal(self):
+        self.assertEqual(pdf.text_string(b'(\376\377\000M\000\040\000D)'), 'M D')
+
     def test_hexa_pdfdocencoded(self):
         self.assertEqual(pdf.text_string(b'<414243>'), 'ABC')
 
