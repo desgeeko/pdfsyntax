@@ -324,7 +324,7 @@ def build_obj_header(article, index) -> str:
         o_num, o_gen, o_ver = obj['o_num'], 0, 0
         ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n<pre>\n\n\n'
         ret += f'<span class="obj-header"><strong>{o_num}</strong> <span class="obj-low">{o_gen} obj</span></span>'
-        ret += f'<em class="obj-low">  from object stream {obj['env_num']} above</em>'
+        ret += f'<em class="obj-low">  from object stream {obj["env_num"]} above</em>'
     else:
         ret += f'<div id="abs{pos}">\n<pre>\n\n\n'
         ret += f'<span class="obj-header"><strong>XREF table & trailer</strong></span>'
