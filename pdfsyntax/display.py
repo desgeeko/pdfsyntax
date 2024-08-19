@@ -184,11 +184,11 @@ def build_xref_table(table: list, index: list) -> str:
             start, size = x
             ret += f'{start}  {size}'
         elif len(x) == 4:
+            pos, o_num, o_gen, st = x
             if st == b'f':
                 continue
-            pos, o_num, o_gen, st = x
             _, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
-            ret += f'{pos:010} {o_gen:05} {st.decode('ascii')}'
+            ret += f'{pos:010} {o_gen:05} {st.decode("ascii")}'
             if o_num != 0:
                 ret += '    '
                 ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
@@ -209,9 +209,9 @@ def build_xref_stream_item(item: tuple, index: list) -> str:
         ret += '</a>'
         ret += '    '
         if env_num:
-            ret += f'In object stream {env_num} at {pos:010} {st.decode('ascii')}'
+            ret += f'In object stream {env_num} at {pos:010} {st.decode("ascii")}'
         else:
-            ret += f'At absolute position {pos:010} {st.decode('ascii')}'
+            ret += f'At absolute position {pos:010} {st.decode("ascii")}'
     ret += '\n'
     return ret
 
