@@ -27,9 +27,16 @@
 </ul>
 <h3><code>disasm</code></h3>
 <p>The output shows a terse and greppable view of the file internal structure.Please refer to the <a href='https://github.com/desgeeko/pdfsyntax/blob/main/docs/disassembler.md'>Disassembler article</a> for details.</p>
-<p></p>
 <h3><code>text</code></h3>
 <p>The output shows a full extract of the text content, with a spatial awareness: the algorithm <em>tries</em> to respect the original layout, as if characters of all sizes were approximately rendered on a fixed-size grid.</p>
+<h3><code>fonts</code></h3>
+<p>The output shows a list of fonts used in the file, with the following tabular data:</p>
+<ul><li>Name</li>
+<li>Type</li>
+<li>Encoding</li>
+<li>Object number and generation number, comma separated</li>
+<li>Number of pages where it occurs</li>
+</ul>
 <h3><code>browse</code></h3>
 <p>The generated HTML looks like the raw PDF file with the following additions:</p>
 <ul><li>Pretty-print dictionary object</li>

@@ -206,19 +206,32 @@ def add_text_annotation(doc: Doc, page_num: int, text: str, rect: list, opened: 
 
 
 def fonts(doc: Doc) -> dict:
-    """Return for each font the pages where it appears."""
+    """Return each font with its attributes and the pages where it appears."""
     ret = {}
     nb = number_pages(doc)
     font_index = get_page_fonts(doc, list(range(nb)))
     for i, page_fonts in enumerate(font_index):
         for font in page_fonts:
+            o = page_fonts[font]['iref']
             n = page_fonts[font]['name'][1:]
             t = page_fonts[font]['type'][1:]
-            u = page_fonts[font]['to_unicode']
-            name = f'{n} ({t})'
-            if name not in ret:
-                ret[name] = {'pages': [], 'to_unicode': u}
-            ret[name]['pages'].append(i)
+            e = page_fonts[font]['encoding']
+            if type(e) == complex:
+                e = 'other'
+            else:
+                e = e[1:]
+            if page_fonts[font]['to_unicode']:
+                u = True
+            else:
+                u = False
+            if o not in ret:
+                ret[o] = {'name': n,
+                          'type': t,
+                          'encoding': e,
+                          'pages': [],
+                          'to_unicode': u,
+                          }
+            ret[o]['pages'].append(i)
     return ret
 
 

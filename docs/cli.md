@@ -20,9 +20,16 @@ The output shows information about:
 The output shows a terse and greppable view of the file internal structure.
 Please refer to the [Disassembler article](https://github.com/desgeeko/pdfsyntax/blob/main/docs/disassembler.md) for details.
 
-
 ### `text`
 The output shows a full extract of the text content, with a spatial awareness: the algorithm *tries* to respect the original layout, as if characters of all sizes were approximately rendered on a fixed-size grid.
+
+### `fonts`
+The output shows a list of fonts used in the file, with the following tabular data:
+- Name
+- Type
+- Encoding
+- Object number and generation number, comma separated
+- Number of pages where it occurs
 
 ### `browse`
 The generated HTML looks like the raw PDF file with the following additions:

@@ -14,7 +14,7 @@ def main():
                                      description='Navigate through the structure of a PDF file')
     parser.add_argument('command',
                         type=str,
-                        choices=['browse', 'disasm', 'overview', 'text'],
+                        choices=['browse', 'disasm', 'overview', 'fonts', 'text'],
                         help='Command')
     parser.add_argument('filename', type=str, help='PDF file name')
     args = parser.parse_args()
@@ -24,6 +24,8 @@ def main():
         dump_disasm(args.filename)
     elif args.command == 'overview':
         overview(args.filename)
+    elif args.command == 'fonts':
+        print_fonts(args.filename)
     elif args.command == 'text':
         spatial(args.filename)
 
@@ -219,6 +221,32 @@ def spatial(filename: str) -> None:
     doc = readfile(filename)
     for i in range(len(pages(doc))):
         print(extract_page_text(doc, i))
+    return
+
+
+def print_generic_table(lines: list, col_widths: list) -> None:
+    """."""
+    text = ''
+    for line in lines:
+        for i, w in enumerate(col_widths):
+            text += f"{line[i][:w]:{w}} "
+        text += '\n'
+    print(text)
+    return
+
+
+def print_fonts(filename: str) -> None:
+    """Print fonts used in file."""
+    table = []
+    doc = readfile(filename)
+    fs = fonts(doc)
+    table.append(['Name', 'Type', 'Encoding', 'Obj', 'Pages'])
+    for iref in fs:
+        f = fs[iref]
+        o_num = f"{int(iref.imag)},{int(iref.real)}"
+        nb_pages = f"{len(f['pages'])}"
+        table.append([f['name'], f['type'], f['encoding'], o_num, nb_pages])
+    print_generic_table(table, [30, 10, 16, 8, 6])
     return
 
 

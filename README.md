@@ -42,6 +42,7 @@ You can get quick insights on a PDF file with these commands:
 - `overview` outputs text data about the structure and the metadata.
 - `disasm` outputs a dump of the file structure on the terminal.
 - `text` outputs extracted text spatially, as if it was a kind of scan.
+- `fonts` outputs list of fonts used.
 - `browse` outputs static html data that lets you browse the internal structure of the PDF file: the PDF source is pretty-printed and augmented with hyperlinks.
 
 ## API overview
