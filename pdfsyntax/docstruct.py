@@ -25,6 +25,49 @@ class Doc(Doc):
         return res
 
 
+def pprint_index(doc: Doc):
+    """Pretty print index as tabular data."""
+    nb_obj = len(doc.index[-1])
+    ver = len(doc.index)
+    for i in range(1, nb_obj):
+        line = f"{i:<10}"
+        o_gen, o_ver, doc_ver = "", "", ""
+        abs_pos, env_num, o_pos = "", "", ""
+        for j in range(ver):
+            cell = '-'
+            x = doc.index[j][i]
+            if x:
+                o_gen_new = x.get('o_gen', '')
+                o_ver_new = x.get('o_ver', '')
+                doc_ver_new = x.get('doc_ver', '')
+                abs_pos_new = x.get('abs_pos', '')
+                env_num_new = x.get('env_num', '')
+                o_pos_new = x.get('o_pos', '')
+                deleted = x.get('DELETED')
+                if deleted:
+                    cell = "Deleted "
+                elif o_gen_new != o_gen or o_ver_new != o_ver or doc_ver_new != doc_ver:
+                    o_gen, o_ver, doc_ver = o_gen_new, o_ver_new, doc_ver_new
+                    cell = f"{o_gen}/{o_ver}/{doc_ver} "
+                if abs_pos_new != abs_pos:
+                    abs_pos = abs_pos_new
+                    cell += f"{abs_pos} "
+                if env_num_new != env_num or o_pos_new != o_pos:
+                    env_num, o_pos = env_num_new, o_pos_new
+                    cell += f"{env_num}>{o_pos} "
+            line += f"| {cell:20}"
+        print(line)
+    print('\n')
+    for i in 'abs_pos startxref_pos xref_table_pos xref_stream_pos xref_strean_num'.split():
+        print(f"{i:20}")
+        line = ' ' * 10
+        for j in range(ver):
+            x = doc.index[j][0].get(i, '')
+            line += f"| {x:<20}"
+        print(line)
+    return
+
+
 def pprint_cache(doc: Doc):
     """Pretty print cache content as a matrix."""
     idx = {}

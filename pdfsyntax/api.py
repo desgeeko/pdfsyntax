@@ -216,10 +216,19 @@ def fonts(doc: Doc) -> dict:
             n = page_fonts[font]['name'][1:]
             t = page_fonts[font]['type'][1:]
             e = page_fonts[font]['encoding']
-            if type(e) == complex:
-                e = 'other'
+            if t == 'Type1':
+                if e is None:
+                    e = 'built-in'
+                else:
+                    if type(e) != str:
+                        e = 'other'
+                    else:
+                        e = e[1:]
             else:
-                e = e[1:]
+                if type(e) != str:
+                    e = 'other'
+                else:
+                    e = e[1:]
             if page_fonts[font]['to_unicode']:
                 u = True
             else:

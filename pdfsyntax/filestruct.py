@@ -162,7 +162,7 @@ def parse_xref_table(bdata: bytes, start_pos: int, general_offset: int) -> list:
         'o_gen': 0,
         'abs_pos': general_offset + trailer_pos,
         'xref_table_pos':general_offset + start_pos,
-        'xref_table':table,
+        #'xref_table':table,   #Simplify
     }
     xref.insert(0, trailer)
     return xref
@@ -204,8 +204,8 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
         'o_gen': 0,
         'abs_pos': trailer_pos,
         'xref_stream_pos': trailer_pos,
-        'xref_stream': table,
         'xref_stream_num': xref_stream_num,
+        #'xref_stream': table,              #Simplify
     }
     xref.insert(0, trailer)
     return xref

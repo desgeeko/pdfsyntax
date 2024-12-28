@@ -166,7 +166,10 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
         elif region_type == 'XREFTABLE':
             macro_ind = '-'
             trailer = content['trailer']
-            detail = keys_in_line(trailer, ['/Root', '/Prev'])
+            if '/XRefStm' in trailer:
+                detail = keys_in_line(trailer, ['/XRefStm', '/Prev'])
+            else:
+                detail = keys_in_line(trailer, ['/Root', '/Prev'])
         elif region_type == 'IND_OBJ':
             env_num = content.get('env_num')
             if env_num:
