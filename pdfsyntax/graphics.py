@@ -130,6 +130,8 @@ def parse_stream_content(content_stream: bytes) -> list:
             continue
             i -= 1
         i -= 1
+    if current:
+        ret.insert(0, current)
     return ret
 
 
