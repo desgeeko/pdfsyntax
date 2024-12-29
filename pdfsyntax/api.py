@@ -308,6 +308,17 @@ def extract_page_text(doc: Doc, page_num: int):
     return basic_spatial_layout(tfs)
 
 
+def pprint_page_contents(doc: Doc, page_num: int) -> str:
+    """."""
+    ret = ''
+    contents = get_page_contents(doc, page_num)
+    for content in contents:
+        f = format_stream_content(content)
+        ret += '$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$\n'
+        ret += f
+    print(ret)
+    return ret
+
 
 Doc.trailer = trailer
 Doc.catalog = catalog
