@@ -273,11 +273,9 @@ def build_xref_table(table: list, index: list) -> str:
             ret += f'{start}  {size}'
         elif len(x) == 4:
             pos, o_num, o_gen, st = x
-            if st == b'f':
-                continue
-            _, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
             ret += f'{pos:010} {o_gen:05} {st.decode("ascii")}'
-            if o_num != 0:
+            if st != b'f':
+                _, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
                 ret += '    '
                 ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
                 ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
