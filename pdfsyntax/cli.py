@@ -275,7 +275,7 @@ def browse(filename: str) -> None:
     file_obj = open(filename, 'rb')
     fdata = bdata_provider(file_obj)
     sections, index = file_map(fdata)
-    print(build_html(sections, index, filename, fdata(0, 8)[0]))
+    print(build_html(sections, index, filename))
 
     
 def file_map(fdata: Callable) -> tuple:

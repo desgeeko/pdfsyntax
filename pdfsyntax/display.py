@@ -1,10 +1,11 @@
 """Module pdfsyntax.display: pretty print the PDF file structure as HTML"""
 
+import os
 import html
 from .objects import Stream
 
 
-NAME_MAX_WIDTH = 20
+NAME_MAX_WIDTH = 15
 VALUE_MAX_WIDTH = 30
 
 HEADER = '''
@@ -14,16 +15,19 @@ HEADER = '''
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>pdfsyntax</title>
+    <title>PDFSyntax</title>
     <style>
         body {
             font-family: monospace;
+        }
+        .block {
+            margin-top: 1em;
         }
         :target {
             background-color: LightYellow;
         }
         .obj-header {
-            background-color: LightGray;
+            background-color: WhiteSmoke;
         }
         .obj-body {
             background-color: WhiteSmoke;
@@ -42,33 +46,53 @@ HEADER = '''
             background-color: AliceBlue;
             color: Grey;
         }
-        .header-link {
-            color: Grey;
-        }
         .important {
             background-color: AntiqueWhite;
         }
         .header {
             position: fixed;
-            top: 0px;
-            left: 0px;
-            width: 100%;
-            background-color: Black;
-            color: White;
+            top: 0;
+            right: 1em;
+            height: 2em;
+            padding: 0 1em 0 1em;
+            background-color: LightGrey;
+            color: Black;
+            border: 2px dotted Grey;
         }
-        .content {
-            margin-top: 5em;
+        nav {
+            position: fixed;
+            top: 3em;
+            right: 1em;
+            width: 20em;
+            max-height: 70%;
+            overflow: scroll;
+            background-color: White;
+            color: Black;
+            border: 2px dotted Grey;
+        }
+        .nav-idx {
+            display: inline-block;
+            width: 4em;
+            padding-left: 0.5em;
+            background-color: WhiteSmoke;
         }
         pre {
             margin-top: 0.5em;
             margin-bottom: 0.5em;
         }
+        ul {
+           padding-left: 1em;
+           list-style: none;
+           line-height: 0.9em;
+        }
     </style>
 </head>
 <body>
+<div class="content">
 '''
 
 TRAILER = '''
+<div id="end"><em>(end of file)</em></div>
 </div>
 </body>
 '''
@@ -103,18 +127,19 @@ def recent_ref_from_index(index: list, iref: complex) -> dict:
     return res
 
 
-def build_html(articles: list, index: list, filename: str, version: str) -> str:
+def build_html(articles: list, index: list, filename: str) -> str:
     """Compose the page layout."""
     nb_ver = len(index)
-    last = articles[-1][0]
     page = HEADER
-    page += build_header(filename, last, version)
     for article in articles:
         pos, _, typ, content = article
         if typ == 'STARTXREF':
             page += add_startxref(article, index)
-        elif typ == 'COMMENT' and content == b'%%EOF':
-            page += add_eof(article)
+        elif typ == 'COMMENT':
+            if content == b'%%EOF':
+                page += add_eof(article)
+            else:
+                page += add_comment(article)
         elif typ == 'IND_OBJ':
             page += build_obj_header(article, index)
             page += follow_obj(content['obj'], index)
@@ -129,20 +154,58 @@ def build_html(articles: list, index: list, filename: str, version: str) -> str:
             page += build_xref_item_header()
             page += build_xref_stream_item(content, index)
             page += build_obj_trailer()
+    page += build_header(filename)
+    page += build_nav_menu(articles, index)
     page += TRAILER
     return page
 
 
-def build_header(filename: str, last: int, version: bytes) -> str:
-    """Add a banner with the file name."""
+def build_nav_menu(articles, index) -> str:
+    """."""
+    ret = '\n'
+    ret += '<nav>\n'
+    ret += f'<pre>\n'
+    ret += f'&gt;&gt;&gt; <a class="header-button" href="#end">Scroll to end of file</a>'
+    ret += '<ul>\n'
+    for article in articles:
+        pos, _, typ, obj = article
+        t = ''
+        if typ != 'IND_OBJ':
+            if typ == 'XREFTABLE':
+                ret += '<li>'
+                ret += f'<a class="nav-idx" href="#idx{pos}">xref</a> XREF table & trailer'
+                ret += '</li>\n'
+            continue
+        q = obj['o_num']
+        c = obj['obj']
+        if type(c) == dict or type(c) == Stream: 
+            if type(c) == Stream:
+                content = c['stream']
+                c = c['entries']
+            t = c.get("/Type", "")
+        ret += '<li>'
+        if type(pos) == tuple:
+            ret += f'<a class="nav-idx" href="#obj{q}.0.0">{q}</a> {t}'
+        else:
+            ret += f'<a class="nav-idx" href="#idx{pos}">{q}</a> {t}'
+        ret += '</li>\n'
+    ret += f'</ul>\n'
+    ret += f'</pre>\n'
+    ret += f'</nav>\n'
+    ret += '\n'
+    return ret
+
+
+def build_header(filename: str) -> str:
+    """."""
     ret = ''
     ret += f'<div class="header">\n'
-    ret += f'<pre> <a class="header-button" href="#abs{last}">jump to end</a>'
-    ret += f'     <span class="obj-low">Hypertext inspection of </span>{filename}<span class="obj-low"> generated by </span>'
-    ret += f'<a class="header-link" href="https://pdfsyntax.dev">pdfsyntax</a></pre>'
+    ret += f'<pre>\n'
+    ret += f'{os.path.basename(filename)} - '
+    ret += f'internal view generated by '
+    ret += f'<a href="https://pdfsyntax.dev">PDFSyntax</a>\n'
+    ret += f'</pre>\n'
     ret += f'</div>\n'
-    ret += f'<div class="content">\n'
-    ret += f'<pre>{version[:8].decode("ascii")}</pre>\n'
     return ret
 
 
@@ -156,13 +219,33 @@ def add_startxref(article: dict, index: list) -> str:
         o_num, o_gen, o_ver = ref
         href = f'obj{o_num}.{o_gen}.{o_ver}'
     ret = ''
-    ret += f'<div id="abs{pos}">\n<pre>\n\n\n'
+    ret += f'<div class="block" id="idx{pos}">\n'
+    ret += f'<div>\n'
+    ret += f'<pre>\n'
     ret += f'startxref\n'
     if xref == 0:
         ret += f'0\n'
     else:
         ret += f'<a class="obj-link" href="#{href}">{int(xref)}</a>\n'
-    ret += f'\n</pre>\n</div>\n'
+    ret += f'\n</pre>\n</div>\n</div>\n'
+    return ret
+
+
+def add_comment(article: dict) -> str:
+    """ """
+    pos, _, _, comment = article
+    try:
+        detail = comment[:10].decode('ascii')
+    except:
+        detail = '<' + comment.hex() + '>'
+    ret = ''
+    ret += f'<div class="block" id="idx{pos}">\n'
+    ret += f'<div>\n'
+    ret += f'<pre class="comment">\n'
+    ret += f'{detail}\n'
+    ret += f'</pre>\n'
+    ret += f'</div>\n'
+    ret += f'</div>\n'
     return ret
 
 
@@ -170,9 +253,14 @@ def add_eof(article: dict) -> str:
     """ """
     pos, _, _, _ = article
     ret = ''
-    ret += f'<div id="abs{pos}">\n<pre class="eof">\n'
+    ret += f'\n'
+    ret += f'<div class="block" id="idx{pos}">\n'
+    ret += f'<div>\n'
+    ret += f'<pre class="eof">\n'
     ret += f'%%EOF\n'
-    ret += f'</pre>\n</div>\n'
+    ret += f'</pre>\n'
+    ret += f'</div>\n'
+    ret += f'</div>\n'
     return ret
 
 
@@ -305,7 +393,7 @@ def follow_obj(obj, index: list, depth=0) -> str:
 def build_xref_item_header() -> str:
     """."""
     ret = ''
-    ret += f'<div><pre>'
+    ret += f'<div><div><pre><div>'
     #ret += f'<div class="obj-body">\n'
     return ret
 
@@ -317,18 +405,25 @@ def build_obj_header(article, index) -> str:
     ret = ''
     if ref:
         o_num, o_gen, o_ver = ref
-        ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n<pre>\n\n\n'
+        ret += f'\n'
+        ret += f'<div class="block" id="idx{pos}">\n'
+        ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n<pre>\n'
         ret += f'<span class="obj-header"><strong>{o_num}</strong> <span class="obj-low">{o_gen} obj</span></span>'
         ret += f'<em class="obj-low">  at offset {pos}</em>'
     elif type(pos) == tuple:
         o_num, o_gen, o_ver = obj['o_num'], 0, 0
-        ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n<pre>\n\n\n'
+        ret += f'\n'
+        ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'
+        ret += f'<div>\n<pre>\n'
         ret += f'<span class="obj-header"><strong>{o_num}</strong> <span class="obj-low">{o_gen} obj</span></span>'
         ret += f'<em class="obj-low">  from object stream {obj["env_num"]} above</em>'
     else:
-        ret += f'<div id="abs{pos}">\n<pre>\n\n\n'
+        ret += f'\n'
+        ret += f'<div class="block" id="idx{pos}">\n'
+        ret += f'<div>\n'
+        ret += f'<pre>\n'
         ret += f'<span class="obj-header"><strong>XREF table & trailer</strong></span>'
-        ret += f'<em class="obj-low">  at offset {pos}</em>'
+        ret += f'<em class="obj-low">  at offset {pos}</em>\n'
     ret += f'<div class="obj-body">\n'
     return ret
 
@@ -338,6 +433,7 @@ def build_obj_trailer() -> str:
     ret = ''
     ret += f'</div>\n'
     ret += f'</pre>\n</div>\n'
+    ret += f'</div>\n'
     return ret
 
 
