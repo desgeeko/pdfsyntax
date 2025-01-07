@@ -20,6 +20,9 @@ HEADER = '''
         body {
             font-family: monospace;
         }
+        .content {
+            height: 100vh;
+        }
         .block {
             margin-top: 1em;
         }
@@ -54,21 +57,40 @@ HEADER = '''
             top: 0;
             right: 1em;
             height: 2em;
-            padding: 0 1em 0 1em;
+            padding: 0 1em 0.2em 1em;
             background-color: LightGrey;
             color: Black;
             border: 2px dotted Grey;
         }
         nav {
             position: fixed;
-            top: 3em;
             right: 1em;
             width: 20em;
-            max-height: 70%;
-            overflow: scroll;
             background-color: White;
             color: Black;
             border: 2px dotted Grey;
+        }
+        #nav-pages {
+            top: 4em;
+            height: 6em;
+            overflow-x: scroll;
+        }
+        #nav-objects {
+            top: 12em;
+            height: 80%;
+            overflow-y: scroll;
+        }
+        #nav-end {
+            bottom: 2em;
+            height: 2.5em;
+         }
+        .title {
+            position: sticky;
+            top: 0;
+            left: 0;
+            height: 1.8em;
+            padding: 0.3em 1em 0.1em 1em;
+            background-color: LightGrey;
         }
         .nav-idx {
             display: inline-block;
@@ -127,7 +149,7 @@ def recent_ref_from_index(index: list, iref: complex) -> dict:
     return res
 
 
-def build_html(articles: list, index: list, filename: str) -> str:
+def build_html(articles: list, index: list, filename: str, pages: list) -> str:
     """Compose the page layout."""
     nb_ver = len(index)
     page = HEADER
@@ -155,17 +177,41 @@ def build_html(articles: list, index: list, filename: str) -> str:
             page += build_xref_stream_item(content, index)
             page += build_obj_trailer()
     page += build_header(filename)
-    page += build_nav_menu(articles, index)
+    page += build_page_nav(pages, index)
+    page += build_nav_menu(articles)
+    page += build_nav_end()
     page += TRAILER
     return page
 
 
-def build_nav_menu(articles, index) -> str:
+def build_page_nav(pages, index) -> str:
     """."""
     ret = '\n'
-    ret += '<nav>\n'
+    ret += '<nav id="nav-pages">\n'
+    ret += f'<div class="title">\n'
+    ret += f'<code>Pages</code>\n'
+    ret += f'</div>\n'
     ret += f'<pre>\n'
-    ret += f'&gt;&gt;&gt; <a class="header-button" href="#end">Scroll to end of file</a>'
+    for i, page in enumerate(pages):
+        iref, _ = page
+        o_num = int(iref.imag)
+        o_gen = int(iref.real)
+        o_ver = index[-1][o_num]['o_ver']
+        ret += f' <a class="nav-idx" href="#obj{o_num}.{o_gen}.{o_ver}">{i}</a>'
+    ret += f'</pre>\n'
+    ret += f'</nav>\n'
+    ret += '\n'
+    return ret
+
+
+def build_nav_menu(articles) -> str:
+    """."""
+    ret = '\n'
+    ret += '<nav id="nav-objects">\n'
+    ret += f'<div class="title">\n'
+    ret += f'<code>Objects</code>\n'
+    ret += f'</div>\n'
+    ret += f'<pre>\n'
     ret += '<ul>\n'
     for article in articles:
         pos, _, typ, obj = article
@@ -190,6 +236,18 @@ def build_nav_menu(articles, index) -> str:
             ret += f'<a class="nav-idx" href="#idx{pos}">{q}</a> {t}'
         ret += '</li>\n'
     ret += f'</ul>\n'
+    ret += f'</pre>\n'
+    ret += f'</nav>\n'
+    ret += '\n'
+    return ret
+
+
+def build_nav_end() -> str:
+    """."""
+    ret = '\n'
+    ret += '<nav id="nav-end">\n'
+    ret += f'<pre>\n'
+    ret += f'&gt;&gt;&gt; <a class="header-button" href="#end">Scroll to end of file</a>'
     ret += f'</pre>\n'
     ret += f'</nav>\n'
     ret += '\n'

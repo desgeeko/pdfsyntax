@@ -275,7 +275,9 @@ def browse(filename: str) -> None:
     file_obj = open(filename, 'rb')
     fdata = bdata_provider(file_obj)
     sections, index = file_map(fdata)
-    print(build_html(sections, index, filename))
+    doc = doc_constructor(fdata)
+    pages = flat_page_tree(doc)
+    print(build_html(sections, index, filename, pages))
 
     
 def file_map(fdata: Callable) -> tuple:
