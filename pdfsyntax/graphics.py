@@ -145,7 +145,7 @@ def format_stream_content(content_stream: Stream) -> str:
                 ret += '[ '
                 for i in token:
                     if type(i) == bytes:
-                        #Readable for debug, but do not this inject into a stream
+                        #Readable for debug, but do not inject this into a stream
                         ret += f"{repr(i)[2:-1]} "
                     else:
                         ret += f"{i} "
