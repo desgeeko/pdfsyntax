@@ -308,7 +308,7 @@ def add_startxref(article: dict, index: list) -> str:
     pos, _, _, xref = article
     ref = pos2ref_from_index(index, int(xref))
     if ref is None:
-        href = f'abs{int(xref)}'
+        href = f'idx{int(xref)}'
     else:
         o_num, o_gen, o_ver = ref
         href = f'obj{o_num}.{o_gen}.{o_ver}'
@@ -371,7 +371,8 @@ def build_xref_table(table: list, index: list) -> str:
             if st != b'f':
                 _, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
                 ret += '    '
-                ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
+                ret += f'<a href="#idx{pos}">'
+                #ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
                 ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
                 ret += '</a>'
         ret += '\n'
@@ -445,7 +446,7 @@ def follow_obj(obj, index: list, depth=0) -> str:
             if name == '/Type' or name == '/Subtype':
                 ret += f'  {name:{NAME_MAX_WIDTH}}<span class="important">{value}</span>\n'
             elif name == '/Prev':
-                ret += f'  {name:{NAME_MAX_WIDTH}}<a class="obj-link" href="#abs{value}">{value}</a>\n'
+                ret += f'  {name:{NAME_MAX_WIDTH}}<a class="obj-link" href="#idx{value}">{value}</a>\n'
             else:
                 ret += f'  {name:{NAME_MAX_WIDTH}}{value}\n'
         ret += ' ' * (NAME_MAX_WIDTH + 2) * depth

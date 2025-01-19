@@ -333,16 +333,22 @@ def build_index_from_chrono(chrono: list) -> list:
             index.append(m)
             doc_ver += 1
             prev_pos = obj['abs_pos']
-        elif obj['o_num'] == -1:
-            pass
+        #elif obj['o_num'] == -1:
+        #    pass
         if m[obj['o_num']] is None:
             if obj['o_num'] == 0:
                 obj['o_ver'] = doc_ver
             else:
                 obj['o_ver'] = 0
+            obj['doc_ver'] = doc_ver
         else:
-            obj['o_ver'] = index[-1][obj['o_num']]['o_ver'] + 1
-        obj['doc_ver'] = doc_ver
+            old_obj = index[-1][obj['o_num']]
+            if 'abs_pos' in old_obj and 'abs_pos' in obj and old_obj['abs_pos'] == obj['abs_pos']:
+                #Special case for hybrid docs where an obj appears both in xref table and stream
+                obj = old_obj
+            else:
+                obj['o_ver'] = old_obj['o_ver'] + 1
+                obj['doc_ver'] = doc_ver
         if obj['o_num'] == 0 and m[obj['o_num']] is not None:
             m[0] = [m[0] ,obj]
         else:
