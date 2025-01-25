@@ -3,9 +3,10 @@
 import os
 import html
 from .objects import Stream
+from .graphics import printable_stream_content
 
 
-NAME_MAX_WIDTH = 15
+NAME_MAX_WIDTH = 20
 VALUE_MAX_WIDTH = 30
 
 HEADER = '''<!DOCTYPE html>
@@ -41,7 +42,7 @@ HEADER = '''<!DOCTYPE html>
         }
         #nav-objects {
             top: 12em;
-            height: 75%;
+            height: 70%;
             overflow-y: scroll;
         }
         #nav-end {
@@ -102,6 +103,11 @@ HEADER = '''<!DOCTYPE html>
         a {
             color: blue;
         }
+        summary {
+            color: blue;
+            text-decoration: underline;
+            font-style: italic;
+        }
         :visited {
             color: blue;
         }
@@ -137,6 +143,11 @@ HEADER = '''<!DOCTYPE html>
         }
         a {
             color: deepskyblue;
+        }
+        summary {
+            color: deepskyblue;
+            text-decoration: underline;
+            font-style: italic;
         }
         :visited {
             color: deepskyblue;
@@ -200,13 +211,13 @@ def build_html(articles: list, index: list, filename: str, pages: list) -> str:
                 page += add_comment(article)
         elif typ == 'IND_OBJ':
             page += build_obj_header(article, index)
-            page += follow_obj(content['obj'], index)
+            page += follow_obj(content['obj'], index, content['o_num'])
             page += build_obj_trailer()
         elif typ == 'XREFTABLE':
             page += build_obj_header(article, index)
             page += build_xref_table(content['table'], index)
             page += "\ntrailer\n"
-            page += follow_obj(content['trailer'], index)
+            page += follow_obj(content['trailer'], index, -1)
             page += build_obj_trailer()
         elif typ == 'XREF' and content[0] == 'XREF_S':
             page += build_xref_item_header()
@@ -331,7 +342,7 @@ def add_comment(article: dict) -> str:
     try:
         detail = comment[:10].decode('ascii')
     except:
-        detail = '<' + comment.hex() + '>'
+        detail = '&lt;' + comment.hex() + '&gt;'
     ret = ''
     ret += f'<div class="block" id="idx{pos}">\n'
     ret += f'<div>\n'
@@ -421,7 +432,7 @@ def move_list_item(mod_list: list, item: int, new_pos: int) -> str:
     return mod_list
 
 
-def follow_obj(obj, index: list, depth=0) -> str:
+def follow_obj(obj, index: list, num: int, depth=0) -> str:
     """Recursively construct object representation."""
     ret = ''
     content = None
@@ -435,13 +446,13 @@ def follow_obj(obj, index: list, depth=0) -> str:
         if type(obj) == Stream:
             content = obj['stream']
             obj = obj['entries']
-        ret += '<<\n'
+        ret += '&lt;&lt;\n'
         keys = list(obj.keys())
         keys = move_list_item(keys, '/Type', 0)
         keys = move_list_item(keys, '/Subtype', 1)
         for i in keys:
             name = i #name = i.decode('ascii')
-            value = follow_obj(obj[i], index, depth + 1)
+            value = follow_obj(obj[i], index, num, depth + 1)
             ret += ' ' * (NAME_MAX_WIDTH + 2) * depth
             if name == '/Type' or name == '/Subtype':
                 ret += f'  {name:{NAME_MAX_WIDTH}}<span class="important">{value}</span>\n'
@@ -450,15 +461,22 @@ def follow_obj(obj, index: list, depth=0) -> str:
             else:
                 ret += f'  {name:{NAME_MAX_WIDTH}}{value}\n'
         ret += ' ' * (NAME_MAX_WIDTH + 2) * depth
-        ret += '>>'
+        ret += '&gt;&gt;'
         if content:
-            content = f'{content}'[2:-1]
-            content = content[:VALUE_MAX_WIDTH * 2] + TRUNCATED
-            ret += f'  \n{"stream":{NAME_MAX_WIDTH}}\n{content}\n'
+            p = printable_stream_content(content)
+            ret += f'  \nstream\n'
+            if p:
+                ret += f'<details>\n<summary>see content</summary>\n'
+                ret += f'<pre class="detail">{p}</pre>\n</details>\n'
+            else:
+                detail = '&lt;' + content.hex() + '&gt;'
+                content = detail[:VALUE_MAX_WIDTH * 2] + TRUNCATED
+                ret += f'{content}\n'
+            ret += f'endstream\n'
     elif type(obj) == list:
         ret += '[ '
         for i in obj:
-            value = follow_obj(i, index)
+            value = follow_obj(i, index, num)
             ret += f'{value} '
         if len(ret) > VALUE_MAX_WIDTH and 'href' not in ret:
             ret = ret[:VALUE_MAX_WIDTH] + TRUNCATED

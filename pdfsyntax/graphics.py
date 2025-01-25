@@ -135,24 +135,17 @@ def parse_stream_content(content_stream: bytes) -> list:
     return ret
 
 
-def format_stream_content(content_stream: Stream) -> str:
-    """Make content stream more readable with 1 command per line."""
+def printable_stream_content(content_stream: bytes, escape = True) -> str:
+    """."""
     ret = ''
-    lines = parse_stream_content(content_stream['stream'])
-    for line in lines:
-        for token in line:
-            if type(token) == list:
-                ret += '[ '
-                for i in token:
-                    if type(i) == bytes:
-                        #Readable for debug, but do not inject this into a stream
-                        ret += f"{repr(i)[2:-1]} "
-                    else:
-                        ret += f"{i} "
-                ret += '] '
-            else:
-                ret += f"{token} "
-        ret += '\n'
+    c = content_stream
+    for i in range(len(c)):
+        if c[i] < 20 and c[i] != 10 and c[i] != 13:
+            return None
+    ret = c.decode('latin-1')
+    if escape:
+        ret = ret.replace('<', '&lt;')
+        ret = ret.replace('>', '&gt;')
     return ret
 
 
