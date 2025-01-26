@@ -170,7 +170,7 @@ TRUNCATED = '<em> ...(truncated) </em>'
 
 
 def pos2ref_from_index(index: list, abs_pos: int) -> dict:
-    """."""
+    """Search abs pos in full index and return corresponding object."""
     for _, current in enumerate(index):
         for x in current:
             if x is None:
@@ -201,7 +201,7 @@ def build_html(articles: list, index: list, filename: str, pages: list) -> str:
     nb_ver = len(index)
     page = HEADER
     for article in articles:
-        pos, _, typ, content = article
+        _, _, typ, content = article
         if typ == 'STARTXREF':
             page += add_startxref(article, index)
         elif typ == 'COMMENT':
@@ -211,27 +211,27 @@ def build_html(articles: list, index: list, filename: str, pages: list) -> str:
                 page += add_comment(article)
         elif typ == 'IND_OBJ':
             page += build_obj_header(article, index)
-            page += follow_obj(content['obj'], index, content['o_num'])
+            page += follow_obj(content['obj'], index)
             page += build_obj_trailer()
         elif typ == 'XREFTABLE':
             page += build_obj_header(article, index)
             page += build_xref_table(content['table'], index)
             page += "\ntrailer\n"
-            page += follow_obj(content['trailer'], index, -1)
+            page += follow_obj(content['trailer'], index)
             page += build_obj_trailer()
         elif typ == 'XREF' and content[0] == 'XREF_S':
             page += build_xref_item_header()
             page += build_xref_stream_item(content, index)
             page += build_obj_trailer()
     page += build_header(filename)
-    page += build_page_nav(pages, index)
-    page += build_nav_menu(articles)
+    page += build_nav_pages(pages, index)
+    page += build_nav_objects(articles)
     page += build_nav_end()
     page += TRAILER
     return page
 
 
-def build_page_nav(pages, index) -> str:
+def build_nav_pages(pages, index) -> str:
     """."""
     ret = '\n'
     ret += '<nav class="b0" id="nav-pages">\n'
@@ -251,7 +251,7 @@ def build_page_nav(pages, index) -> str:
     return ret
 
 
-def build_nav_menu(articles) -> str:
+def build_nav_objects(articles) -> str:
     """."""
     ret = '\n'
     ret += '<nav class="b0" id="nav-objects">\n'
@@ -278,7 +278,8 @@ def build_nav_menu(articles) -> str:
             t = c.get("/Type", "")
         ret += '<li>'
         if type(pos) == tuple:
-            ret += f'<a class="nav-idx b2" href="#obj{q}.0.0">{q}</a> {t}'
+            env_pos, pos_in_env, _ = pos
+            ret += f'<a class="nav-idx b2" href="#idx{env_pos}_{pos_in_env}">{q}</a> {t}'
         else:
             ret += f'<a class="nav-idx b2" href="#idx{pos}">{q}</a> {t}'
         ret += '</li>\n'
@@ -432,7 +433,7 @@ def move_list_item(mod_list: list, item: int, new_pos: int) -> str:
     return mod_list
 
 
-def follow_obj(obj, index: list, num: int, depth=0) -> str:
+def follow_obj(obj, index: list, depth=0) -> str:
     """Recursively construct object representation."""
     ret = ''
     content = None
@@ -452,7 +453,7 @@ def follow_obj(obj, index: list, num: int, depth=0) -> str:
         keys = move_list_item(keys, '/Subtype', 1)
         for i in keys:
             name = i #name = i.decode('ascii')
-            value = follow_obj(obj[i], index, num, depth + 1)
+            value = follow_obj(obj[i], index, depth + 1)
             ret += ' ' * (NAME_MAX_WIDTH + 2) * depth
             if name == '/Type' or name == '/Subtype':
                 ret += f'  {name:{NAME_MAX_WIDTH}}<span class="important">{value}</span>\n'
@@ -476,7 +477,7 @@ def follow_obj(obj, index: list, num: int, depth=0) -> str:
     elif type(obj) == list:
         ret += '[ '
         for i in obj:
-            value = follow_obj(i, index, num)
+            value = follow_obj(i, index)
             ret += f'{value} '
         if len(ret) > VALUE_MAX_WIDTH and 'href' not in ret:
             ret = ret[:VALUE_MAX_WIDTH] + TRUNCATED
@@ -518,14 +519,17 @@ def build_obj_header(article, index) -> str:
         o_num, o_gen, o_ver = ref
         ret += f'\n'
         ret += f'<div class="block" id="idx{pos}">\n'
-        ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n<pre>\n'
+        ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'
+        ret += f'<pre>\n'
         ret += f'<span class="obj-header b1"><strong>{o_num}</strong> <span class="c1">{o_gen} obj</span></span>'
         ret += f'<em class="obj-low">  at offset {pos}</em>'
     elif type(pos) == tuple:
+        env_pos, pos_in_env, seq = pos
         o_num, o_gen, o_ver = obj['o_num'], 0, 0
         ret += f'\n'
+        ret += f'<div class="block" id="idx{env_pos}_{pos_in_env}">\n'
         ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'
-        ret += f'<div>\n<pre>\n'
+        ret += f'<pre>\n'
         ret += f'<span class="obj-header b1"><strong>{o_num}</strong> <span class="c1">{o_gen} obj</span></span>'
         ret += f'<em class="obj-low">  from object stream {obj["env_num"]} above</em>'
     else:

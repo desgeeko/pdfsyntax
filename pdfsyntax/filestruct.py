@@ -104,8 +104,8 @@ def file_object_map(fdata: Callable) -> list:
                     ln = 0
                     continue
                 index, i_num, i_gen, s = a
-                a_pos = subsection, ln
-                s = (a_pos, None, 'XREF', ('XREF_T', index, i_num, i_gen, s))
+                r_pos = subsection, ln
+                s = (r_pos, None, 'XREF', ('XREF_T', index, i_num, i_gen, s))
                 sections.append(s)
                 ln += 1
         elif t == 'IND_OBJ' and type(content['obj']) == Stream:
@@ -118,19 +118,19 @@ def file_object_map(fdata: Callable) -> list:
                         ln = -1
                         current_sub = subsection
                     ln += 1
-                    a_pos = subsection, ln
-                    s = (a_pos, None, 'XREF', ('XREF_S', index, i_num, i_gen, s, env_num, raw_line))
+                    r_pos = subsection, ln
+                    s = (r_pos, None, 'XREF', ('XREF_S', index, i_num, i_gen, s, env_num, raw_line))
                     sections.append(s)
             elif content['obj']['entries'].get('/Type') == '/ObjStm':
                 _, _, typ, obj = parse_object_stream(content['obj'], content['o_num'])
                 for embedded in obj:
                     i_num, obj, env_num, theorical_pos, actual_pos = embedded
                     if theorical_pos:
-                        a_pos = j, actual_pos
+                        r_pos = bo, actual_pos, j
                         j += 1
                     else:
-                        a_pos = -1, actual_pos
-                    s = (a_pos, None, 'IND_OBJ', {'o_num':i_num, 'o_gen':None, 'obj':obj, 'env_num':env_num})
+                        r_pos = bo, actual_pos, -1
+                    s = (r_pos, None, 'IND_OBJ', {'o_num':i_num, 'o_gen':None, 'obj':obj, 'env_num':env_num})
                     sections.append(s)
         i = eo
     return sections

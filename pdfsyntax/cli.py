@@ -174,7 +174,7 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
             env_num = content.get('env_num')
             if env_num:
                 macro_ind = '-'
-                seq_num, pos = start_pos
+                env_pos, pos, seq_num = start_pos
                 env_iref = f"{env_num},"
             o_num = content['o_num']
             o_gen = content['o_gen']
