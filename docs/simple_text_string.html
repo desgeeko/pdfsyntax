@@ -6,12 +6,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDFSyntax</title>
     <style>
-        content {
+        .content {
             font-family: monospace;
+            background: linear-gradient(to right, lightgrey 10ch, transparent 5ch);
         }
+	.s {
+	    position: relative;
+	    left: 11ch;
+	    background-color: green;
+	}
         pre {
-            margin-top: 0.5em;
-            margin-bottom: 0.5em;
+            margin-top: 0;
+            margin-bottom: 0;
         }
         ul {
            padding-left: 1em;
@@ -31,17 +37,32 @@
         }
         #nav-objects {
             top: 12em;
-            height: 75%;
+            height: 70%;
             overflow-y: scroll;
         }
         #nav-end {
             bottom: 2em;
             height: 2.5em;
+            padding-top: 0.5em;
          }
         .block {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
             padding-top: 1em;
         }
+        .xref-item {
+	    position: relative;
+	    left: 11ch;
+            margin: 0 0 0 0;
+        }
         .obj-body {
+	    position: relative;
+	    left: 12ch;
+            margin: 0 0 0 0;
+        }
+        .obj-header {
+	    position: relative;
+	    left: 2ch;
             margin: 0 0 0 0;
         }
         .header {
@@ -49,7 +70,7 @@
             top: 0;
             right: 1em;
             height: 2em;
-            padding: 0 1em 0.2em 1em;
+            padding: 0.2em 1em 0 1em;
             border: 2px dotted Grey;
         }
         .title {
@@ -58,6 +79,7 @@
             left: 0;
             height: 1.8em;
             padding: 0.3em 1em 0.1em 1em;
+            margin-bottom: 0.5em;
         }
         .nav-idx {
             display: inline-block;
@@ -81,7 +103,7 @@
             color: black;
         }
         .c1 {
-            color: grey;
+            color: #555;
         }
         :target {
             background-color: lightyellow;
@@ -92,6 +114,11 @@
         a {
             color: blue;
         }
+        summary {
+            color: blue;
+            text-decoration: underline;
+            font-style: italic;
+        }
         :visited {
             color: blue;
         }
@@ -100,6 +127,10 @@
        body {
             background-color: black;
             color: white;
+        }
+        .content {
+            font-family: monospace;
+            background: linear-gradient(to right, #222 10ch, transparent 5ch);
         }
         .b0 {
             background-color: black;
@@ -114,7 +145,7 @@
             background-color: #444;
         }
         .c0 {
-            color: white;
+            color: #ddd;
         }
         .c1 {
             color: grey;
@@ -128,6 +159,11 @@
         a {
             color: deepskyblue;
         }
+        summary {
+            color: deepskyblue;
+            text-decoration: underline;
+            font-style: italic;
+        }
         :visited {
             color: deepskyblue;
         }
@@ -135,12 +171,12 @@
 
     </style>
 </head>
-<body>
+<body class="b1 c0">
 <div class="content">
 <div class="block" id="idx0">
 <div>
 <pre class="comment">
-%PDF-1.4
+<span class="c1">0000000000</span><span class="obj-header b0">%PDF-1.4</span>
 </pre>
 </div>
 </div>
@@ -148,104 +184,104 @@
 <div class="block" id="idx9">
 <div id="obj1.0.0">
 <pre>
-<span class="obj-header b1"><strong>1</strong> <span class="c1">0 obj</span></span><em class="obj-low">  at offset 9</em><div class="obj-body b1">
-<<
-  /Type          <span class="important">/Catalog</span>
-  /Pages         <a href="#obj3.0.0"><span class="obj-link">3 0 R</span></a>
-  /Outlines      <a href="#obj2.0.0"><span class="obj-link">2 0 R</span></a>
->></div>
-</pre>
+<span class="c1">0000000009</span><span class="obj-header b0"><strong>1</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+&lt;&lt;
+  /Type               <span class="important">/Catalog</span>
+  /Pages              <a href="#obj3.0.0"><span class="obj-link">3 0 R</span></a>
+  /Outlines           <a href="#obj2.0.0"><span class="obj-link">2 0 R</span></a>
+&gt;&gt;</div></pre>
 </div>
 </div>
 
 <div class="block" id="idx80">
 <div id="obj2.0.0">
 <pre>
-<span class="obj-header b1"><strong>2</strong> <span class="c1">0 obj</span></span><em class="obj-low">  at offset 80</em><div class="obj-body b1">
-<<
-  /Type          <span class="important">/Outlines</span>
-  /Count         0
->></div>
-</pre>
+<span class="c1">0000000080</span><span class="obj-header b0"><strong>2</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+&lt;&lt;
+  /Type               <span class="important">/Outlines</span>
+  /Count              0
+&gt;&gt;</div></pre>
 </div>
 </div>
 
 <div class="block" id="idx129">
 <div id="obj3.0.0">
 <pre>
-<span class="obj-header b1"><strong>3</strong> <span class="c1">0 obj</span></span><em class="obj-low">  at offset 129</em><div class="obj-body b1">
-<<
-  /Type          <span class="important">/Pages</span>
-  /Count         1
-  /Kids          [ <a href="#obj4.0.0"><span class="obj-link">4 0 R</span></a> ]
->></div>
-</pre>
+<span class="c1">0000000129</span><span class="obj-header b0"><strong>3</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+&lt;&lt;
+  /Type               <span class="important">/Pages</span>
+  /Count              1
+  /Kids               [ <a href="#obj4.0.0"><span class="obj-link">4 0 R</span></a> ]
+&gt;&gt;</div></pre>
 </div>
 </div>
 
 <div class="block" id="idx192">
 <div id="obj4.0.0">
 <pre>
-<span class="obj-header b1"><strong>4</strong> <span class="c1">0 obj</span></span><em class="obj-low">  at offset 192</em><div class="obj-body b1">
-<<
-  /Type          <span class="important">/Page</span>
-  /Resources     <<
-                   /Font          <<
-                                    /F1            <a href="#obj7.0.0"><span class="obj-link">7 0 R</span></a>
-                                  >>
-                   /ProcSet       <a href="#obj6.0.0"><span class="obj-link">6 0 R</span></a>
-                 >>
-  /Contents      <a href="#obj5.0.0"><span class="obj-link">5 0 R</span></a>
-  /MediaBox      [ 0 0 612 792 ]
-  /Parent        <a href="#obj3.0.0"><span class="obj-link">3 0 R</span></a>
->></div>
-</pre>
+<span class="c1">0000000192</span><span class="obj-header b0"><strong>4</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+&lt;&lt;
+  /Type               <span class="important">/Page</span>
+  /Resources          &lt;&lt;
+                        /Font               &lt;&lt;
+                                              /F1                 <a href="#obj7.0.0"><span class="obj-link">7 0 R</span></a>
+                                            &gt;&gt;
+                        /ProcSet            <a href="#obj6.0.0"><span class="obj-link">6 0 R</span></a>
+                      &gt;&gt;
+  /Contents           <a href="#obj5.0.0"><span class="obj-link">5 0 R</span></a>
+  /MediaBox           [ 0 0 612 792 ]
+  /Parent             <a href="#obj3.0.0"><span class="obj-link">3 0 R</span></a>
+&gt;&gt;</div></pre>
 </div>
 </div>
 
 <div class="block" id="idx376">
 <div id="obj5.0.0">
 <pre>
-<span class="obj-header b1"><strong>5</strong> <span class="c1">0 obj</span></span><em class="obj-low">  at offset 376</em><div class="obj-body b1">
-<<
-  /Length        73
->>  
-stream         
-    BT\n       /F1 24 Tf\n       100 100 Td\n       (Hello W<em> ...(truncated) </em>
-</div>
-</pre>
+<span class="c1">0000000376</span><span class="obj-header b0"><strong>5</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+&lt;&lt;
+  /Length             73
+&gt;&gt;  
+stream
+<details>
+<summary>see content</summary>
+<pre class="detail">    BT
+       /F1 24 Tf
+       100 100 Td
+       (Hello World) Tj
+    ET</pre>
+</details>
+endstream
+</div></pre>
 </div>
 </div>
 
 <div class="block" id="idx498">
 <div id="obj6.0.0">
 <pre>
-<span class="obj-header b1"><strong>6</strong> <span class="c1">0 obj</span></span><em class="obj-low">  at offset 498</em><div class="obj-body b1">
-[ /PDF /Text ]</div>
-</pre>
+<span class="c1">0000000498</span><span class="obj-header b0"><strong>6</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+[ /PDF /Text ]</div></pre>
 </div>
 </div>
 
 <div class="block" id="idx526">
 <div id="obj7.0.0">
 <pre>
-<span class="obj-header b1"><strong>7</strong> <span class="c1">0 obj</span></span><em class="obj-low">  at offset 526</em><div class="obj-body b1">
-<<
-  /Type          <span class="important">/Font</span>
-  /Subtype       <span class="important">/Type1</span>
-  /Encoding      /MacRomanEncoding
-  /BaseFont      /Helvetica
-  /Name          /F1
->></div>
-</pre>
+<span class="c1">0000000526</span><span class="obj-header b0"><strong>7</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+&lt;&lt;
+  /Type               <span class="important">/Font</span>
+  /Subtype            <span class="important">/Type1</span>
+  /Encoding           /MacRomanEncoding
+  /BaseFont           /Helvetica
+  /Name               /F1
+&gt;&gt;</div></pre>
 </div>
 </div>
 
 <div class="block" id="idx646">
 <div>
 <pre>
-<span class="obj-header b1"><strong>XREF table & trailer</strong></span><em class="c1">  at offset 646</em>
-<div class="obj-body b1">
+<span class="c1">0000000646</span><span class="obj-header b0"><strong>XREF table & trailer</strong></span><div class="obj-body b0">
 0  8
 0000000000 65535 f
 0000000009 00000 n    <a href="#idx9"><span class="obj-link">#1 0</span></a>
@@ -257,18 +293,19 @@ stream
 0000000526 00000 n    <a href="#idx526"><span class="obj-link">#7 0</span></a>
 
 trailer
-<<
-  /Root          <a href="#obj1.0.0"><span class="obj-link">1 0 R</span></a>
-  /Size          8
->></div>
-</pre>
+&lt;&lt;
+  /Root               <a href="#obj1.0.0"><span class="obj-link">1 0 R</span></a>
+  /Size               8
+&gt;&gt;</div></pre>
 </div>
 </div>
 <div class="block" id="idx845">
 <div>
 <pre>
-startxref
+<span class="c1">0000000845</span><span class="obj-header b0">startxref</span>
+<div class="obj-body b0">
 <a class="obj-link" href="#idx646">646</a>
+</div>
 
 </pre>
 </div>
@@ -276,8 +313,8 @@ startxref
 
 <div class="block" id="idx859">
 <div>
-<pre class="eof b1">
-%%EOF
+<pre class="eof">
+<span class="c1">0000000859</span><span class="obj-header b0">%%EOF</span>
 </pre>
 </div>
 </div>
@@ -287,41 +324,41 @@ simple_text_string.pdf - internal view generated by <a href="https://pdfsyntax.d
 </pre>
 </div>
 
-<nav class="b0" id="nav-pages">
+<nav class="b2" id="nav-pages">
 <div class="title b3">
 <code>Pages</code>
 </div>
 <pre>
- <a class="nav-idx b2" href="#obj4.0.0">0</a></pre>
+ <a class="nav-idx b1" href="#obj4.0.0">0</a></pre>
 </nav>
 
 
-<nav class="b0" id="nav-objects">
+<nav class="b2" id="nav-objects">
 <div class="title b3">
 <code>Minimap</code>
 </div>
 <pre>
 <ul>
-<li><a class="nav-idx b2" href="#idx9">1</a> /Catalog</li>
-<li><a class="nav-idx b2" href="#idx80">2</a> /Outlines</li>
-<li><a class="nav-idx b2" href="#idx129">3</a> /Pages</li>
-<li><a class="nav-idx b2" href="#idx192">4</a> /Page</li>
-<li><a class="nav-idx b2" href="#idx376">5</a> </li>
-<li><a class="nav-idx b2" href="#idx498">6</a> </li>
-<li><a class="nav-idx b2" href="#idx526">7</a> /Font</li>
-<li><a class="nav-idx b2" href="#idx646">xref</a> XREF table & trailer</li>
+<li><a class="nav-idx b1" href="#idx9">1</a> /Catalog</li>
+<li><a class="nav-idx b1" href="#idx80">2</a> /Outlines</li>
+<li><a class="nav-idx b1" href="#idx129">3</a> /Pages</li>
+<li><a class="nav-idx b1" href="#idx192">4</a> /Page</li>
+<li><a class="nav-idx b1" href="#idx376">5</a> </li>
+<li><a class="nav-idx b1" href="#idx498">6</a> </li>
+<li><a class="nav-idx b1" href="#idx526">7</a> /Font</li>
+<li><a class="nav-idx b1" href="#idx646">xref</a> XREF table & trailer</li>
 </ul>
 </pre>
 </nav>
 
 
-<nav class="b0" id="nav-end">
+<nav class="b2" id="nav-end">
 <pre>
 &gt;&gt;&gt; <a class="header-button" href="#end">Scroll to end of file</a></pre>
 </nav>
 
 
-<div id="end"><code><em>(end of file)</em></code></div>
+<div id="end"><code><em>endoffile</em></code></div>
 </div>
 </body>
 

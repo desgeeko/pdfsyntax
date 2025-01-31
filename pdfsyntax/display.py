@@ -17,12 +17,18 @@ HEADER = '''<!DOCTYPE html>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDFSyntax</title>
     <style>
-        content {
+        .content {
             font-family: monospace;
+            background: linear-gradient(to right, lightgrey 10ch, transparent 5ch);
         }
+	.s {
+	    position: relative;
+	    left: 11ch;
+	    background-color: green;
+	}
         pre {
-            margin-top: 0.5em;
-            margin-bottom: 0.5em;
+            margin-top: 0;
+            margin-bottom: 0;
         }
         ul {
            padding-left: 1em;
@@ -48,11 +54,26 @@ HEADER = '''<!DOCTYPE html>
         #nav-end {
             bottom: 2em;
             height: 2.5em;
+            padding-top: 0.5em;
          }
         .block {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
             padding-top: 1em;
         }
+        .xref-item {
+	    position: relative;
+	    left: 11ch;
+            margin: 0 0 0 0;
+        }
         .obj-body {
+	    position: relative;
+	    left: 12ch;
+            margin: 0 0 0 0;
+        }
+        .obj-header {
+	    position: relative;
+	    left: 2ch;
             margin: 0 0 0 0;
         }
         .header {
@@ -60,7 +81,7 @@ HEADER = '''<!DOCTYPE html>
             top: 0;
             right: 1em;
             height: 2em;
-            padding: 0 1em 0.2em 1em;
+            padding: 0.2em 1em 0 1em;
             border: 2px dotted Grey;
         }
         .title {
@@ -69,6 +90,7 @@ HEADER = '''<!DOCTYPE html>
             left: 0;
             height: 1.8em;
             padding: 0.3em 1em 0.1em 1em;
+            margin-bottom: 0.5em;
         }
         .nav-idx {
             display: inline-block;
@@ -92,7 +114,7 @@ HEADER = '''<!DOCTYPE html>
             color: black;
         }
         .c1 {
-            color: grey;
+            color: #555;
         }
         :target {
             background-color: lightyellow;
@@ -117,6 +139,10 @@ HEADER = '''<!DOCTYPE html>
             background-color: black;
             color: white;
         }
+        .content {
+            font-family: monospace;
+            background: linear-gradient(to right, #222 10ch, transparent 5ch);
+        }
         .b0 {
             background-color: black;
         }
@@ -130,7 +156,7 @@ HEADER = '''<!DOCTYPE html>
             background-color: #444;
         }
         .c0 {
-            color: white;
+            color: #ddd;
         }
         .c1 {
             color: grey;
@@ -156,12 +182,12 @@ HEADER = '''<!DOCTYPE html>
 
     </style>
 </head>
-<body>
+<body class="b1 c0">
 <div class="content">
 '''
 
 TRAILER = '''
-<div id="end"><code><em>(end of file)</em></code></div>
+<div id="end"><code><em>endoffile</em></code></div>
 </div>
 </body>
 '''
@@ -234,7 +260,7 @@ def build_html(articles: list, index: list, filename: str, pages: list) -> str:
 def build_nav_pages(pages, index) -> str:
     """."""
     ret = '\n'
-    ret += '<nav class="b0" id="nav-pages">\n'
+    ret += '<nav class="b2" id="nav-pages">\n'
     ret += f'<div class="title b3">\n'
     ret += f'<code>Pages</code>\n'
     ret += f'</div>\n'
@@ -244,7 +270,7 @@ def build_nav_pages(pages, index) -> str:
         o_num = int(iref.imag)
         o_gen = int(iref.real)
         o_ver = index[-1][o_num]['o_ver']
-        ret += f' <a class="nav-idx b2" href="#obj{o_num}.{o_gen}.{o_ver}">{i}</a>'
+        ret += f' <a class="nav-idx b1" href="#obj{o_num}.{o_gen}.{o_ver}">{i}</a>'
     ret += f'</pre>\n'
     ret += f'</nav>\n'
     ret += '\n'
@@ -254,7 +280,7 @@ def build_nav_pages(pages, index) -> str:
 def build_nav_objects(articles) -> str:
     """."""
     ret = '\n'
-    ret += '<nav class="b0" id="nav-objects">\n'
+    ret += '<nav class="b2" id="nav-objects">\n'
     ret += f'<div class="title b3">\n'
     ret += f'<code>Minimap</code>\n'
     ret += f'</div>\n'
@@ -266,7 +292,7 @@ def build_nav_objects(articles) -> str:
         if typ != 'IND_OBJ':
             if typ == 'XREFTABLE':
                 ret += '<li>'
-                ret += f'<a class="nav-idx b2" href="#idx{pos}">xref</a> XREF table & trailer'
+                ret += f'<a class="nav-idx b1" href="#idx{pos}">xref</a> XREF table & trailer'
                 ret += '</li>\n'
             continue
         q = obj['o_num']
@@ -279,9 +305,9 @@ def build_nav_objects(articles) -> str:
         ret += '<li>'
         if type(pos) == tuple:
             env_pos, pos_in_env, _ = pos
-            ret += f'<a class="nav-idx b2" href="#idx{env_pos}_{pos_in_env}">{q}</a> {t}'
+            ret += f'<a class="nav-idx b1" href="#idx{env_pos}_{pos_in_env}">{q}</a> {t}'
         else:
-            ret += f'<a class="nav-idx b2" href="#idx{pos}">{q}</a> {t}'
+            ret += f'<a class="nav-idx b1" href="#idx{pos}">{q}</a> {t}'
         ret += '</li>\n'
     ret += f'</ul>\n'
     ret += f'</pre>\n'
@@ -293,7 +319,7 @@ def build_nav_objects(articles) -> str:
 def build_nav_end() -> str:
     """."""
     ret = '\n'
-    ret += '<nav class="b0" id="nav-end">\n'
+    ret += '<nav class="b2" id="nav-end">\n'
     ret += f'<pre>\n'
     ret += f'&gt;&gt;&gt; <a class="header-button" href="#end">Scroll to end of file</a>'
     ret += f'</pre>\n'
@@ -328,11 +354,13 @@ def add_startxref(article: dict, index: list) -> str:
     ret += f'<div class="block" id="idx{pos}">\n'
     ret += f'<div>\n'
     ret += f'<pre>\n'
-    ret += f'startxref\n'
+    ret += f'<span class="c1">{pos:010d}</span><span class="obj-header b0">startxref</span>\n'
+    ret += f'<div class="obj-body b0">\n'
     if xref == 0:
         ret += f'0\n'
     else:
         ret += f'<a class="obj-link" href="#{href}">{int(xref)}</a>\n'
+    ret += f'</div>\n'
     ret += f'\n</pre>\n</div>\n</div>\n'
     return ret
 
@@ -348,7 +376,7 @@ def add_comment(article: dict) -> str:
     ret += f'<div class="block" id="idx{pos}">\n'
     ret += f'<div>\n'
     ret += f'<pre class="comment">\n'
-    ret += f'{detail}\n'
+    ret += f'<span class="c1">{pos:010d}</span><span class="obj-header b0">{detail}</span>\n'
     ret += f'</pre>\n'
     ret += f'</div>\n'
     ret += f'</div>\n'
@@ -362,8 +390,8 @@ def add_eof(article: dict) -> str:
     ret += f'\n'
     ret += f'<div class="block" id="idx{pos}">\n'
     ret += f'<div>\n'
-    ret += f'<pre class="eof b1">\n'
-    ret += f'%%EOF\n'
+    ret += f'<pre class="eof">\n'
+    ret += f'<span class="c1">{pos:010d}</span><span class="obj-header b0">%%EOF</span>\n'
     ret += f'</pre>\n'
     ret += f'</div>\n'
     ret += f'</div>\n'
@@ -384,7 +412,6 @@ def build_xref_table(table: list, index: list) -> str:
                 _, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
                 ret += '    '
                 ret += f'<a href="#idx{pos}">'
-                #ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
                 ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
                 ret += '</a>'
         ret += '\n'
@@ -405,23 +432,23 @@ def build_xref_stream_item(item: tuple, index: list) -> str:
             ret += f'In object stream {env_num} at {pos:010} {st.decode("ascii")}'
         else:
             ret += f'At absolute position {pos:010} {st.decode("ascii")}'
-    ret += '\n'
+    #ret += '\n'
     return ret
 
 
-def build_xref_stream(table: list, mini_index: list) -> str:
-    """Display XREF stream with additional links to objects."""
-    ret = '\nstream\n'
-    for line, o_num in table:
-        ret += line.decode('ascii')
-        if o_num != None:
-            o_gen, o_ver = mini_index[o_num]
-            ret += '    '
-            ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
-            ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
-            ret += '</a>'
-        ret += '\n'
-    return ret
+#def build_xref_stream(table: list, mini_index: list) -> str:
+#    """Display XREF stream with additional links to objects."""
+#    ret = '\nstream\n'
+#    for line, o_num in table:
+#        ret += line.decode('ascii')
+#        if o_num != None:
+#            o_gen, o_ver = mini_index[o_num]
+#            ret += '    '
+#            ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
+#            ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
+#            ret += '</a>'
+#        ret += '\n'
+#    return ret
 
 
 def move_list_item(mod_list: list, item: int, new_pos: int) -> str:
@@ -505,8 +532,7 @@ def follow_obj(obj, index: list, depth=0) -> str:
 def build_xref_item_header() -> str:
     """."""
     ret = ''
-    ret += f'<div><div><pre><div>'
-    #ret += f'<div class="obj-body">\n'
+    ret += f'<div><div><pre><div class="xref-item">'
     return ret
 
 
@@ -521,8 +547,8 @@ def build_obj_header(article, index) -> str:
         ret += f'<div class="block" id="idx{pos}">\n'
         ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'
         ret += f'<pre>\n'
-        ret += f'<span class="obj-header b1"><strong>{o_num}</strong> <span class="c1">{o_gen} obj</span></span>'
-        ret += f'<em class="obj-low">  at offset {pos}</em>'
+        ret += f'<span class="c1">{pos:010d}</span>'
+        ret += f'<span class="obj-header b0"><strong>{o_num}</strong> <span class="">{o_gen} obj</span></span>'
     elif type(pos) == tuple:
         env_pos, pos_in_env, seq = pos
         o_num, o_gen, o_ver = obj['o_num'], 0, 0
@@ -530,23 +556,23 @@ def build_obj_header(article, index) -> str:
         ret += f'<div class="block" id="idx{env_pos}_{pos_in_env}">\n'
         ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'
         ret += f'<pre>\n'
-        ret += f'<span class="obj-header b1"><strong>{o_num}</strong> <span class="c1">{o_gen} obj</span></span>'
-        ret += f'<em class="obj-low">  from object stream {obj["env_num"]} above</em>'
+        ret += f'<span class="c1">-{pos_in_env:09d}</span>'
+        ret += f'<span class="obj-header b0"><strong>{o_num}</strong> <span class="">{o_gen} obj</span></span>'
     else:
         ret += f'\n'
         ret += f'<div class="block" id="idx{pos}">\n'
         ret += f'<div>\n'
         ret += f'<pre>\n'
-        ret += f'<span class="obj-header b1"><strong>XREF table & trailer</strong></span>'
-        ret += f'<em class="c1">  at offset {pos}</em>\n'
-    ret += f'<div class="obj-body b1">\n'
+        ret += f'<span class="c1">{pos:010d}</span>'
+        ret += f'<span class="obj-header b0"><strong>XREF table & trailer</strong></span>'
+    ret += f'<div class="obj-body b0">\n'
     return ret
 
 
 def build_obj_trailer() -> str:
     """Add closing elements to object."""
     ret = ''
-    ret += f'</div>\n'
+    ret += f'</div>'
     ret += f'</pre>\n</div>\n'
     ret += f'</div>\n'
     return ret
