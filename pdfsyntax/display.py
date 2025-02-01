@@ -303,11 +303,7 @@ def build_nav_objects(articles) -> str:
                 c = c['entries']
             t = c.get("/Type", "")
         ret += '<li>'
-        if type(pos) == tuple:
-            env_pos, pos_in_env, _ = pos
-            ret += f'<a class="nav-idx b1" href="#idx{env_pos}_{pos_in_env}">{q}</a> {t}'
-        else:
-            ret += f'<a class="nav-idx b1" href="#idx{pos}">{q}</a> {t}'
+        ret += f'<a class="nav-idx b1" href="#idx{pos}">{q}</a> {t}'
         ret += '</li>\n'
     ret += f'</ul>\n'
     ret += f'</pre>\n'
@@ -409,7 +405,7 @@ def build_xref_table(table: list, index: list) -> str:
             pos, o_num, o_gen, st = x
             ret += f'{pos:010} {o_gen:05} {st.decode("ascii")}'
             if st != b'f':
-                _, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
+                #_, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
                 ret += '    '
                 ret += f'<a href="#idx{pos}">'
                 ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
@@ -538,10 +534,17 @@ def build_xref_item_header() -> str:
 
 def build_obj_header(article, index) -> str:
     """Add opening elements to object."""
-    pos, _, typ, obj = article
+    pos, addon, typ, obj = article
     ref = pos2ref_from_index(index, pos)
     ret = ''
-    if ref:
+    if typ == 'XREFTABLE':
+        ret += f'\n'
+        ret += f'<div class="block" id="idx{pos}">\n'
+        ret += f'<div>\n'
+        ret += f'<pre>\n'
+        ret += f'<span class="c1">{pos:010d}</span>'
+        ret += f'<span class="obj-header b0"><strong>XREF table & trailer</strong></span>'
+    elif type(pos) == int:
         o_num, o_gen, o_ver = ref
         ret += f'\n'
         ret += f'<div class="block" id="idx{pos}">\n'
@@ -549,22 +552,17 @@ def build_obj_header(article, index) -> str:
         ret += f'<pre>\n'
         ret += f'<span class="c1">{pos:010d}</span>'
         ret += f'<span class="obj-header b0"><strong>{o_num}</strong> <span class="">{o_gen} obj</span></span>'
-    elif type(pos) == tuple:
-        env_pos, pos_in_env, seq = pos
+    elif type(addon) == tuple:
+        env_pos, pos_in_env, seq = addon
         o_num, o_gen, o_ver = obj['o_num'], 0, 0
         ret += f'\n'
-        ret += f'<div class="block" id="idx{env_pos}_{pos_in_env}">\n'
+        ret += f'<div class="block" id="idx{pos}">\n'
         ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'
         ret += f'<pre>\n'
-        ret += f'<span class="c1">-{pos_in_env:09d}</span>'
+#        ret += f'<span class="c1">-{pos_in_env:09d}</span>'
+        embedded = f'{obj["env_num"]} #{seq}'
+        ret += f'<span class="c1">{embedded:10}</span>'
         ret += f'<span class="obj-header b0"><strong>{o_num}</strong> <span class="">{o_gen} obj</span></span>'
-    else:
-        ret += f'\n'
-        ret += f'<div class="block" id="idx{pos}">\n'
-        ret += f'<div>\n'
-        ret += f'<pre>\n'
-        ret += f'<span class="c1">{pos:010d}</span>'
-        ret += f'<span class="obj-header b0"><strong>XREF table & trailer</strong></span>'
     ret += f'<div class="obj-body b0">\n'
     return ret
 

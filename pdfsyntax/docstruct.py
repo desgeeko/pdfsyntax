@@ -54,8 +54,9 @@ def pprint_index(doc: Doc):
                     cell += f"{abs_pos} "
                 if env_num_new != env_num or o_pos_new != o_pos:
                     env_num, o_pos = env_num_new, o_pos_new
-                    cell += f"{env_num}>{o_pos} "
-            line += f"| {cell:20}"
+                    #cell += f"{env_num}>{o_pos} "
+                    cell += f"{env_num} "
+            line += f"| {cell:25}"
         print(line)
     print('\n')
     for i in 'abs_pos startxref_pos xref_table_pos xref_stream_pos xref_strean_num'.split():

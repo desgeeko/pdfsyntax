@@ -372,6 +372,8 @@ def expand_xref_index(xref_index: list) -> list:
 def parse_xref_stream_raw(xref_stream: Stream) -> tuple:
     """."""
     res = []
+    uncompressed = {}
+    envs = {}
     cols = xref_stream['entries']['/W']
     i = 0
     if '/Index' in xref_stream['entries']:
@@ -390,13 +392,22 @@ def parse_xref_stream_raw(xref_stream: Stream) -> tuple:
             i += int(col)
             ppr += asciihex(x) + b' '
         if params[0] == 0:
-            res.append((params[1], None, obj_num, params[2], b'f', ppr, subsection))
+            offset = params[1]
+            o_gen = params[2]
+            res.append((offset, None, obj_num, o_gen, b'f', ppr, subsection))
         elif params[0] == 1:
-            res.append((params[1], None, obj_num, params[2], b'n', ppr, subsection))
+            offset = params[1]
+            o_gen = params[2]
+            res.append((offset, None, obj_num, o_gen, b'n', ppr, subsection))
+            uncompressed[obj_num] = offset
         elif params[0] == 2:
             env_num = params[1]
-            res.append((params[2], env_num, obj_num, 0, b'n', ppr, subsection))
-    return (None, None, 'XREFSTREAM', {'table':res, 'trailer': xref_stream['entries']})
+            o_pos = params[2]
+            res.append((o_pos, env_num, obj_num, 0, b'n', ppr, subsection))
+            envs[env_num] = 'TDB'
+    for k in envs:
+        envs[k] = uncompressed.get(k)
+    return (None, None, 'XREFSTREAM', {'table': res, 'trailer': xref_stream['entries'], 'envs': envs})
 
 
 def parse_region(text: bytes, start=0) -> tuple:

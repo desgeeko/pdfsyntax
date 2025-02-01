@@ -43,7 +43,7 @@ The generated HTML looks like the raw PDF file with the following additions:
 
 The command writes on the standard output so you need to redirect to a file that you can open in your browser:
 
-    python3 -m pdfsyntax browse file.pdf > inspection_file.pdf
+    python3 -m pdfsyntax browse file.pdf > inspection_file.html
 
 
 [This is a link to an EXAMPLE](https://pdfsyntax.dev/simple_text_string.html) of a full inspection output that you can browse.

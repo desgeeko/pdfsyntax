@@ -125,12 +125,10 @@ def file_object_map(fdata: Callable) -> list:
                 _, _, typ, obj = parse_object_stream(content['obj'], content['o_num'])
                 for embedded in obj:
                     i_num, obj, env_num, theorical_pos, actual_pos = embedded
-                    if theorical_pos:
-                        r_pos = bo, actual_pos, j
-                        j += 1
-                    else:
-                        r_pos = bo, actual_pos, -1
-                    s = (r_pos, None, 'IND_OBJ', {'o_num':i_num, 'o_gen':None, 'obj':obj, 'env_num':env_num})
+                    abs_pos = bo + (j + 1) / 10000
+                    r_pos = bo, actual_pos, j
+                    j += 1
+                    s = (abs_pos, r_pos, 'IND_OBJ', {'o_num':i_num, 'o_gen':None, 'obj':obj, 'env_num':env_num})
                     sections.append(s)
         i = eo
     return sections
@@ -186,6 +184,7 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     table = []
     _, _, _, xref_table = parse_xref_stream_raw(xref_stream)
     lines = xref_table['table']
+    envs = xref_table['envs']
     for line in lines:
         offset, env_iref, o_num, o_gen, keyword, raw_line, _ = line
         if o_num == 0:
@@ -194,7 +193,8 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
         if keyword == b'f':
             continue
         if env_iref:
-            xref.append({'o_pos': offset, 'env_num':env_iref, 'o_num': o_num, 'o_gen': o_gen})
+            float_pos = envs[env_iref] + (offset + 1) / 10000
+            xref.append({'o_pos': offset, 'env_num':env_iref, 'o_num': o_num, 'o_gen': o_gen, 'abs_pos': float_pos})
         else:
             xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_gen})
         table.append((raw_line, o_num))
@@ -303,7 +303,7 @@ def build_chrono_from_xref(fdata: Callable) -> list:
             tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
             chrono =  tmp_index + chrono
             trailer = xref['entries']
-    seq = [i.get('abs_pos') for i in chrono if i.get('abs_pos')]
+    seq = [i.get('abs_pos') for i in chrono if i.get('abs_pos') and i.get('env_num') is None]
     seq.sort()
     idx = {}
     i = 0
@@ -313,8 +313,11 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         i += 1
     idx[seq[i]] = None
     for i in chrono:
-        if i.get('abs_pos'):
-            i['abs_next'] = idx[i.get('abs_pos')]
+        a = i.get('abs_pos')
+        if a:
+            if type(a) == float:
+                a = int(a)
+            i['abs_next'] = idx[a]
     return chrono
 
 
@@ -353,13 +356,13 @@ def build_index_from_chrono(chrono: list) -> list:
             m[0] = [m[0] ,obj]
         else:
             m[obj['o_num']] = obj
-    for rev in index:
-        abs_list = [obj for obj in rev if obj is not None and 'abs_pos' in obj]
-        env_list = [obj for obj in rev if obj is not None and 'env_num' in obj]
-        for obj in abs_list:
-            abs_pos_array[obj['o_num']] = obj['abs_pos']
-        for obj in env_list:
-            obj['a_'] = abs_pos_array[obj['env_num']] + (obj['o_pos'] + 1) / 1000
+#    for rev in index:
+#        abs_list = [obj for obj in rev if obj is not None and 'abs_pos' in obj]
+#        env_list = [obj for obj in rev if obj is not None and 'env_num' in obj]
+#        for obj in abs_list:
+#            abs_pos_array[obj['o_num']] = obj['abs_pos']
+#        for obj in env_list:
+#            obj['a_'] = abs_pos_array[obj['env_num']] + (obj['o_pos'] + 1) / 1000
     return index
 
 
