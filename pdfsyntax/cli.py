@@ -149,7 +149,8 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
         if start_pos is None or end_pos is None:
             size = 0
         else:
-            size = end_pos - start_pos
+            if type(end_pos) != tuple:
+                size = end_pos - start_pos
         if region_type == 'COMMENT':
             if content[:4] == b'%PDF':
                 detail = content[:8].decode('ascii')
@@ -174,7 +175,8 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
             env_num = content.get('env_num')
             if env_num:
                 macro_ind = '-'
-                env_pos, pos, seq_num = start_pos
+                #env_pos, pos, seq_num = start_pos
+                env_pos, pos, seq_num = end_pos
                 env_iref = f"{env_num},"
             o_num = content['o_num']
             o_gen = content['o_gen']
@@ -270,16 +272,6 @@ def overview(filename: str) -> None:
     return
 
 
-def browse(filename: str) -> None:
-    """Print html view of the file map."""
-    file_obj = open(filename, 'rb')
-    fdata = bdata_provider(file_obj)
-    sections, index = file_map(fdata)
-    doc = doc_constructor(fdata)
-    pages = flat_page_tree(doc)
-    print(build_html(sections, index, filename, pages))
-
-    
 def file_map(fdata: Callable) -> tuple:
     """Build file sequence and sort it by absolute position."""
     new_sections = []
@@ -291,3 +283,63 @@ def file_map(fdata: Callable) -> tuple:
             continue
         new_sections.append(x)
     return (new_sections, index)
+
+
+def find_abs_pos_in_index(abs_pos, index):
+    """."""
+    found = None
+    max_num = len(index[-1]) - 1
+    for num in range(1, max_num+1):
+        for ver in range(len(index)):
+            if num > len(index[ver]) - 1:
+                continue
+            obj = index[ver][num]
+            if obj is None:
+                continue
+            if obj.get('abs_pos') == abs_pos:
+                found = (num, ver)
+        if found:
+            return found
+    return found
+
+
+def cross_map_index(sections, index):
+    """."""
+    ret = {}
+    for section in sections:
+        abs_pos, addon, typ, payload = section
+        if typ != 'IND_OBJ':
+            continue
+        o_num = payload['o_num']
+        o_gen = payload['o_gen']
+        obj = payload['obj']
+        relevance = find_abs_pos_in_index(abs_pos, index)
+        targets = deep_ref_detect(obj)
+        ret[abs_pos] = o_num, relevance, targets, []
+    for abs_pos in ret:
+        o_num, relevance, targets, _ = ret[abs_pos]
+        _, ver = relevance
+        if ver < len(index) - 1:
+            continue
+        for target in targets:
+            target_num = int(target.imag)
+            target_pos = index[-1][target_num]['abs_pos']
+            _, _, _, target_used_by = ret[target_pos]
+            target_used_by.append((o_num, abs_pos))
+    return ret
+
+
+def browse(filename: str) -> None:
+    """Print html view of the file map."""
+    file_obj = open(filename, 'rb')
+    fdata = bdata_provider(file_obj)
+    sections, index = file_map(fdata)
+    cross = cross_map_index(sections, index)
+    #print(cross)
+    doc = doc_constructor(fdata)
+    pages = flat_page_tree(doc)
+    print(build_html(sections, index, cross, filename, pages))
+
+
+
+

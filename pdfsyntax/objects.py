@@ -517,14 +517,16 @@ def deep_ref_retarget(obj: Any, mapping: dict) -> Any:
     return obj
 
 
-#def deep_ref_detect(obj: Any, l: set) -> set:
-#    """Recursively detect all references in object tree."""
-#    if type(obj) == complex:
-#        return l.add(obj)
-#    elif type(obj) == dict:
-#        for k in obj:
-#            obj[k] = deep_ref_detect(obj[k], l)
-#    elif type(obj) == list:
-#        for k in range(len(obj)):
-#            obj[k] = deep_ref_detect(obj[k], l)
-#    return l
+def deep_ref_detect(obj: Any, l = None) -> set:
+    """Recursively detect all references in object tree."""
+    if l is None:
+        l = set()
+    if type(obj) == complex:
+        return l.add(obj)
+    elif type(obj) == dict:
+        for k in obj:
+            deep_ref_detect(obj[k], l)
+    elif type(obj) == list:
+        for k in range(len(obj)):
+            deep_ref_detect(obj[k], l)
+    return l

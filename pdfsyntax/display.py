@@ -222,12 +222,12 @@ def recent_ref_from_index(index: list, iref: complex) -> dict:
     return res
 
 
-def build_html(articles: list, index: list, filename: str, pages: list) -> str:
+def build_html(articles: list, index: list, cross: dict, filename: str, pages: list) -> str:
     """Compose the page layout."""
-    nb_ver = len(index)
     page = HEADER
     for article in articles:
-        _, _, typ, content = article
+        #print(article)
+        abs_pos, _, typ, content = article
         if typ == 'STARTXREF':
             page += add_startxref(article, index)
         elif typ == 'COMMENT':
@@ -237,13 +237,15 @@ def build_html(articles: list, index: list, filename: str, pages: list) -> str:
                 page += add_comment(article)
         elif typ == 'IND_OBJ':
             page += build_obj_header(article, index)
-            page += follow_obj(content['obj'], index)
+            _, relevance, _, _ = cross[abs_pos]
+            _, ver = relevance
+            page += follow_obj(content['obj'], index[ver])
             page += build_obj_trailer()
         elif typ == 'XREFTABLE':
             page += build_obj_header(article, index)
             page += build_xref_table(content['table'], index)
             page += "\ntrailer\n"
-            page += follow_obj(content['trailer'], index)
+            page += follow_obj(content['trailer'], index[ver])
             page += build_obj_trailer()
         elif typ == 'XREF' and content[0] == 'XREF_S':
             page += build_xref_item_header()
@@ -461,8 +463,10 @@ def follow_obj(obj, index: list, depth=0) -> str:
     ret = ''
     content = None
     if isinstance(obj, complex):
-        o_num, o_gen, o_ver = recent_ref_from_index(index, obj)
-        ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
+        o_num = int(obj.imag)
+        o_gen = int(obj.real)
+        abs_pos = index[o_num].get('abs_pos')
+        ret += f'<a href="#idx{abs_pos}">'
         ret += f'<span class="obj-link">{o_num} {o_gen} R</span>'
         ret += '</a>'
         return ret
