@@ -523,6 +523,8 @@ def deep_ref_detect(obj: Any, l = None) -> set:
         l = set()
     if type(obj) == complex:
         return l.add(obj)
+    elif type(obj) == Stream:
+            deep_ref_detect(obj['entries'], l)
     elif type(obj) == dict:
         for k in obj:
             deep_ref_detect(obj[k], l)

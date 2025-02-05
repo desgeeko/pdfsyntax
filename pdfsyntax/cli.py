@@ -285,6 +285,24 @@ def file_map(fdata: Callable) -> tuple:
     return (new_sections, index)
 
 
+def find_xref_table_pos_in_index(xref_table_pos, index):
+    """."""
+    found = None
+    obj = index[0][0]
+    if type(obj) == dict:
+        obj_list = [obj]
+    for o in obj_list:
+        if o.get('xref_table_pos') == xref_table_pos:
+            found = (0, 0)
+    for ver in range(1, len(index)):
+        obj = index[ver][0]
+        if obj is None:
+            continue
+        if obj.get('xref_table_pos') == xref_table_pos:
+            found = (0, ver)
+    return found
+
+
 def find_abs_pos_in_index(abs_pos, index):
     """."""
     found = None
@@ -308,14 +326,18 @@ def cross_map_index(sections, index):
     ret = {}
     for section in sections:
         abs_pos, addon, typ, payload = section
-        if typ != 'IND_OBJ':
-            continue
-        o_num = payload['o_num']
-        o_gen = payload['o_gen']
-        obj = payload['obj']
-        relevance = find_abs_pos_in_index(abs_pos, index)
-        targets = deep_ref_detect(obj)
-        ret[abs_pos] = o_num, relevance, targets, []
+        if typ == 'XREFTABLE':
+            trailer = payload['trailer']
+            relevance = find_xref_table_pos_in_index(abs_pos, index)
+            targets = deep_ref_detect(trailer)
+            ret[abs_pos] = 0, relevance, targets, []
+        elif typ == 'IND_OBJ':
+            o_num = payload['o_num']
+            o_gen = payload['o_gen']
+            obj = payload['obj']
+            relevance = find_abs_pos_in_index(abs_pos, index)
+            targets = deep_ref_detect(obj)
+            ret[abs_pos] = o_num, relevance, targets, []
     for abs_pos in ret:
         o_num, relevance, targets, _ = ret[abs_pos]
         _, ver = relevance
@@ -335,7 +357,6 @@ def browse(filename: str) -> None:
     fdata = bdata_provider(file_obj)
     sections, index = file_map(fdata)
     cross = cross_map_index(sections, index)
-    #print(cross)
     doc = doc_constructor(fdata)
     pages = flat_page_tree(doc)
     print(build_html(sections, index, cross, filename, pages))

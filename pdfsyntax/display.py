@@ -226,7 +226,6 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
     """Compose the page layout."""
     page = HEADER
     for article in articles:
-        #print(article)
         abs_pos, _, typ, content = article
         if typ == 'STARTXREF':
             page += add_startxref(article, index)
@@ -236,13 +235,13 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
             else:
                 page += add_comment(article)
         elif typ == 'IND_OBJ':
-            page += build_obj_header(article, index)
+            page += build_obj_header(article, index, cross)
             _, relevance, _, _ = cross[abs_pos]
             _, ver = relevance
             page += follow_obj(content['obj'], index[ver])
             page += build_obj_trailer()
         elif typ == 'XREFTABLE':
-            page += build_obj_header(article, index)
+            page += build_obj_header(article, index, cross)
             page += build_xref_table(content['table'], index)
             page += "\ntrailer\n"
             page += follow_obj(content['trailer'], index[ver])
@@ -536,7 +535,7 @@ def build_xref_item_header() -> str:
     return ret
 
 
-def build_obj_header(article, index) -> str:
+def build_obj_header(article, index, cross) -> str:
     """Add opening elements to object."""
     pos, addon, typ, obj = article
     ref = pos2ref_from_index(index, pos)
@@ -550,23 +549,42 @@ def build_obj_header(article, index) -> str:
         ret += f'<span class="obj-header b0"><strong>XREF table & trailer</strong></span>'
     elif type(pos) == int:
         o_num, o_gen, o_ver = ref
+        _, _, _, used_by = cross[pos]
         ret += f'\n'
         ret += f'<div class="block" id="idx{pos}">\n'
         ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'
         ret += f'<pre>\n'
         ret += f'<span class="c1">{pos:010d}</span>'
-        ret += f'<span class="obj-header b0"><strong>{o_num}</strong> <span class="">{o_gen} obj</span></span>'
+        ret += f'<span class="obj-header b0"><strong>{o_num}</strong> '
+        ret += f'{o_gen} obj</span>'
+        if used_by:
+            ret += f'<em><span class="c1">                 used in '
+            for n, p in used_by:
+                if n == 0:
+                    ret += f'<a href="#idx{p}">trailer</a> '
+                else:
+                    ret += f'<a href="#idx{p}">{n}</a> '
+            ret += f'</span></em>'
     elif type(addon) == tuple:
         env_pos, pos_in_env, seq = addon
         o_num, o_gen, o_ver = obj['o_num'], 0, 0
+        _, _, _, used_by = cross[pos]
         ret += f'\n'
         ret += f'<div class="block" id="idx{pos}">\n'
         ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'
         ret += f'<pre>\n'
-#        ret += f'<span class="c1">-{pos_in_env:09d}</span>'
         embedded = f'{obj["env_num"]} #{seq}'
         ret += f'<span class="c1">{embedded:10}</span>'
-        ret += f'<span class="obj-header b0"><strong>{o_num}</strong> <span class="">{o_gen} obj</span></span>'
+        ret += f'<span class="obj-header b0"><strong>{o_num}</strong> '
+        ret += f'{o_gen} obj</span>'
+        if used_by:
+            ret += f'<em><span class="c1">                 used in '
+            for n, p in used_by:
+                if n == 0:
+                    ret += f'<a href="#idx{p}">trailer</a> '
+                else:
+                    ret += f'<a href="#idx{p}">{n}</a> '
+            ret += f'</span></em>'
     ret += f'<div class="obj-body b0">\n'
     return ret
 
