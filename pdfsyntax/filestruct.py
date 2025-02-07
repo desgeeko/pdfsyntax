@@ -110,9 +110,11 @@ def file_object_map(fdata: Callable) -> list:
                 ln += 1
         elif t == 'IND_OBJ' and type(content['obj']) == Stream:
             if content['obj']['entries'].get('/Type') == '/XRef':
-                _, _, typ, obj = parse_xref_stream_raw(content['obj'])
+                xrefstream = parse_xref_stream_raw(content['obj'])
+                _, _, typ, obj = xrefstream
                 table = obj['table']
                 current_sub = -1
+                sections.append(xrefstream)
                 for index, env_num, i_num, i_gen, s, raw_line, subsection in table:
                     if subsection != current_sub:
                         ln = -1

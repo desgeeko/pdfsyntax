@@ -60,6 +60,7 @@ HEADER = '''<!DOCTYPE html>
             margin-top: 0.5em;
             margin-bottom: 0.5em;
             padding-top: 1em;
+            padding-bottom: 1em;
         }
         .xref-item {
 	    position: relative;
@@ -195,40 +196,15 @@ TRAILER = '''
 TRUNCATED = '<em> ...(truncated) </em>'
 
 
-def pos2ref_from_index(index: list, abs_pos: int) -> dict:
-    """Search abs pos in full index and return corresponding object."""
-    for _, current in enumerate(index):
-        for x in current:
-            if x is None:
-                continue
-            if abs_pos == x.get('abs_pos') and x.get('o_num') != 0:
-                o_num = x['o_num']
-                o_gen = x['o_gen']
-                o_ver = x['o_ver']
-                return (o_num, o_gen, o_ver)
-    return None
-
-
-def recent_ref_from_index(index: list, iref: complex) -> dict:
-    """."""
-    res = None
-    o_num = int(iref.imag)
-    for _, current in enumerate(index):
-        x = current[o_num]
-        if x is None:
-            continue
-        else:
-            res =  (o_num, x['o_gen'], x['o_ver'])
-    return res
-
 
 def build_html(articles: list, index: list, cross: dict, filename: str, pages: list) -> str:
     """Compose the page layout."""
     page = HEADER
+    envs = {}
     for article in articles:
         abs_pos, _, typ, content = article
         if typ == 'STARTXREF':
-            page += add_startxref(article, index)
+            page += add_startxref(article, index, cross)
         elif typ == 'COMMENT':
             if content == b'%%EOF':
                 page += add_eof(article)
@@ -246,9 +222,11 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
             page += "\ntrailer\n"
             page += follow_obj(content['trailer'], index[ver])
             page += build_obj_trailer()
+        elif typ == 'XREFSTREAM':
+            envs = content['envs']
         elif typ == 'XREF' and content[0] == 'XREF_S':
             page += build_xref_item_header()
-            page += build_xref_stream_item(content, index)
+            page += build_xref_stream_item(content, index, envs)
             page += build_obj_trailer()
     page += build_header(filename)
     page += build_nav_pages(pages, index)
@@ -338,15 +316,10 @@ def build_header(filename: str) -> str:
     return ret
 
 
-def add_startxref(article: dict, index: list) -> str:
+def add_startxref(article: dict, index: list, cross) -> str:
     """ """
     pos, _, _, xref = article
-    ref = pos2ref_from_index(index, int(xref))
-    if ref is None:
-        href = f'idx{int(xref)}'
-    else:
-        o_num, o_gen, o_ver = ref
-        href = f'obj{o_num}.{o_gen}.{o_ver}'
+    href = f'idx{int(xref)}'
     ret = ''
     ret += f'<div class="block" id="idx{pos}">\n'
     ret += f'<div>\n'
@@ -406,7 +379,6 @@ def build_xref_table(table: list, index: list) -> str:
             pos, o_num, o_gen, st = x
             ret += f'{pos:010} {o_gen:05} {st.decode("ascii")}'
             if st != b'f':
-                #_, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
                 ret += '    '
                 ret += f'<a href="#idx{pos}">'
                 ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
@@ -415,13 +387,16 @@ def build_xref_table(table: list, index: list) -> str:
     return ret
 
 
-def build_xref_stream_item(item: tuple, index: list) -> str:
+def build_xref_stream_item(item: tuple, index: list, envs) -> str:
     """Display XREF stream item."""
     ret = ' '
     _, pos, o_num, o_gen, st, env_num, raw_line = item
-    _, _, o_ver = recent_ref_from_index(index, complex(o_gen, o_num))
     if o_num != 0:
-        ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
+        if env_num:
+            abs_pos = envs[env_num] + (pos + 1) / 10000
+            ret += f'<a href="#idx{abs_pos}">'
+        else:
+            ret += f'<a href="#idx{pos}">'
         ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
         ret += '</a>'
         ret += '    '
@@ -431,21 +406,6 @@ def build_xref_stream_item(item: tuple, index: list) -> str:
             ret += f'At absolute position {pos:010} {st.decode("ascii")}'
     #ret += '\n'
     return ret
-
-
-#def build_xref_stream(table: list, mini_index: list) -> str:
-#    """Display XREF stream with additional links to objects."""
-#    ret = '\nstream\n'
-#    for line, o_num in table:
-#        ret += line.decode('ascii')
-#        if o_num != None:
-#            o_gen, o_ver = mini_index[o_num]
-#            ret += '    '
-#            ret += f'<a href="#obj{o_num}.{o_gen}.{o_ver}">'
-#            ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
-#            ret += '</a>'
-#        ret += '\n'
-#    return ret
 
 
 def move_list_item(mod_list: list, item: int, new_pos: int) -> str:
@@ -538,7 +498,6 @@ def build_xref_item_header() -> str:
 def build_obj_header(article, index, cross) -> str:
     """Add opening elements to object."""
     pos, addon, typ, obj = article
-    ref = pos2ref_from_index(index, pos)
     ret = ''
     if typ == 'XREFTABLE':
         ret += f'\n'
@@ -548,8 +507,10 @@ def build_obj_header(article, index, cross) -> str:
         ret += f'<span class="c1">{pos:010d}</span>'
         ret += f'<span class="obj-header b0"><strong>XREF table & trailer</strong></span>'
     elif type(pos) == int:
-        o_num, o_gen, o_ver = ref
-        _, _, _, used_by = cross[pos]
+        _, relevance, _, used_by = cross[pos]
+        o_num, ver = relevance
+        o_gen = index[ver][o_num]['o_gen']
+        o_ver = index[ver][o_num]['o_ver']
         ret += f'\n'
         ret += f'<div class="block" id="idx{pos}">\n'
         ret += f'<div id="obj{o_num}.{o_gen}.{o_ver}">\n'

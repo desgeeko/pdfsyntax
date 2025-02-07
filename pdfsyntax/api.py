@@ -320,6 +320,72 @@ def pprint_page_contents(doc: Doc, page_num: int) -> str:
     return ret
 
 
+def find_xref_table_pos_in_index(xref_table_pos, index):
+    """."""
+    found = None
+    obj = index[0][0]
+    if type(obj) == dict:
+        obj_list = [obj]
+    for o in obj_list:
+        if o.get('xref_table_pos') == xref_table_pos:
+            found = (0, 0)
+    for ver in range(1, len(index)):
+        obj = index[ver][0]
+        if obj is None:
+            continue
+        if obj.get('xref_table_pos') == xref_table_pos:
+            found = (0, ver)
+    return found
+
+
+def find_abs_pos_in_index(abs_pos, index):
+    """."""
+    found = None
+    max_num = len(index[-1]) - 1
+    for num in range(1, max_num+1):
+        for ver in range(len(index)):
+            if num > len(index[ver]) - 1:
+                continue
+            obj = index[ver][num]
+            if obj is None:
+                continue
+            if obj.get('abs_pos') == abs_pos:
+                found = (num, ver)
+        if found:
+            return found
+    return found
+
+
+def cross_map_index(sections, index):
+    """."""
+    ret = {}
+    for section in sections:
+        abs_pos, addon, typ, payload = section
+        if typ == 'XREFTABLE':
+            trailer = payload['trailer']
+            relevance = find_xref_table_pos_in_index(abs_pos, index)
+            targets = deep_ref_detect(trailer)
+            ret[abs_pos] = 0, relevance, targets, []
+        elif typ == 'IND_OBJ':
+            o_num = payload['o_num']
+            o_gen = payload['o_gen']
+            obj = payload['obj']
+            relevance = find_abs_pos_in_index(abs_pos, index)
+            targets = deep_ref_detect(obj)
+            ret[abs_pos] = o_num, relevance, targets, []
+    for abs_pos in ret:
+        o_num, relevance, targets, _ = ret[abs_pos]
+        _, ver = relevance
+        if ver < len(index) - 1:
+            continue
+        for target in targets:
+            target_num = int(target.imag)
+            target_pos = index[-1][target_num]['abs_pos']
+            _, _, _, target_used_by = ret[target_pos]
+            target_used_by.append((o_num, abs_pos))
+    return ret
+
+
 Doc.trailer = trailer
 Doc.catalog = catalog
 Doc.metadata = metadata
