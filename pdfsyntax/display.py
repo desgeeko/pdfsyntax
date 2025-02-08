@@ -38,24 +38,24 @@ HEADER = '''<!DOCTYPE html>
         nav {
             position: fixed;
             right: 1em;
-            width: 20em;
+            width: 22em;
+            top: 4em;
+            max-height: 80%;
+            overflow-x: scroll;
             border: 2px dotted grey;
         }
-        #nav-pages {
-            top: 4em;
-            height: 6em;
+        p {
+            line-height: 2em;
+            padding-top: 1em;
+            padding-bottom: 1em;
+            padding-left: 1em;
+        }
+        .nav-x {
             overflow-x: scroll;
         }
-        #nav-objects {
-            top: 12em;
-            height: 70%;
+        .nav-y {
             overflow-y: scroll;
         }
-        #nav-end {
-            bottom: 2em;
-            height: 2.5em;
-            padding-top: 0.5em;
-         }
         .block {
             margin-top: 0.5em;
             margin-bottom: 0.5em;
@@ -96,7 +96,6 @@ HEADER = '''<!DOCTYPE html>
         .nav-idx {
             display: inline-block;
             width: 4em;
-            height: 1.2em;
             padding-left: 0.5em;
         }
         .b0 {
@@ -126,7 +125,7 @@ HEADER = '''<!DOCTYPE html>
         a {
             color: blue;
         }
-        summary {
+        .stream-content {
             color: blue;
             text-decoration: underline;
             font-style: italic;
@@ -171,7 +170,7 @@ HEADER = '''<!DOCTYPE html>
         a {
             color: deepskyblue;
         }
-        summary {
+        .stream-content {
             color: deepskyblue;
             text-decoration: underline;
             font-style: italic;
@@ -229,8 +228,10 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
             page += build_xref_stream_item(content, index, envs)
             page += build_obj_trailer()
     page += build_header(filename)
+    page += build_nav_begin()
     page += build_nav_pages(pages, index)
     page += build_nav_objects(articles)
+    page += build_nav_quick()
     page += build_nav_end()
     page += TRAILER
     return page
@@ -239,19 +240,17 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
 def build_nav_pages(pages, index) -> str:
     """."""
     ret = '\n'
-    ret += '<nav class="b2" id="nav-pages">\n'
-    ret += f'<div class="title b3">\n'
-    ret += f'<code>Pages</code>\n'
-    ret += f'</div>\n'
-    ret += f'<pre>\n'
+    ret += f'<details class="b3">\n'
+    ret += f'<summary class="title b3"><code> Pages</code></summary>\n'
+    ret += f'<p class="nav-y b2">\n'
     for i, page in enumerate(pages):
         iref, _ = page
         o_num = int(iref.imag)
         o_gen = int(iref.real)
         o_ver = index[-1][o_num]['o_ver']
-        ret += f' <a class="nav-idx b1" href="#obj{o_num}.{o_gen}.{o_ver}">{i}</a>'
-    ret += f'</pre>\n'
-    ret += f'</nav>\n'
+        ret += f' <a class="nav-idx" href="#obj{o_num}.{o_gen}.{o_ver}">{i}</a>'
+    ret += f'</p>\n'
+    ret += f'</details>\n'
     ret += '\n'
     return ret
 
@@ -259,11 +258,9 @@ def build_nav_pages(pages, index) -> str:
 def build_nav_objects(articles) -> str:
     """."""
     ret = '\n'
-    ret += '<nav class="b2" id="nav-objects">\n'
-    ret += f'<div class="title b3">\n'
-    ret += f'<code>Minimap</code>\n'
-    ret += f'</div>\n'
-    ret += f'<pre>\n'
+    ret += '<details class="b3">\n'
+    ret += '<summary class="title b3"><code> Minimap</code></summary>\n'
+    ret += '<pre class="nav-y b2">\n'
     ret += '<ul>\n'
     for article in articles:
         pos, _, typ, obj = article
@@ -271,7 +268,7 @@ def build_nav_objects(articles) -> str:
         if typ != 'IND_OBJ':
             if typ == 'XREFTABLE':
                 ret += '<li>'
-                ret += f'<a class="nav-idx b1" href="#idx{pos}">xref</a> XREF table & trailer'
+                ret += f'<a class="nav-idx" href="#idx{pos}">xref</a> XREF table & trailer'
                 ret += '</li>\n'
             continue
         q = obj['o_num']
@@ -282,11 +279,35 @@ def build_nav_objects(articles) -> str:
                 c = c['entries']
             t = c.get("/Type", "")
         ret += '<li>'
-        ret += f'<a class="nav-idx b1" href="#idx{pos}">{q}</a> {t}'
+        ret += f'<a class="nav-idx" href="#idx{pos}">{q}</a> {t}'
         ret += '</li>\n'
-    ret += f'</ul>\n'
-    ret += f'</pre>\n'
-    ret += f'</nav>\n'
+    ret += '</ul>\n'
+    ret += '</pre>\n'
+    ret += '</details>\n'
+    ret += '\n'
+    return ret
+
+
+def build_nav_quick() -> str:
+    """."""
+    ret = '\n'
+    ret += '<details class="b3" open>\n'
+    ret += '<summary class="title b3"><code> Quick access</code></summary>\n'
+    ret += '<pre class="b2">\n'
+    ret += '<ul>\n'
+    ret += '<li>&UpArrowBar; <a class="header-button" href="#idx0">Beginning</a></li>\n'
+    ret += '<li>&DownArrowBar; <a class="header-button" href="#end">End of file</a></li>\n'
+    ret += '</ul>'
+    ret += '</pre>\n'
+    ret += '</details>\n'
+    ret += '\n'
+    return ret
+
+
+def build_nav_begin() -> str:
+    """."""
+    ret = '\n'
+    ret += '<nav class="b2">\n'
     ret += '\n'
     return ret
 
@@ -294,11 +315,7 @@ def build_nav_objects(articles) -> str:
 def build_nav_end() -> str:
     """."""
     ret = '\n'
-    ret += '<nav class="b2" id="nav-end">\n'
-    ret += f'<pre>\n'
-    ret += f'&gt;&gt;&gt; <a class="header-button" href="#end">Scroll to end of file</a>'
-    ret += f'</pre>\n'
-    ret += f'</nav>\n'
+    ret += '</nav>\n'
     ret += '\n'
     return ret
 
@@ -453,7 +470,7 @@ def follow_obj(obj, index: list, depth=0) -> str:
             p = printable_stream_content(content)
             ret += f'  \nstream\n'
             if p:
-                ret += f'<details>\n<summary>see content</summary>\n'
+                ret += f'<details>\n<summary class="stream-content">see content</summary>\n'
                 ret += f'<pre class="detail">{p}</pre>\n</details>\n'
             else:
                 detail = '&lt;' + content.hex() + '&gt;'
