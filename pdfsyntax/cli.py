@@ -291,11 +291,13 @@ def browse(filename: str) -> None:
     """Print html view of the file map."""
     file_obj = open(filename, 'rb')
     fdata = bdata_provider(file_obj)
+    _, _, _, file_size = fdata(None, -1)
     sections, index = file_map(fdata)
     cross = cross_map_index(sections, index)
     doc = doc_constructor(fdata)
+    s = structure(doc)
     pages = flat_page_tree(doc)
-    print(build_html(sections, index, cross, filename, pages))
+    print(build_html(sections, index, cross, filename, pages, s, file_size))
 
 
 

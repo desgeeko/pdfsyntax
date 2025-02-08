@@ -118,6 +118,14 @@ def structure(doc: Doc) -> dict:
     return ret
 
 
+def bool2yesno(b: bool) -> str:
+    """."""
+    if b == True:
+        return "yes"
+    else:
+        return "no"
+
+
 def metadata(doc: Doc) -> dict:
     """Return doc metadata."""
     ret = {}

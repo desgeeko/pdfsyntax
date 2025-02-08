@@ -4,6 +4,7 @@ import os
 import html
 from .objects import Stream
 from .graphics import printable_stream_content
+from .api import bool2yesno
 
 
 NAME_MAX_WIDTH = 20
@@ -196,7 +197,7 @@ TRUNCATED = '<em> ...(truncated) </em>'
 
 
 
-def build_html(articles: list, index: list, cross: dict, filename: str, pages: list) -> str:
+def build_html(articles: list, index: list, cross: dict, filename: str, pages: list, structure: dict, file_size: int) -> str:
     """Compose the page layout."""
     page = HEADER
     envs = {}
@@ -229,6 +230,7 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
             page += build_obj_trailer()
     page += build_header(filename)
     page += build_nav_begin()
+    page += build_nav_info(structure, file_size)
     page += build_nav_pages(pages, index)
     page += build_nav_objects(articles)
     page += build_nav_quick()
@@ -297,6 +299,29 @@ def build_nav_quick() -> str:
     ret += '<ul>\n'
     ret += '<li>&UpArrowBar; <a class="header-button" href="#idx0">Beginning</a></li>\n'
     ret += '<li>&DownArrowBar; <a class="header-button" href="#end">End of file</a></li>\n'
+    ret += '</ul>'
+    ret += '</pre>\n'
+    ret += '</details>\n'
+    ret += '\n'
+    return ret
+
+
+def build_nav_info(structure, file_size) -> str:
+    """."""
+    ret = '\n'
+    ret += '<details class="b3">\n'
+    ret += '<summary class="title b3"><code> Info</code></summary>\n'
+    ret += '<pre class="b2">\n'
+    ret += '<ul>\n'
+    attrs = []
+    attrs.append(f'{"Version: ":15}{structure["Version"]}')
+    attrs.append(f'{"Pages(s): ":15}{structure["Pages"]}')
+    attrs.append(f'{"Revisions(s): ":15}{structure["Revisions"]}')
+    attrs.append(f'{"Hybrid: ":15}{bool2yesno(structure["Hybrid"])}')
+    attrs.append(f'{"Linearized: ":15}{bool2yesno(structure["Linearized"])}')
+    attrs.append(f'{"File size: ":15}{file_size} bytes')
+    for x in attrs:
+        ret += f' <li class="">{x}</li>\n'
     ret += '</ul>'
     ret += '</pre>\n'
     ret += '</details>\n'
