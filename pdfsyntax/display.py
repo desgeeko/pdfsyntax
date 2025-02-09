@@ -9,6 +9,7 @@ from .api import bool2yesno
 
 NAME_MAX_WIDTH = 20
 VALUE_MAX_WIDTH = 30
+INFO_MAX_WIDTH = 15
 
 HEADER = '''<!DOCTYPE html>
 <html lang="en">
@@ -20,7 +21,7 @@ HEADER = '''<!DOCTYPE html>
     <style>
         .content {
             font-family: monospace;
-            background: linear-gradient(to right, lightgrey 10ch, transparent 5ch);
+            background: linear-gradient(to right, #cccccc 10ch, transparent 5ch);
         }
 	.s {
 	    position: relative;
@@ -103,25 +104,28 @@ HEADER = '''<!DOCTYPE html>
             background-color: white;
         }
         .b1 {
-            background-color: whitesmoke;
+            background-color: #dddddd;
         }
         .b2 {
-            background-color: lightgrey;
+            background-color: #cccccc;
         }
         .b3 {
-            background-color: silver;
+            background-color: #bbbbbb;
         }
         .c0 {
             color: black;
         }
         .c1 {
-            color: #555;
+            color: #555555;
         }
         :target {
             background-color: lightyellow;
         }
         .important {
             background-color: antiquewhite;
+        }
+        .warning {
+            background-color: crimson;
         }
         a {
             color: blue;
@@ -142,31 +146,34 @@ HEADER = '''<!DOCTYPE html>
         }
         .content {
             font-family: monospace;
-            background: linear-gradient(to right, #222 10ch, transparent 5ch);
+            background: linear-gradient(to right, #333333 10ch, transparent 5ch);
         }
         .b0 {
             background-color: black;
         }
         .b1 {
-            background-color: #111;
+            background-color: #222222;
         }
         .b2 {
-            background-color: #222;
+            background-color: #333333;
         }
         .b3 {
-            background-color: #444;
+            background-color: #444444;
         }
         .c0 {
-            color: #ddd;
+            color: #dddddd;
         }
         .c1 {
             color: grey;
         }
         :target {
-            background-color: #220;
+            background-color: #222200;
         }
         .important {
             background-color: olive;
+        }
+        .warning {
+            background-color: firebrick;
         }
         a {
             color: deepskyblue;
@@ -312,17 +319,17 @@ def build_nav_info(structure, file_size) -> str:
     ret += '<details class="b3">\n'
     ret += '<summary class="title b3"><code> Info</code></summary>\n'
     ret += '<pre class="b2">\n'
-    ret += '<ul>\n'
+    ret += '<ul>'
     attrs = []
-    attrs.append(f'{"Version: ":15}{structure["Version"]}')
-    attrs.append(f'{"Pages(s): ":15}{structure["Pages"]}')
-    attrs.append(f'{"Revisions(s): ":15}{structure["Revisions"]}')
-    attrs.append(f'{"Hybrid: ":15}{bool2yesno(structure["Hybrid"])}')
-    attrs.append(f'{"Linearized: ":15}{bool2yesno(structure["Linearized"])}')
-    attrs.append(f'{"File size: ":15}{file_size} bytes')
+    attrs.append(f'{"Version: ":{INFO_MAX_WIDTH}}{structure["Version"]}')
+    attrs.append(f'{"Page(s): ":{INFO_MAX_WIDTH}}{structure["Pages"]}')
+    attrs.append(f'{"Revision(s): ":{INFO_MAX_WIDTH}}{structure["Revisions"]}')
+    attrs.append(f'{"Hybrid: ":{INFO_MAX_WIDTH}}{bool2yesno(structure["Hybrid"])}')
+    attrs.append(f'{"Linearized: ":{INFO_MAX_WIDTH}}{bool2yesno(structure["Linearized"])}')
+    attrs.append(f'{"File size: ":{INFO_MAX_WIDTH}}{file_size} bytes')
     for x in attrs:
-        ret += f' <li class="">{x}</li>\n'
-    ret += '</ul>'
+        ret += f' <li class="">{x}</li>'
+    ret += '</ul>\n'
     ret += '</pre>\n'
     ret += '</details>\n'
     ret += '\n'
@@ -485,6 +492,10 @@ def follow_obj(obj, index: list, depth=0) -> str:
             ret += ' ' * (NAME_MAX_WIDTH + 2) * depth
             if name == '/Type' or name == '/Subtype':
                 ret += f'  {name:{NAME_MAX_WIDTH}}<span class="important">{value}</span>\n'
+            elif name == '/JS':
+                ret += f'  <span class="warning">{name:{NAME_MAX_WIDTH}}</span>{value}\n'
+            elif value == '/JavaScript':
+                ret += f'  {name:{NAME_MAX_WIDTH}}<span class="warning">{value}</span>\n'
             elif name == '/Prev':
                 ret += f'  {name:{NAME_MAX_WIDTH}}<a class="obj-link" href="#idx{value}">{value}</a>\n'
             else:

@@ -32,24 +32,12 @@ The output shows a list of fonts used in the file, with the following tabular da
 - Number of pages where it occurs
 
 ### `browse`
-The generated HTML looks like the raw PDF file with the following additions:
-* Pretty-print dictionary object
-* Extract an object contained in an object stream and insert it in the flow like a regular object
-* Decompress stream and display a small part of it
-* Turn indirect object reference into hyperlink
-* Turn offset reference (for example a /Prev entry) into hyperlink
-* Put some color on key names (for example /Type)
-* Display offset of an object
-
-The command writes on the standard output so you need to redirect to a file that you can open in your browser:
+This command generates HTML output that looks like the raw PDF file with additionnal hyperlinks and information that expose its internal structure and relations between its objects.
+Redirect the standard output to a file that you can open in your browser:
 
     python3 -m pdfsyntax browse file.pdf > inspection_file.html
 
-
-[This is a link to an EXAMPLE](https://pdfsyntax.dev/simple_text_string.html) of a full inspection output that you can browse.
-
-Here is another example, as a partial screenshot:
-![PDFSyntax screenshot](https://raw.githubusercontent.com/desgeeko/pdfsyntax/main/docs/screenshot.png)
+Please refer to the [Browse article](https://github.com/desgeeko/pdfsyntax/blob/main/docs/browse.md) for details.
 
 
 > TO BE CONTINUED
