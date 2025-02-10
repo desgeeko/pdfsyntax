@@ -257,7 +257,7 @@ def build_nav_pages(pages, index) -> str:
         o_num = int(iref.imag)
         o_gen = int(iref.real)
         o_ver = index[-1][o_num]['o_ver']
-        ret += f' <a class="nav-idx" href="#obj{o_num}.{o_gen}.{o_ver}">{i}</a>'
+        ret += f' <a class="nav-idx" href="#obj{o_num}.{o_gen}.{o_ver}">{i+1}</a>'
     ret += f'</p>\n'
     ret += f'</details>\n'
     ret += '\n'

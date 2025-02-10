@@ -334,6 +334,8 @@ def find_xref_table_pos_in_index(xref_table_pos, index):
     obj = index[0][0]
     if type(obj) == dict:
         obj_list = [obj]
+    else:
+        obj_list = obj
     for o in obj_list:
         if o.get('xref_table_pos') == xref_table_pos:
             found = (0, 0)
