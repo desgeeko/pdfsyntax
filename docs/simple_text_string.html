@@ -8,7 +8,7 @@
     <style>
         .content {
             font-family: monospace;
-            background: linear-gradient(to right, lightgrey 10ch, transparent 5ch);
+            background: linear-gradient(to right, #cccccc 10ch, transparent 5ch);
         }
 	.s {
 	    position: relative;
@@ -27,28 +27,29 @@
         nav {
             position: fixed;
             right: 1em;
-            width: 20em;
+            width: 22em;
+            top: 4em;
+            max-height: 80%;
+            overflow-x: scroll;
             border: 2px dotted grey;
         }
-        #nav-pages {
-            top: 4em;
-            height: 6em;
+        p {
+            line-height: 2em;
+            padding-top: 1em;
+            padding-bottom: 1em;
+            padding-left: 1em;
+        }
+        .nav-x {
             overflow-x: scroll;
         }
-        #nav-objects {
-            top: 12em;
-            height: 70%;
+        .nav-y {
             overflow-y: scroll;
         }
-        #nav-end {
-            bottom: 2em;
-            height: 2.5em;
-            padding-top: 0.5em;
-         }
         .block {
             margin-top: 0.5em;
             margin-bottom: 0.5em;
             padding-top: 1em;
+            padding-bottom: 1em;
         }
         .xref-item {
 	    position: relative;
@@ -84,26 +85,25 @@
         .nav-idx {
             display: inline-block;
             width: 4em;
-            height: 1.2em;
             padding-left: 0.5em;
         }
         .b0 {
             background-color: white;
         }
         .b1 {
-            background-color: whitesmoke;
+            background-color: #dddddd;
         }
         .b2 {
-            background-color: lightgrey;
+            background-color: #cccccc;
         }
         .b3 {
-            background-color: silver;
+            background-color: #bbbbbb;
         }
         .c0 {
             color: black;
         }
         .c1 {
-            color: #555;
+            color: #555555;
         }
         :target {
             background-color: lightyellow;
@@ -111,10 +111,13 @@
         .important {
             background-color: antiquewhite;
         }
+        .warning {
+            background-color: crimson;
+        }
         a {
             color: blue;
         }
-        summary {
+        .stream-content {
             color: blue;
             text-decoration: underline;
             font-style: italic;
@@ -130,36 +133,39 @@
         }
         .content {
             font-family: monospace;
-            background: linear-gradient(to right, #222 10ch, transparent 5ch);
+            background: linear-gradient(to right, #333333 10ch, transparent 5ch);
         }
         .b0 {
             background-color: black;
         }
         .b1 {
-            background-color: #111;
+            background-color: #222222;
         }
         .b2 {
-            background-color: #222;
+            background-color: #333333;
         }
         .b3 {
-            background-color: #444;
+            background-color: #444444;
         }
         .c0 {
-            color: #ddd;
+            color: #dddddd;
         }
         .c1 {
             color: grey;
         }
         :target {
-            background-color: #220;
+            background-color: #222200;
         }
         .important {
             background-color: olive;
         }
+        .warning {
+            background-color: firebrick;
+        }
         a {
             color: deepskyblue;
         }
-        summary {
+        .stream-content {
             color: deepskyblue;
             text-decoration: underline;
             font-style: italic;
@@ -184,11 +190,11 @@
 <div class="block" id="idx9">
 <div id="obj1.0.0">
 <pre>
-<span class="c1">0000000009</span><span class="obj-header b0"><strong>1</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+<span class="c1">0000000009</span><span class="obj-header b0"><strong>1</strong> 0 obj</span><em><span class="c1">                 used in <a href="#idx646">trailer</a> </span></em><div class="obj-body b0">
 &lt;&lt;
   /Type               <span class="important">/Catalog</span>
-  /Pages              <a href="#obj3.0.0"><span class="obj-link">3 0 R</span></a>
-  /Outlines           <a href="#obj2.0.0"><span class="obj-link">2 0 R</span></a>
+  /Pages              <a href="#idx129"><span class="obj-link">3 0 R</span></a>
+  /Outlines           <a href="#idx80"><span class="obj-link">2 0 R</span></a>
 &gt;&gt;</div></pre>
 </div>
 </div>
@@ -196,7 +202,7 @@
 <div class="block" id="idx80">
 <div id="obj2.0.0">
 <pre>
-<span class="c1">0000000080</span><span class="obj-header b0"><strong>2</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+<span class="c1">0000000080</span><span class="obj-header b0"><strong>2</strong> 0 obj</span><em><span class="c1">                 used in <a href="#idx9">1</a> </span></em><div class="obj-body b0">
 &lt;&lt;
   /Type               <span class="important">/Outlines</span>
   /Count              0
@@ -207,11 +213,11 @@
 <div class="block" id="idx129">
 <div id="obj3.0.0">
 <pre>
-<span class="c1">0000000129</span><span class="obj-header b0"><strong>3</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+<span class="c1">0000000129</span><span class="obj-header b0"><strong>3</strong> 0 obj</span><em><span class="c1">                 used in <a href="#idx9">1</a> <a href="#idx192">4</a> </span></em><div class="obj-body b0">
 &lt;&lt;
   /Type               <span class="important">/Pages</span>
   /Count              1
-  /Kids               [ <a href="#obj4.0.0"><span class="obj-link">4 0 R</span></a> ]
+  /Kids               [ <a href="#idx192"><span class="obj-link">4 0 R</span></a> ]
 &gt;&gt;</div></pre>
 </div>
 </div>
@@ -219,18 +225,18 @@
 <div class="block" id="idx192">
 <div id="obj4.0.0">
 <pre>
-<span class="c1">0000000192</span><span class="obj-header b0"><strong>4</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+<span class="c1">0000000192</span><span class="obj-header b0"><strong>4</strong> 0 obj</span><em><span class="c1">                 used in <a href="#idx129">3</a> </span></em><div class="obj-body b0">
 &lt;&lt;
   /Type               <span class="important">/Page</span>
   /Resources          &lt;&lt;
                         /Font               &lt;&lt;
-                                              /F1                 <a href="#obj7.0.0"><span class="obj-link">7 0 R</span></a>
+                                              /F1                 <a href="#idx526"><span class="obj-link">7 0 R</span></a>
                                             &gt;&gt;
-                        /ProcSet            <a href="#obj6.0.0"><span class="obj-link">6 0 R</span></a>
+                        /ProcSet            <a href="#idx498"><span class="obj-link">6 0 R</span></a>
                       &gt;&gt;
-  /Contents           <a href="#obj5.0.0"><span class="obj-link">5 0 R</span></a>
+  /Contents           <a href="#idx376"><span class="obj-link">5 0 R</span></a>
   /MediaBox           [ 0 0 612 792 ]
-  /Parent             <a href="#obj3.0.0"><span class="obj-link">3 0 R</span></a>
+  /Parent             <a href="#idx129"><span class="obj-link">3 0 R</span></a>
 &gt;&gt;</div></pre>
 </div>
 </div>
@@ -238,13 +244,13 @@
 <div class="block" id="idx376">
 <div id="obj5.0.0">
 <pre>
-<span class="c1">0000000376</span><span class="obj-header b0"><strong>5</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+<span class="c1">0000000376</span><span class="obj-header b0"><strong>5</strong> 0 obj</span><em><span class="c1">                 used in <a href="#idx192">4</a> </span></em><div class="obj-body b0">
 &lt;&lt;
   /Length             73
 &gt;&gt;  
 stream
 <details>
-<summary>see content</summary>
+<summary class="stream-content">see content</summary>
 <pre class="detail">    BT
        /F1 24 Tf
        100 100 Td
@@ -259,7 +265,7 @@ endstream
 <div class="block" id="idx498">
 <div id="obj6.0.0">
 <pre>
-<span class="c1">0000000498</span><span class="obj-header b0"><strong>6</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+<span class="c1">0000000498</span><span class="obj-header b0"><strong>6</strong> 0 obj</span><em><span class="c1">                 used in <a href="#idx192">4</a> </span></em><div class="obj-body b0">
 [ /PDF /Text ]</div></pre>
 </div>
 </div>
@@ -267,7 +273,7 @@ endstream
 <div class="block" id="idx526">
 <div id="obj7.0.0">
 <pre>
-<span class="c1">0000000526</span><span class="obj-header b0"><strong>7</strong> <span class="">0 obj</span></span><div class="obj-body b0">
+<span class="c1">0000000526</span><span class="obj-header b0"><strong>7</strong> 0 obj</span><em><span class="c1">                 used in <a href="#idx192">4</a> </span></em><div class="obj-body b0">
 &lt;&lt;
   /Type               <span class="important">/Font</span>
   /Subtype            <span class="important">/Type1</span>
@@ -294,7 +300,7 @@ endstream
 
 trailer
 &lt;&lt;
-  /Root               <a href="#obj1.0.0"><span class="obj-link">1 0 R</span></a>
+  /Root               <a href="#idx9"><span class="obj-link">1 0 R</span></a>
   /Size               8
 &gt;&gt;</div></pre>
 </div>
@@ -324,37 +330,51 @@ simple_text_string.pdf - internal view generated by <a href="https://pdfsyntax.d
 </pre>
 </div>
 
-<nav class="b2" id="nav-pages">
-<div class="title b3">
-<code>Pages</code>
-</div>
-<pre>
- <a class="nav-idx b1" href="#obj4.0.0">0</a></pre>
-</nav>
+<nav class="b2">
 
 
-<nav class="b2" id="nav-objects">
-<div class="title b3">
-<code>Minimap</code>
-</div>
-<pre>
+<details class="b3">
+<summary class="title b3"><code> Info</code></summary>
+<pre class="b2">
+<ul> <li class="">Version:       1.4</li> <li class="">Page(s):       1</li> <li class="">Revision(s):   1</li> <li class="">Hybrid:        no</li> <li class="">Linearized:    no</li> <li class="">File size:     866 bytes</li></ul>
+</pre>
+</details>
+
+
+<details class="b3">
+<summary class="title b3"><code> Pages</code></summary>
+<p class="nav-y b2">
+ <a class="nav-idx" href="#obj4.0.0">0</a></p>
+</details>
+
+
+<details class="b3">
+<summary class="title b3"><code> Minimap</code></summary>
+<pre class="nav-y b2">
 <ul>
-<li><a class="nav-idx b1" href="#idx9">1</a> /Catalog</li>
-<li><a class="nav-idx b1" href="#idx80">2</a> /Outlines</li>
-<li><a class="nav-idx b1" href="#idx129">3</a> /Pages</li>
-<li><a class="nav-idx b1" href="#idx192">4</a> /Page</li>
-<li><a class="nav-idx b1" href="#idx376">5</a> </li>
-<li><a class="nav-idx b1" href="#idx498">6</a> </li>
-<li><a class="nav-idx b1" href="#idx526">7</a> /Font</li>
-<li><a class="nav-idx b1" href="#idx646">xref</a> XREF table & trailer</li>
+<li><a class="nav-idx" href="#idx9">1</a> /Catalog</li>
+<li><a class="nav-idx" href="#idx80">2</a> /Outlines</li>
+<li><a class="nav-idx" href="#idx129">3</a> /Pages</li>
+<li><a class="nav-idx" href="#idx192">4</a> /Page</li>
+<li><a class="nav-idx" href="#idx376">5</a> </li>
+<li><a class="nav-idx" href="#idx498">6</a> </li>
+<li><a class="nav-idx" href="#idx526">7</a> /Font</li>
+<li><a class="nav-idx" href="#idx646">xref</a> XREF table & trailer</li>
 </ul>
 </pre>
-</nav>
+</details>
 
 
-<nav class="b2" id="nav-end">
-<pre>
-&gt;&gt;&gt; <a class="header-button" href="#end">Scroll to end of file</a></pre>
+<details class="b3" open>
+<summary class="title b3"><code> Quick access</code></summary>
+<pre class="b2">
+<ul>
+<li>&UpArrowBar; <a class="header-button" href="#idx0">Beginning</a></li>
+<li>&DownArrowBar; <a class="header-button" href="#end">End of file</a></li>
+</ul></pre>
+</details>
+
+
 </nav>
 
 

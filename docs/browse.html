@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="pdfsyntax.css">
+    <title>PDFSyntax</title>
+</head>
+<body>
+<main>
+<h2>Browse</h2>
+<p></p>
+<h3>Introduction</h3>
+<p>Inspecting the internal structure of a PDF file involves a lot of things (decompression, parsing, xref indexing, etc...) in order to make sense of the raw bytes.</p>
+<p>PDFSyntax takes care of the processing and proposes a visualization approach that consists in adding information and hyperlinks on top of a text that is a mostly a pretty-print of the PDF data once uncompressed. It respects the physical flow of the file while offering a logical navigation between revisions (incremental updates) and between objects.</p>
+<h3>Architecture</h3>
+<p>PDFSyntax is a self-contained Python package - without any dependency - and is principally a low-level PDF library.The <code>browse</code> command is its highest and most visible part. It produces static HTML content that offers sufficient interactivity: JavaScript may be disabled.</p>
+<h3>Demo</h3>
+<p>Please try the [<strong>LIVE DEMO</strong>](https://pdfsyntax.dev/simple<em>text</em>string.html) of a full inspection HTML output that you can browse, at <a href='https://pdfsyntax.dev/simple<em>text</em>string.html'></a> of a full inspection HTML output that you can browse, at <a href='https://pdfsyntax.dev/simple<em>text</em>string.html'>https://pdfsyntax.dev/simple<em>text</em>string.html</a> (hosted on GitHub Pages).</p>
+<p>Here is the same example, as a partial screenshot:<img src='https://raw.githubusercontent.com/desgeeko/pdfsyntax/main/docs/screenshot.png' alt='PDFSyntax screenshot'></p>
+<p>NB: this is the output produced for the <a href='https://github.com/desgeeko/pdfsyntax/raw/main/samples/simple<em>text</em>string.pdf'><em>Simple Text String</em></a> example file from the PDF Specification.</p>
+<h3>Usage</h3>
+<p>PDFSyntax can be installed from the GitHub repo (no dependency) or from PyPI:</p>
+<pre>    pip install pdfsyntax
+</pre>
+<p>Redirect the standard output to a file that you can open in your browser:</p>
+<pre>    python3 -m pdfsyntax browse file.pdf &gt; inspection_file.html
+</pre>
+<h3>Features</h3>
+<p>The generated HTML "looks" like an augmented raw PDF file with the following additional work:</p>
+<ul><li>Add a reverse index: links to where an object is used</li>
+<li>Add a page index in a navigation menu</li>
+<li>Add a physical minimap in a navigation menu</li>
+<li>Indent to pretty-print dictionary objects</li>
+<li>Extract objects contained in object streams and insert them in the flow like regular objects</li>
+<li>Decompress streams and display a small part of it</li>
+<li>Turn indirect object references into hyperlinks</li>
+<li>Turn offset references (for example a /Prev entry) into hyperlinks</li>
+<li>Display file offsets of objects in a left margin</li>
+<li>Put some color on important names (for example /Type)</li>
+<li>Put some color on warnings (for example the presence of /JS)</li>
+<li>Light & dark modes</li>
+</ul>
+<blockquote><p> WARNING: Encrypted files are not supported yet</p>
+</blockquote>
+<blockquote></blockquote>
+
+</main>
+</body>

@@ -38,20 +38,10 @@
 <li>Number of pages where it occurs</li>
 </ul>
 <h3><code>browse</code></h3>
-<p>The generated HTML looks like the raw PDF file with the following additions:</p>
-<ul><li>Pretty-print dictionary object</li>
-<li>Extract an object contained in an object stream and insert it in the flow like a regular object</li>
-<li>Decompress stream and display a small part of it</li>
-<li>Turn indirect object reference into hyperlink</li>
-<li>Turn offset reference (for example a /Prev entry) into hyperlink</li>
-<li>Put some color on key names (for example /Type)</li>
-<li>Display offset of an object</li>
-</ul>
-<p>The command writes on the standard output so you need to redirect to a file that you can open in your browser:</p>
-<pre>    python3 -m pdfsyntax browse file.pdf &gt; inspection_file.pdf
+<p>This command generates HTML output that looks like the raw PDF file with additionnal hyperlinks and information that expose its internal structure and relations between its objects.Redirect the standard output to a file that you can open in your browser:</p>
+<pre>    python3 -m pdfsyntax browse file.pdf &gt; inspection_file.html
 </pre>
-<p><a href='https://pdfsyntax.dev/simple<em>text</em>string.html'>This is a link to an EXAMPLE</a> of a full inspection output that you can browse.</p>
-<p>Here is another example, as a partial screenshot:<img src='https://raw.githubusercontent.com/desgeeko/pdfsyntax/main/docs/screenshot.png' alt='PDFSyntax screenshot'></p>
+<p>Please refer to the <a href='https://github.com/desgeeko/pdfsyntax/blob/main/docs/browse.md'>Browse article</a> for details.</p>
 <p></p>
 <blockquote><p> TO BE CONTINUED</p>
 </blockquote>
