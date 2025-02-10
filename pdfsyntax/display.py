@@ -300,7 +300,7 @@ def build_nav_objects(articles) -> str:
 def build_nav_quick() -> str:
     """."""
     ret = '\n'
-    ret += '<details class="b3" open>\n'
+    ret += '<details class="b3">\n'
     ret += '<summary class="title b3"><code> Quick access</code></summary>\n'
     ret += '<pre class="b2">\n'
     ret += '<ul>\n'
