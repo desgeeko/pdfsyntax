@@ -2,14 +2,15 @@ body {
     font-family: system-ui, sans-serif;
 }
 header, main, footer {
+    max-width: 1200px;
     font-size: 1em;
-    max-width: 720px;
     padding: 1em;
     margin: 0.5em auto;
 }
 header, footer {
     text-align: center;
 }
+
 h1 {
     font-size: 2.5em;
     margin-top: 0;
@@ -22,6 +23,11 @@ h2 {
 h3 {
     font-size: 1.2em;
 }
+
+h4 {
+    font-size: 1em;
+}
+
 code {
     background-color: #eeeeee;
 }
@@ -33,4 +39,38 @@ pre {
 }
 img {
     max-width: 100%;
+}
+
+section {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: start;
+    justify-content: space-around;
+    gap: 50px;
+    padding-top: 2em;
+    padding-bottom: 2em;
+}
+
+.f {
+    width: 360px;
+}
+
+.b0 {
+    background-color: #ffffff;
+}    
+
+.b1 {
+    background: linear-gradient(#e0e0e0, #f2f2f2);
+    text-align: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}    
+
+.content {
+    max-width: 1200px;
+    margin: 0.5em auto;
+}
+
+a {
+    color: #770000;
 }
