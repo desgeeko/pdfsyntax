@@ -61,7 +61,7 @@ section {
 }    
 
 .b1 {
-    background: linear-gradient(#e0e0e0, #f2f2f2);
+    background: linear-gradient(#e2e2e2, #f7f7f7);
     text-align: center;
     padding-top: 20px;
     padding-bottom: 20px;
@@ -88,4 +88,8 @@ h4 {
 
 p {
     margin-top: 8px;
+}
+
+.rl {
+    border-top: solid 1px #770000;
 }
