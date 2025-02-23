@@ -222,6 +222,7 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
             _, relevance, _, _ = cross[abs_pos]
             _, ver = relevance
             page += follow_obj(content['obj'], index[ver])
+            page += '\n\nendobj'
             page += build_obj_trailer()
         elif typ == 'XREFTABLE':
             page += build_obj_header(article, index, cross)
@@ -605,7 +606,7 @@ def build_obj_header(article, index, cross) -> str:
 
 def build_obj_trailer() -> str:
     """Add closing elements to object."""
-    ret = ''
+    ret = '\n'
     ret += f'</div>'
     ret += f'</pre>\n</div>\n'
     ret += f'</div>\n'
