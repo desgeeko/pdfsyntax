@@ -117,7 +117,7 @@ def encode_stream(stream, stream_def):
 
 
 def asciihex(stream, columns = None):
-    """ASCIIHex encoder augmented with a beautifier (colums and newlines) for DEBUG ONLY."""
+    """ASCIIHex encoder augmented with a beautifier (columns and newlines) for DEBUG ONLY."""
     if columns is None:
         return (binascii.hexlify(stream)).upper()
     else:

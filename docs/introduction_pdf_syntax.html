@@ -261,7 +261,7 @@
             <p>
                 The first line of a PDF file is a <code>%PDF-X.Y</code> header. 
                 These numbers indicate the version of the specification the file complies to.
-                When the numbers are high, "modern" features may be used, but this is not an obligation because of PDF backward compatibily.
+                When the numbers are high, "modern" features may be used, but this is not an obligation because of PDF backward compatibility.
                 For example, a PDF 1.2 document is also a valid PDF 1.7 document.
             </p>
             <p>
@@ -340,7 +340,7 @@
                 </svg>
             </div>
             <p>
-                In the previous example, indirect object #7 contains a payload that is a dictionnary defining 5 key-value pairs.
+                In the previous example, indirect object #7 contains a payload that is a dictionary defining 5 key-value pairs.
                 The following section is here to describe most of the object types.
             </p>
     </section>
@@ -361,17 +361,17 @@
             <p>
                 And there are collection types : 
                 <ul>
-                <li><em>Array</em> : an ordered list of atomic objects written bewteen brackets, like <code>[true 800 (ABC) /Something]</code>,</li>
+                <li><em>Array</em> : an ordered list of atomic objects written between brackets, like <code>[true 800 (ABC) /Something]</code>,</li>
                 <li><em>Dictionary</em> : a map / associative array of unordered key-value pairs; 
                                         all keys must be names, and the object is enclosed in double angle brackets like <code>&lt;&lt; /Key1 (Value1) /Key2 (Value2) &gt;&gt;</code>;
-                                    Note that the same separator (for example space or carriage return) may occur bewteen a key and a value and bewteen distinct pairs: 
+                                    Note that the same separator (for example space or carriage return) may occur between a key and a value and between distinct pairs: 
                                     a parser needs to keep a context in order to determine if the next token is a key or a value.</li>
                 </ul>
             </p>
             <p>
                 And there is a composite type for content : 
                 <ul>
-                <li><em>Stream</em> : a dictionnary immediately followed by a sequence of bytes enclosed bewteen the <code>stream</code> and <code>endstream</code> keywords; 
+                <li><em>Stream</em> : a dictionary immediately followed by a sequence of bytes enclosed between the <code>stream</code> and <code>endstream</code> keywords; 
                                     It typically conveys either a sequence of commands that write content on a page or a blob used in a sequence of commands (font file, image).</li>
                 </ul>
             </p>
@@ -398,7 +398,7 @@
             </div>
             <p>
                 But very often some filter modifies the bytes sequence. A filter may compress the data or encode it, and several may be chained to form a pipeline.
-                For example a stream dictionnary containing <code>/Filter [/ASCII85Decode /FlateDecode]</code> (besides the mandatory <code>/Length</code> attribute) 
+                For example a stream dictionary containing <code>/Filter [/ASCII85Decode /FlateDecode]</code> (besides the mandatory <code>/Length</code> attribute) 
                 should be decoded from ASCII Base85 into binary and then decompressed with the deflate algorithm. 
     
             </p>
@@ -413,7 +413,7 @@
                         <li>and the stream content contains a structure specifying the location of indirect objects</li>
                         </ul>
                         <p>
-                            This mecanism adds a feature that was not possible with Cross-Reference tables where all objects are accessed with file offset in bytes: 
+                            This mechanism adds a feature that was not possible with Cross-Reference tables where all objects are accessed with file offset in bytes: 
                     an indirect object may be located inside another indirect object. 
                     In that case the terminology says that the container is an Object Stream that contains compressed objects.
                 </p>
@@ -456,7 +456,7 @@
         <h2>Incremental Updates</h2>
             <p>It is possible to build a new revision of a document without writing a whole new file: changes are appended to the original file.
              Changes consist in new or modified objects, a Cross-reference, and a <code>startxref</code> that points to it. 
-             The Cross-Reference (either its trailer or its stream dictionary) contains a <code>/Prev</code> attribute thats links the new revision to the original Cross-Reference. 
+             The Cross-Reference (either its trailer or its stream dictionary) contains a <code>/Prev</code> attribute that's links the new revision to the original Cross-Reference. 
     </p>
             <div class="centered">
                 <svg viewBox="0 1360 600 930">
