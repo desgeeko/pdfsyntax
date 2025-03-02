@@ -88,7 +88,6 @@ def file_object_map(fdata: Callable) -> list:
     sections = []
     bdata, _, _, length = fdata(0, -1) #Read all
     i = 0
-    j = 0
     while i < length:
         mo = parse_region(bdata, i)
         if mo is None:
@@ -125,6 +124,7 @@ def file_object_map(fdata: Callable) -> list:
                     sections.append(s)
             elif content['obj']['entries'].get('/Type') == '/ObjStm':
                 _, _, typ, obj = parse_object_stream(content['obj'], content['o_num'])
+                j = 0
                 for embedded in obj:
                     i_num, obj, env_num, theorical_pos, actual_pos = embedded
                     abs_pos = bo + (j + 1) / 10000
