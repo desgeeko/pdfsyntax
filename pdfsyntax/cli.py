@@ -165,7 +165,7 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
             startxref = int(content)
             addr = startxref
         elif region_type == 'XREFTABLE':
-            macro_ind = '-'
+            #macro_ind = '-'
             trailer = content['trailer']
             if '/XRefStm' in trailer:
                 detail = keys_in_line(trailer, ['/XRefStm', '/Prev'])
@@ -186,11 +186,14 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
             cl = type(obj)
             if cl == dict:
                 cl = 'dict'
-                detail = keys_in_line(obj, ['/Type'])
+                detail = keys_in_line(obj, ['/Type', '/Linearized'])
             elif cl == Stream:
                 cl = 'stream'
                 detail = keys_in_line(obj['entries'], ['/Type', '/Root', '/Prev', '/N', '/First'])
-                ratio = f"{int(len(obj['encoded']) / len(obj['stream']) * 100)}%"
+                if len(obj['stream']):
+                    ratio = f"{int(len(obj['encoded']) / len(obj['stream']) * 100)}%"
+                else:
+                    ratio = "!!"
                 filters_l = filters_in_line(obj['entries'].get('/Filter'))
             elif cl == list:
                 cl = 'array'

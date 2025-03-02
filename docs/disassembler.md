@@ -37,7 +37,7 @@ $ python3 -m pdfsyntax disasm samples/simple_text_string.pdf
 + 0525 [1  ]            void                                                  
 + 0526 [119]            ind_obj   7,0            dict     /Font               
 + 0645 [1  ]            void                                                  
-- 0646 [198]            xreftable                         /Root=1,0           
++ 0646 [198]            xreftable                         /Root=1,0
 -                       xref      0,65535   0000 free                         
 -                       xref      1,0       0009 inuse                        
 -                       xref      2,0       0080 inuse                        
