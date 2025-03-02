@@ -186,7 +186,7 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
     table = []
     _, _, _, xref_table = parse_xref_stream_raw(xref_stream)
     lines = xref_table['table']
-    envs = xref_table['envs']
+    #envs = xref_table['envs']
     for line in lines:
         offset, env_iref, o_num, o_gen, keyword, raw_line, _ = line
         if o_num == 0:
@@ -195,7 +195,8 @@ def parse_xref_stream(xref_stream: dict, trailer_pos: int, o_num: int) -> list:
         if keyword == b'f':
             continue
         if env_iref:
-            float_pos = envs[env_iref] + (offset + 1) / 10000
+            #float_pos = envs[env_iref] + (offset + 1) / 10000
+            float_pos = (env_iref, offset)
             xref.append({'o_pos': offset, 'env_num':env_iref, 'o_num': o_num, 'o_gen': o_gen, 'abs_pos': float_pos})
         else:
             xref.append({'abs_pos': offset, 'o_num': o_num, 'o_gen': o_gen})
@@ -314,11 +315,17 @@ def build_chrono_from_xref(fdata: Callable) -> list:
         idx[seq[i]] = seq[i+1]
         i += 1
     idx[seq[i]] = None
+    loc_idx = {}
+    for o in chrono:
+        if o['o_num'] > 0 and 'env_num' not in o:
+            loc_idx[o['o_num']] = o.get('abs_pos')
     for i in chrono:
         a = i.get('abs_pos')
         if a:
-            if type(a) == float:
-                a = int(a)
+            if type(a) == tuple:
+                e, offset = a
+                i['abs_pos'] = loc_idx[e] + (offset + 1) / 10000
+                a = loc_idx[e]
             i['abs_next'] = idx[a]
     return chrono
 

@@ -207,7 +207,6 @@ TRUNCATED = '<em> ...(truncated) </em>'
 def build_html(articles: list, index: list, cross: dict, filename: str, pages: list, structure: dict, file_size: int) -> str:
     """Compose the page layout."""
     page = HEADER
-    envs = {}
     for article in articles:
         abs_pos, _, typ, content = article
         if typ == 'STARTXREF':
@@ -231,10 +230,10 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
             page += follow_obj(content['trailer'], index[ver])
             page += build_obj_trailer()
         elif typ == 'XREFSTREAM':
-            envs = content['envs']
+            pass
         elif typ == 'XREF' and content[0] == 'XREF_S':
             page += build_xref_item_header()
-            page += build_xref_stream_item(content, index, envs)
+            page += build_xref_stream_item(content, index)
             page += build_obj_trailer()
     page += build_header(filename)
     page += build_nav_begin()
@@ -437,14 +436,15 @@ def build_xref_table(table: list, index: list) -> str:
     return ret
 
 
-def build_xref_stream_item(item: tuple, index: list, envs) -> str:
+def build_xref_stream_item(item: tuple, index: list) -> str:
     """Display XREF stream item."""
     ret = ' '
     _, pos, o_num, o_gen, st, env_num, raw_line = item
     if o_num != 0:
         if env_num:
-            abs_pos = envs[env_num] + (pos + 1) / 10000
-            ret += f'<a href="#idx{abs_pos}">'
+            #abs_pos = envs[env_num] + (pos + 1) / 10000
+            #ret += f'<a href="#idx{abs_pos}">'
+            ret += f'<a href="#obj{o_num}.{o_gen}.0">'
         else:
             ret += f'<a href="#idx{pos}">'
         ret += f'<span class="obj-link">#{o_num} {o_gen}</span>'
