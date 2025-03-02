@@ -59,7 +59,7 @@ PDFSyntax is mostly made of simple functions. Example:
 
 The Doc object is probably the only dedicated class you will need to handle. It is a black box that stores all the internal states of a document:
 - content that is cached/memoized from an original file,
-- modifications that add/modifiy/delete content and that are tracked as incremental updates.
+- modifications that add/modify/delete content and that are tracked as incremental updates.
 
 ```Python
 >>> doc
@@ -97,6 +97,6 @@ You then can write the modified PDF to disk. Note that the resulting file contai
 ## Open-Source, not Open-Contribution yet
 
 PDFSyntax is [MIT licensed](https://github.com/desgeeko/pdfsyntax/blob/main/LICENCE) but is currently closed to contributions.
-> Personal note: this is a pet projet of mine and my time is limited. First I need to focus on my roadmap (new features and refactoring) and then I will happily accept contributions when everything is a little more stabilised. 
+> Personal note: this is a pet project of mine and my time is limited. First I need to focus on my roadmap (new features and refactoring) and then I will happily accept contributions when everything is a little more stabilised. 
 
 

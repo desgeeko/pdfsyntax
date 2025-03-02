@@ -82,11 +82,11 @@ Search all mentions of an indirect object, both in itself and in xref:
 
 ### Columns
 
-Most of the columns are collapsable in order to save horizontal space. For example the position (`#2`) may have a maximum width of 10 digits but for small files the unecessary leading zeros are removed.
+Most of the columns are collapsible in order to save horizontal space. For example the position (`#2`) may have a maximum width of 10 digits but for small files the unnecessary leading zeros are removed.
 
 | Column | Description |
 |--------|-------------|
-| `1`     | `+` for a region with absolute positionning, `-` for a detail line (xref, /XRef, /ObjStm)|
+| `1`     | `+` for a region with absolute positioning, `-` for a detail line (xref, /XRef, /ObjStm)|
 | `2`     | Position, absolute (`+`) or relative (`-`)|
 | `3`     | Size in bytes|
 | `4`     | Percentage compressed size / plain size|

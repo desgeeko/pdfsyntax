@@ -32,7 +32,7 @@ The output shows a list of fonts used in the file, with the following tabular da
 - Number of pages where it occurs
 
 ### `browse`
-This command generates HTML output that looks like the raw PDF file with additionnal hyperlinks and information that expose its internal structure and relations between its objects.
+This command generates HTML output that looks like the raw PDF file with additional hyperlinks and information that expose its internal structure and relations between its objects.
 Redirect the standard output to a file that you can open in your browser:
 
     python3 -m pdfsyntax browse file.pdf > inspection_file.html

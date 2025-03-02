@@ -273,9 +273,9 @@ def build_text_fragments(page_contents: list, f: list):
     """List all text fragmemts that are part of a page, with their coordinates.
     
     Each list item is another list made of:
-    - the intial transformation matrix
+    - the initial transformation matrix
     - the text
-    - the final tranformation matrix
+    - the final transformation matrix
     """
     tfs = []
     gs = []

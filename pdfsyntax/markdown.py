@@ -257,7 +257,7 @@ def parse_markdown(lines: list, start_pos = 0, start_indent = 0) -> tuple:
 
 
 def tags(string: str) -> str:
-    """Tranform both style & links."""
+    """Transform both style & links."""
     return style(link(string))
 
 
@@ -269,7 +269,7 @@ def entities(string: str) -> str:
 
 
 def assemble_html(blocks: list, html = '') -> str:
-    """Recusively build HTML string for parsed markdown."""
+    """Recursively build HTML string for parsed markdown."""
     for typ, items in blocks:
         html += f"<{typ.lower()}>"
         for x in items:
