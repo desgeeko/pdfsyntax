@@ -48,7 +48,7 @@
 <p><code>1j</code> is a complex number (!) representing indirect reference <code>1 0 R</code>. Why? Because the approach is to map PDF object types to Python basic built-in types as much as possible, and it is a concise way to show both the object number (as the imaginary part) and the generation number (as the real part). Moreover the generation is very often equal to zero, so the real part is not shown.You may think of the <code>j</code> as a "jump" to another object :)</p>
 <p><code>get_object</code> gives direct access to indirect objects.</p>
 <pre>&gt;&gt;&gt; #Access to document catalog, given that the trailer redirects to 1j for root
-&gt;&gt;&gt; #(equivalent to catalog fonction)
+&gt;&gt;&gt; #(equivalent to catalog function)
 &gt;&gt;&gt; doc.get_object(1j)
 {'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
 </pre>
@@ -62,7 +62,7 @@
 &gt;&gt;&gt; #(In this example, nothing is inherited from upper nodes)
 </pre>
 <p>The <code>page</code> function goes further by merging inherited attributes with local attributes of each page and giving the result in a list.</p>
-<pre>&gt;&gt;&gt; #Equivalent list with computed page attribues
+<pre>&gt;&gt;&gt; #Equivalent list with computed page attributes
 &gt;&gt;&gt; pdf.pages(doc)
 [{'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j},
   '/Contents': 5j,

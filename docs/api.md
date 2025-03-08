@@ -53,7 +53,7 @@ You may think of the `j` as a "jump" to another object :)
 
 ```Python
 >>> #Access to document catalog, given that the trailer redirects to 1j for root
->>> #(equivalent to catalog fonction)
+>>> #(equivalent to catalog function)
 >>> doc.get_object(1j)
 {'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
 ```
@@ -73,7 +73,7 @@ Page index is a tree structure where attributes can be inherited from parent nod
 The `page` function goes further by merging inherited attributes with local attributes of each page and giving the result in a list.
 
 ```Python
->>> #Equivalent list with computed page attribues
+>>> #Equivalent list with computed page attributes
 >>> pdf.pages(doc)
 [{'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j},
   '/Contents': 5j,
