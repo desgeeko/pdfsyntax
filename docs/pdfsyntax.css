@@ -40,6 +40,7 @@ pre {
     padding-bottom: 1em;
     background-color: #eeeeee;
     overflow-y: auto;
+    border-radius: 8px;
 }
 blockquote {
     margin-top: 2em;

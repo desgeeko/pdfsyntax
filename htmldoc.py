@@ -2,7 +2,7 @@ from pdfsyntax import markdown
 import sys
 
 
-html_header = '''<!DOCTYPE html>
+HEAD = '''<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8" />
@@ -11,11 +11,18 @@ html_header = '''<!DOCTYPE html>
     <title>PDFSyntax</title>
 </head>
 '''
+HEADER = '''<header>
+<a href="https://pdfsyntax.dev"><img src="logo.svg" width="50"/></a>
+</header>
+'''
+FOOTER = '''<footer>
+&copy; 2025 <a href="mailto:desgeeko@gmail.com">Martin D.</a> &lt;desgeeko@gmail.com&gt;
+</footer>
+'''
 
 filename = sys.argv[1]
-
 f = open(filename, 'r')
 md = f.read()
-
-print(f"{html_header}<body>\n<main>\n{markdown.render_html(md)}\n</main>\n</body>")
+main = f"<main>\n{markdown.render_html(md)}\n</main>\n"
+print(f"{HEAD}<body>\n{HEADER}{main}{FOOTER}</body>\n</html>")
 
