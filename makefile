@@ -27,8 +27,8 @@ build:
 upload:
 	python3 -m twine upload dist/*
 
-inspect:
-	python3 -m pdfsyntax inspect $(SPL_DIR)/simple_text_string.pdf > $(DOC_DIR)/simple_text_string.html
+browse:
+	python3 -m pdfsyntax browse $(SPL_DIR)/simple_text_string.pdf > $(DOC_DIR)/simple_text_string.html
 
 doc: $(HT_DOCS)
 

@@ -2,7 +2,7 @@ body {
     font-family: system-ui, sans-serif;
 }
 header, main, footer {
-    max-width: 1200px;
+    max-width: 900px;
     font-size: 1em;
     padding: 1em;
     margin: 0.5em auto;
@@ -17,8 +17,9 @@ h1 {
 }
 h2 {
     font-size: 1.4em;
-    border-bottom-style: solid;
-    border-bottom-color: black;
+    text-decoration: underline solid 4px #770000;
+/*    border-bottom-style: solid;
+    border-bottom-color: black;*/
 }
 h3 {
     font-size: 1.2em;
@@ -30,12 +31,19 @@ h4 {
 
 code {
     background-color: #eeeeee;
+    padding: 0.1em;
 }
 pre {
+    margin-bottom: 1.5em;
     padding-top: 1em;
     padding-bottom: 1em;
     background-color: #eeeeee;
     overflow-y: auto;
+}
+blockquote {
+    margin-top: 2em;
+    padding-left: 1em;
+    border-left: 0.3em solid  black;
 }
 img {
     max-width: 100%;

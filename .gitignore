@@ -4,4 +4,5 @@ dist/
 venv/
 .venv/
 pdfsyntax.egg-info/
+debug.py
 

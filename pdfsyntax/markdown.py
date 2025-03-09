@@ -32,7 +32,7 @@ def link(string: str) -> str:
         f = string.find('](', i)
         if f == -1:
             break
-        b1 = string.rfind('[', i) + 1
+        b1 = string.find('[', i) + 1
         b2 = f
         p1 = f + 2
         p2 = string.find(')', f) + 1
@@ -56,14 +56,17 @@ def style(string: str) -> str:
     current = 0
     accu = False
     search = 'TBD'
+    p = ' '
     while i < len(string):
         c = string[i]
+        if i > 0:
+            p = string[i-1]
         if search == 'TBD':
             if c == '`':
                 search = c
                 res += string[current:i]
                 current = i
-            if c in '*_':
+            if c == '*' or (p in ' [>' and c == '_'):
                 accu = True
                 search = c
                 res += string[current:i]
@@ -287,8 +290,8 @@ def assemble_html(blocks: list, html = '') -> str:
 def render_html(md: str):
     """Render HTML from markdown string."""
     lines = md.split('\n')
-    p, _ = parse_markdown(lines)
-    html = assemble_html(p)
+    ast, _ = parse_markdown(lines)
+    html = assemble_html(ast)
     return html
 
 
