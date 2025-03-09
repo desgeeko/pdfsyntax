@@ -17,8 +17,9 @@ h1 {
 }
 h2 {
     font-size: 1.4em;
-    text-decoration: underline solid 4px #770000;
-/*    border-bottom-style: solid;
+    color: #770000;
+/*    text-decoration: underline solid 4px #770000;
+    border-bottom-style: solid;
     border-bottom-color: black;*/
 }
 h3 {
