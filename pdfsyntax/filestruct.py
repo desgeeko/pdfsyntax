@@ -330,6 +330,70 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     return chrono
 
 
+def build_xref_sequence(fdata: Callable) -> list:
+    """Return a list of all xref sequentially found in file."""
+    EOF = b'%%EOF'
+    STARTXREF = b'startxref'
+    XREF = b'xref'
+    xref_stm = False
+    start = True
+    prev = False
+    xrefstm = False
+    prev_eof = None
+    chrono = []
+    while start or prev or xrefstm:
+        a0 = 0
+        o0 = 0
+        if start:
+            start = False
+            bdata, a0, o0, _ = fdata(-100, -1)
+            eof_pos = o0 + bdata.rfind(EOF, a0)
+            startxref_pos = o0 + bdata.rfind(STARTXREF, a0)
+            i, j, _ = next_token(bdata, startxref_pos + len(STARTXREF) - o0)
+            xref_pos = int(bdata[i:j])
+            last = startxref_pos
+        elif xrefstm:
+            xref_pos = xrefstm
+            startxref_pos = o0 + bdata.find(STARTXREF, xref_pos)
+            eof_pos = o0 + bdata.find(EOF, xref_pos)
+            last = eof_pos
+            xrefstm = False
+        elif prev:
+            xref_pos = prev
+            startxref_pos = o0 + bdata.find(STARTXREF, xref_pos)
+            eof_pos = o0 + bdata.find(EOF, xref_pos)
+            last = eof_pos
+            prev = False
+        bdata, a0, o0, _ = fdata(xref_pos, last - xref_pos)
+        if bdata[a0:a0+4] == XREF:
+            tmp_index = parse_xref_table(bdata, a0, o0)
+            tmp_index[0]['startxref_pos'] = startxref_pos
+            tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
+            chrono.append(tmp_index)
+            i, j, _ = next_token(bdata, tmp_index[0]['abs_pos'] - o0) #b'trailer'
+            i, j, _ = next_token(bdata, j)                            #dict
+            trailer = parse_obj(bdata[i:j])
+        else: # must be a /XRef stream
+            bdata, a0, o0, _ = fdata(xref_pos, startxref_pos - xref_pos)
+            i, j, _ = next_token(bdata, a0 - o0) #o_num
+            o_num = parse_obj(bdata, i)
+            i, j, _ = next_token(bdata, j)       #o_ver
+            i, j, _ = next_token(bdata, j)       #b'obj'
+            i, j, _ = next_token(bdata, j)       #dict
+            xref = parse_obj(bdata, i)
+            tmp_index = parse_xref_stream(xref, xref_pos, o_num)
+            tmp_index[0]['startxref_pos'] = startxref_pos
+            tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
+            chrono.append(tmp_index)
+            trailer = xref['entries']
+        if xrefstm == False and prev == False:
+            if '/XRefStm' in trailer:
+                xrefstm = int(trailer['/XRefStm'])
+            if '/Prev' in trailer:
+                prev = int(trailer['/Prev'])
+    return chrono
+
+
 def build_index_from_chrono(chrono: list) -> list:
     """Build a multi-dimensional array where each column represents a doc update."""
     nb = max(chrono, key = lambda i: i['o_num']).get('o_num') + 2
