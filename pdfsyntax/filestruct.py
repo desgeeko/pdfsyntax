@@ -335,12 +335,13 @@ def build_xref_sequence(fdata: Callable) -> list:
     EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
-    xref_stm = False
+    #xref_stm = False
     start = True
     prev = False
     xrefstm = False
     prev_eof = None
     chrono = []
+    seq = []
     while start or prev or xrefstm:
         a0 = 0
         o0 = 0
@@ -366,11 +367,8 @@ def build_xref_sequence(fdata: Callable) -> list:
             prev = False
         bdata, a0, o0, _ = fdata(xref_pos, last - xref_pos)
         if bdata[a0:a0+4] == XREF:
-            tmp_index = parse_xref_table(bdata, a0, o0)
-            tmp_index[0]['startxref_pos'] = startxref_pos
-            tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
-            chrono.append(tmp_index)
-            i, j, _ = next_token(bdata, tmp_index[0]['abs_pos'] - o0) #b'trailer'
+            xref_index = parse_xref_table(bdata, a0, o0)
+            i, j, _ = next_token(bdata, xref_index[0]['abs_pos'] - o0) #b'trailer'
             i, j, _ = next_token(bdata, j)                            #dict
             trailer = parse_obj(bdata[i:j])
         else: # must be a /XRef stream
@@ -381,17 +379,75 @@ def build_xref_sequence(fdata: Callable) -> list:
             i, j, _ = next_token(bdata, j)       #b'obj'
             i, j, _ = next_token(bdata, j)       #dict
             xref = parse_obj(bdata, i)
-            tmp_index = parse_xref_stream(xref, xref_pos, o_num)
-            tmp_index[0]['startxref_pos'] = startxref_pos
-            tmp_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
-            chrono.append(tmp_index)
+            xref_index = parse_xref_stream(xref, xref_pos, o_num)
             trailer = xref['entries']
+        xref_index[0]['xref_stm'] = xrefstm
+        xref_index[0]['startxref_pos'] = startxref_pos
+        xref_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
+        chrono.append(xref_index)
+        seq += [(i.get('abs_pos'), i.get('o_num')) for i in xref_index if 'abs_pos' in i and 'env_num' not in i]
         if xrefstm == False and prev == False:
             if '/XRefStm' in trailer:
                 xrefstm = int(trailer['/XRefStm'])
             if '/Prev' in trailer:
                 prev = int(trailer['/Prev'])
-    return chrono
+    idx = sorted([i[0] for i in seq])
+    _, _, _, file_sz = fdata(None, -1)
+    idx.append(file_sz)
+    #idx.append(None)
+    nxt = {idx[i]: idx[i+1] for i in range(len(idx)-1) if idx[i] < idx[i+1]}
+    #nxt = {idx[i]: idx[i+1] for i in range(len(idx)-1)}
+    nb = max(seq, key = lambda i: i[1])[1]
+    return chrono, nxt, nb
+
+
+def build_index_from_xref_sequence(xref_seq: list, nxt: dict, nb: int) -> list:
+    """Build a multi-dimensional array where each column represents a doc update."""
+    nb = nb + 2
+    m = nb * [None]
+    abs_pos_array = nb * [0]
+    index = []
+    doc_ver = -1
+    prev_pos = 0
+    xref_seq.reverse()
+    for x in xref_seq:
+        trailer = x[0]
+        if trailer['abs_pos'] > prev_pos or trailer.get('xref_stm'):
+            m = m[:]
+            index.append(m)
+            doc_ver += 1
+            m[0] = trailer
+            prev_pos = trailer['abs_pos']
+        else:
+            m[0] = [m[0], trailer]
+        trailer['o_ver'] = doc_ver
+        trailer['doc_ver'] = doc_ver
+        for obj in x[1:]:
+            if m[obj['o_num']] is None:
+                obj['o_ver'] = 0
+                obj['doc_ver'] = doc_ver
+            else:
+                old_obj = index[-1][obj['o_num']]
+                if 'abs_pos' in old_obj and 'abs_pos' in obj and old_obj['abs_pos'] == obj['abs_pos']:
+                    #Special case for hybrid docs where an obj appears both in xref table and stream
+                    obj = old_obj
+                else:
+                    obj['o_ver'] = old_obj['o_ver'] + 1
+                    obj['doc_ver'] = doc_ver
+            m[obj['o_num']] = obj
+    for current in index:
+        for x in current:
+            if x is None:
+                continue
+            abs_pos = x.get('abs_pos')
+            env_num = x.get('env_num')
+            if type(abs_pos) == tuple:
+                e, offset = abs_pos
+                loc = current[e]['abs_pos']
+                x['abs_pos'] = loc + (offset + 1) / 10000
+                abs_pos = loc
+            x['abs_next'] = nxt[abs_pos]
+    return index
 
 
 def build_index_from_chrono(chrono: list) -> list:
