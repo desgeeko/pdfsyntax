@@ -330,12 +330,17 @@ def build_chrono_from_xref(fdata: Callable) -> list:
     return chrono
 
 
-def build_xref_sequence(fdata: Callable) -> list:
-    """Return a list of all xref sequentially found in file."""
+def build_xref_sequence(fdata: Callable) -> tuple:
+    """Build a list of all xref sequentially found in file.
+
+    Return:
+    - the list of xref
+    - a dict that gives the following abs_pos
+    - the max obj number
+    """
     EOF = b'%%EOF'
     STARTXREF = b'startxref'
     XREF = b'xref'
-    #xref_stm = False
     start = True
     prev = False
     xrefstm = False
@@ -381,13 +386,13 @@ def build_xref_sequence(fdata: Callable) -> list:
             xref = parse_obj(bdata, i)
             xref_index = parse_xref_stream(xref, xref_pos, o_num)
             trailer = xref['entries']
-        xref_index[0]['xref_stm'] = xrefstm
         xref_index[0]['startxref_pos'] = startxref_pos
         xref_index.append({'o_num': -1, 'o_gen': -1, 'abs_pos': eof_pos})
         chrono.append(xref_index)
         seq += [(i.get('abs_pos'), i.get('o_num')) for i in xref_index if 'abs_pos' in i and 'env_num' not in i]
         if xrefstm == False and prev == False:
             if '/XRefStm' in trailer:
+                xref_index[0]['xref_stm'] = True
                 xrefstm = int(trailer['/XRefStm'])
             if '/Prev' in trailer:
                 prev = int(trailer['/Prev'])
@@ -409,6 +414,7 @@ def build_index_from_xref_sequence(xref_seq: list, nxt: dict, nb: int) -> list:
     index = []
     doc_ver = -1
     prev_pos = 0
+    xref_seq = xref_seq[:]
     xref_seq.reverse()
     for x in xref_seq:
         trailer = x[0]
@@ -439,14 +445,19 @@ def build_index_from_xref_sequence(xref_seq: list, nxt: dict, nb: int) -> list:
         for x in current:
             if x is None:
                 continue
-            abs_pos = x.get('abs_pos')
-            env_num = x.get('env_num')
-            if type(abs_pos) == tuple:
-                e, offset = abs_pos
-                loc = current[e]['abs_pos']
-                x['abs_pos'] = loc + (offset + 1) / 10000
-                abs_pos = loc
-            x['abs_next'] = nxt[abs_pos]
+            elif type(x) == dict:
+                x = [x]
+            for y in x:
+                if y.get('abs_next'):
+                    continue
+                abs_pos = y.get('abs_pos')
+                env_num = y.get('env_num')
+                if type(abs_pos) == tuple:
+                    e, offset = abs_pos
+                    loc = current[e]['abs_pos']
+                    y['abs_pos'] = loc + (offset + 1) / 10000
+                    abs_pos = loc
+                y['abs_next'] = nxt[abs_pos]
     return index
 
 
