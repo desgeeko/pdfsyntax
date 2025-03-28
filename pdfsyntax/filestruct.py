@@ -97,7 +97,7 @@ def file_object_map(fdata: Callable) -> list:
         if t == 'XREFTABLE':
             table = content['table']
             subsection = -1
-            for a in table:
+            for i, a in enumerate(table):
                 if len(a) == 2:
                     subsection += 1
                     ln = 0
@@ -105,7 +105,7 @@ def file_object_map(fdata: Callable) -> list:
                 index, i_num, i_gen, s = a
                 r_pos = subsection, ln
                 s = (r_pos, None, 'XREF', ('XREF_T', index, i_num, i_gen, s))
-                sections.append(s)
+                table[i] = s
                 ln += 1
         elif t == 'IND_OBJ' and type(content['obj']) == Stream:
             if content['obj']['entries'].get('/Type') == '/XRef':
@@ -114,14 +114,15 @@ def file_object_map(fdata: Callable) -> list:
                 table = obj['table']
                 current_sub = -1
                 sections.append(xrefstream)
-                for index, env_num, i_num, i_gen, s, raw_line, subsection in table:
+                for i, a in enumerate(table):
+                    index, env_num, i_num, i_gen, s, raw_line, subsection = a
                     if subsection != current_sub:
                         ln = -1
                         current_sub = subsection
                     ln += 1
                     r_pos = subsection, ln
                     s = (r_pos, None, 'XREF', ('XREF_S', index, i_num, i_gen, s, env_num, raw_line))
-                    sections.append(s)
+                    table[i] = s
             elif content['obj']['entries'].get('/Type') == '/ObjStm':
                 _, _, typ, obj = parse_object_stream(content['obj'], content['o_num'])
                 j = 0

@@ -161,9 +161,19 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
                     detail = content[:10].decode('ascii')
                 except:
                     detail = '<' + content[:10].hex() + '>'
+            l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio, 'filters_l': filters_l,
+                 'env_iref': env_iref, 'seq_num': seq_num, 'region_type': region_type.lower(), 'iref': iref,
+                 'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'detail': detail
+                 }
+            lines.append(l)
         elif region_type == 'STARTXREF':
             startxref = int(content)
             addr = startxref
+            l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio, 'filters_l': filters_l,
+                 'env_iref': env_iref, 'seq_num': seq_num, 'region_type': region_type.lower(), 'iref': iref,
+                 'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'detail': detail
+                 }
+            lines.append(l)
         elif region_type == 'XREFTABLE':
             #macro_ind = '-'
             trailer = content['trailer']
@@ -171,6 +181,30 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
                 detail = keys_in_line(trailer, ['/XRefStm', '/Prev'])
             else:
                 detail = keys_in_line(trailer, ['/Root', '/Prev'])
+            l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio, 'filters_l': filters_l,
+                 'env_iref': env_iref, 'seq_num': seq_num, 'region_type': region_type.lower(), 'iref': iref,
+                 'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'detail': detail
+                 }
+            lines.append(l)
+            for x in content['table']:
+                if len(x) == 2:
+                    continue
+                _, _, _, y = x
+                _, index, x_num, x_gen, s = y
+                iref = f"{x_num},{x_gen}"
+                addr = index
+                cl = 'inuse' if s == b'n' else 'free'
+                macro_ind = '-'
+                pos = None
+                size = 0
+                ratio = ''
+                region_type = 'xref'
+                detail = ''
+                l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio, 'filters_l': filters_l,
+                     'env_iref': env_iref, 'seq_num': seq_num, 'region_type': region_type.lower(), 'iref': iref,
+                     'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'detail': detail
+                     }
+                lines.append(l)
         elif region_type == 'IND_OBJ':
             env_num = content.get('env_num')
             if env_num:
@@ -201,27 +235,38 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
                 cl = 'int'
             else:
                 cl = 'other'
-        elif region_type == 'XREF':
-            macro_ind = '-'
-            pos = None
-            if content[0] == 'XREF_T':
-                _, index, x_num, x_gen, s = content
-                iref = f"{x_num},{x_gen}"
-                addr = index
-            else:
-                _, index, x_num, x_gen, s, env_num, raw_line = content
+            l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio, 'filters_l': filters_l,
+                 'env_iref': env_iref, 'seq_num': seq_num, 'region_type': region_type.lower(), 'iref': iref,
+                 'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'detail': detail
+                 }
+            lines.append(l)
+        elif region_type == 'XREFSTREAM':
+            trailer = content['trailer']
+            for x in content['table']:
+                _, _, _, y = x
+                _, index, x_num, x_gen, s, env_num, raw_line = y
                 iref = f"{x_num},{x_gen}"
                 target = 'abs' if env_num is None else f"{env_num},"
                 addr = index
                 addr_mode = f"{target}"
-            cl = 'inuse' if s == b'n' else 'free'
-        elif region_type == 'XREFSTREAM':
-            continue
-        l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio, 'filters_l': filters_l,
-             'env_iref': env_iref, 'seq_num': seq_num, 'region_type': region_type.lower(), 'iref': iref,
-             'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'detail': detail
-             }
-        lines.append(l)
+                cl = 'inuse' if s == b'n' else 'free'
+                macro_ind = '-'
+                pos = None
+                size = 0
+                ratio = ''
+                region_type = 'xref'
+                detail = ''
+                l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio, 'filters_l': filters_l,
+                     'env_iref': env_iref, 'seq_num': seq_num, 'region_type': region_type.lower(), 'iref': iref,
+                     'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'detail': detail
+                     }
+                lines.append(l)
+        elif region_type == 'VOID':
+            l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio, 'filters_l': filters_l,
+                 'env_iref': env_iref, 'seq_num': seq_num, 'region_type': region_type.lower(), 'iref': iref,
+                 'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'detail': detail
+                 }
+            lines.append(l)
     print_disasm_columns(lines, columns_mode)
     return sections
 
