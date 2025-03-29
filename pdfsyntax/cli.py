@@ -325,8 +325,8 @@ def overview(filename: str) -> None:
 def file_map(fdata: Callable) -> tuple:
     """Build file sequence and sort it by absolute position."""
     new_sections = []
-    chrono = build_chrono_from_xref(fdata)
-    index = build_index_from_chrono(chrono)
+    chrono, nxt, nb = build_xref_sequence(fdata)
+    index = build_index_from_xref_sequence(chrono, nxt, nb)
     sections = file_object_map(fdata)
     for x in sections:
         if x[2] == 'VOID':

@@ -41,8 +41,8 @@ PAPER_SIZES = {
 
 def doc_constructor(fdata: Callable) -> Doc:
     """Initialize doc and close first revision."""
-    chrono = build_chrono_from_xref(fdata)
-    index = build_index_from_chrono(chrono)
+    chrono, nxt, nb = build_xref_sequence(fdata)
+    index = build_index_from_xref_sequence(chrono, nxt, nb)
     data = [{'eof_cut': eof_cut(i[-1]['abs_pos'], fdata), 'fdata': fdata} for i in index if i[-1]]
     for i in index:
         del i[-1]
