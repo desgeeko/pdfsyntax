@@ -133,3 +133,9 @@ def asciihex(stream, columns = None):
         return res
 
 
+def ascii_hexdump_printable(c: int):
+    """Replace a non printable character with a dot (.)."""
+    if c >= 0x20 and c <= 0x7e:
+        return c
+    else:
+        return 0x2e #.

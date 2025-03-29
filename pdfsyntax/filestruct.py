@@ -83,6 +83,25 @@ def bdata_all(bdata: Callable) -> bytes:
     return bdata
 
 
+def hexdump(bdata: Callable, start: int = None, length: int = None) -> str:
+    """Build a string similar to hexdump -C for binary data exploration"""
+    LN = 10
+    ret = ''
+    if start is None:
+        start = 0
+        _, _, _, length = bdata(None, -1)
+    idx = (start // LN) * LN
+    buf, d0, i0, sz0 = bdata(idx, length+(start-idx))
+    i = d0 + i0
+    while i < d0 + i0 + sz0:
+        l = buf[i:i+LN]
+        hexl = bytes.hex(l, ' ')
+        hext = bytes([ascii_hexdump_printable(c) for c in l]).decode('ascii')
+        ret += f"{i:0{LN}d}  {hexl:{LN*3-1}}  |{hext}|\n"
+        i += LN
+    return ret
+
+
 def file_object_map(fdata: Callable) -> list:
     """Parse whole file in sequential order without using xref."""
     sections = []
