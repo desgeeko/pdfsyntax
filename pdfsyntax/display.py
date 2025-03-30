@@ -220,9 +220,13 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
             page += build_obj_header(article, index, cross)
             _, relevance, _, _ = cross[abs_pos]
             _, ver = relevance
-            page += follow_obj(content['obj'], index[ver])
-            page += '\n\nendobj'
-            page += build_obj_trailer()
+            o = content['obj']
+            if type(o) == Stream and '/Type' in o['entries'] and o['entries']['/Type'] == '/XRef':
+                page += follow_obj(o, index[ver], display_stream=False)
+            else:
+                page += follow_obj(o, index[ver], display_stream=True)
+                page += '\n\nendobj'
+                page += build_obj_trailer()
         elif typ == 'XREFTABLE':
             page += build_obj_header(article, index, cross)
             page += build_xref_table(content['table'], index)
@@ -230,8 +234,8 @@ def build_html(articles: list, index: list, cross: dict, filename: str, pages: l
             page += follow_obj(content['trailer'], index[ver])
             page += build_obj_trailer()
         elif typ == 'XREFSTREAM':
-            page += build_obj_header(article, index, cross)
             page += build_xref_stream(content['table'], index)
+            page += '\n\nendobj'
             page += build_obj_trailer()
     page += build_header(filename)
     page += build_nav_begin()
@@ -438,6 +442,7 @@ def build_xref_table(table: list, index: list) -> str:
 def build_xref_stream(table: list, index: list) -> str:
     """Display XREF table with additional links to objects."""
     ret = ''
+    ret += '\nstream\n\n'
     for x in table:
         _, _, _, y = x
         _, pos, o_num, o_gen, st, env_num, raw_line = y
@@ -455,6 +460,7 @@ def build_xref_stream(table: list, index: list) -> str:
                 ret += f'In object stream {env_num} at {pos:010} {st.decode("ascii")}\n'
             else:
                 ret += f'At absolute position {pos:010} {st.decode("ascii")}\n'
+    ret += '\nendstream\n'
     return ret
 
 
@@ -467,7 +473,7 @@ def move_list_item(mod_list: list, item: int, new_pos: int) -> str:
     return mod_list
 
 
-def follow_obj(obj, index: list, depth=0) -> str:
+def follow_obj(obj, index: list, depth=0, display_stream=True) -> str:
     """Recursively construct object representation."""
     ret = ''
     content = None
@@ -503,7 +509,7 @@ def follow_obj(obj, index: list, depth=0) -> str:
                 ret += f'  {name:{NAME_MAX_WIDTH}}{value}\n'
         ret += ' ' * (NAME_MAX_WIDTH + 2) * depth
         ret += '&gt;&gt;'
-        if content:
+        if content and display_stream:
             p = printable_stream_content(content)
             ret += f'  \nstream\n'
             if p:
