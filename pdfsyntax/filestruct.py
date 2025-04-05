@@ -602,3 +602,57 @@ def linearized(fdata: Callable) -> dict:
     return None
 
 
+def check_index_targets(object_map: list, xref_seq: list):
+    """List, for every xref structure, the entries that do not lead to anything."""
+    ret = {}
+    ind_objs = [x for x in object_map if x[2] == 'IND_OBJ']
+    dir_objs = {(x[3]['o_num'], x[3]['o_gen'], 'DIR', x[0]) for x in ind_objs if type(x[0]) == int}
+    emb_objs = {(x[3]['o_num'], 'EMB', x[3]['env_num'], x[1][2]) for x in ind_objs if type(x[0]) == float}
+    objs = dir_objs | emb_objs
+    for xref in xref_seq:
+        errors = []
+        for o in xref:
+            if o['o_num'] == 0:
+                pos = o.get('xref_table_pos')
+                if pos is None:
+                    pos = o.get('xref_stream_pos')
+                continue
+            elif o['o_num'] < 0:
+                continue
+            if 'env_num' in o:
+                k = (o['o_num'], 'EMB', o['env_num'], o['o_pos'])
+            else:
+                k = (o['o_num'], o['o_gen'], 'DIR', o['abs_pos'])
+            if k in objs:
+                continue
+            errors.append(k)
+        ret[pos] = errors
+    return ret
+
+
+def check_not_indexed_objects(object_map: list, xref_seq: list):
+    """List objects that are not indexed by any xref structure."""
+    ret = []
+    indexed = set()
+    for xref in xref_seq:
+        errors = []
+        for o in xref:
+            if o['o_num'] <= 0:
+                continue
+            if 'env_num' in o:
+                k = (o['o_num'], 'EMB', o['env_num'], o['o_pos'])
+            else:
+                k = (o['o_num'], o['o_gen'], 'DIR', o['abs_pos'])
+            indexed.add(k)
+    ind_objs = [x for x in object_map if x[2] == 'IND_OBJ']
+    for x in ind_objs:
+        if type(x[0]) == int:
+            o = (x[3]['o_num'], x[3]['o_gen'], 'DIR', x[0])
+        elif type(x[0]) == float:
+            o = (x[3]['o_num'], 'EMB', x[3]['env_num'], x[1][2])
+        else:
+            continue
+        if o not in indexed:
+            ret.append(o)
+    return ret
+
