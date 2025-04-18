@@ -369,7 +369,7 @@ def expand_xref_index(xref_index: list) -> list:
     return res
 
 
-def parse_xref_stream_raw(xref_stream: Stream) -> tuple:
+def parse_xref_stream_raw(xref_stream: Stream, start_pos=None) -> tuple:
     """."""
     res = []
     cols = xref_stream['entries']['/W']
@@ -401,7 +401,7 @@ def parse_xref_stream_raw(xref_stream: Stream) -> tuple:
             env_num = params[1]
             o_pos = params[2]
             res.append((o_pos, env_num, obj_num, 0, b'n', ppr, subsection))
-    return (None, None, 'XREFSTREAM', {'table': res, 'trailer': xref_stream['entries']})
+    return (start_pos, None, 'XREFSTREAM', {'table': res, 'trailer': xref_stream['entries']})
 
 
 def parse_region(text: bytes, start=0) -> tuple:

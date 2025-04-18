@@ -128,7 +128,7 @@ def file_object_map(fdata: Callable) -> list:
                 ln += 1
         elif t == 'IND_OBJ' and type(content['obj']) == Stream:
             if content['obj']['entries'].get('/Type') == '/XRef':
-                xrefstream = parse_xref_stream_raw(content['obj'])
+                xrefstream = parse_xref_stream_raw(content['obj'], bo)
                 _, _, typ, obj = xrefstream
                 table = obj['table']
                 current_sub = -1
@@ -606,8 +606,8 @@ def check_index_targets(object_map: list, xref_seq: list):
     """List, for every xref structure, the entries that do not lead to anything."""
     ret = {}
     ind_objs = [x for x in object_map if x[2] == 'IND_OBJ']
-    dir_objs = {(x[3]['o_num'], x[3]['o_gen'], 'DIR', x[0]) for x in ind_objs if type(x[0]) == int}
-    emb_objs = {(x[3]['o_num'], 'EMB', x[3]['env_num'], x[1][2]) for x in ind_objs if type(x[0]) == float}
+    dir_objs = {('DIR', x[3]['o_num'], x[3]['o_gen'], x[0]) for x in ind_objs if type(x[0]) == int}
+    emb_objs = {('EMB', x[3]['o_num'], x[3]['env_num'], x[1][2]) for x in ind_objs if type(x[0]) == float}
     objs = dir_objs | emb_objs
     for xref in xref_seq:
         errors = []
@@ -620,9 +620,9 @@ def check_index_targets(object_map: list, xref_seq: list):
             elif o['o_num'] < 0:
                 continue
             if 'env_num' in o:
-                k = (o['o_num'], 'EMB', o['env_num'], o['o_pos'])
+                k = ('EMB', o['o_num'], o['env_num'], o['o_pos'])
             else:
-                k = (o['o_num'], o['o_gen'], 'DIR', o['abs_pos'])
+                k = ('DIR', o['o_num'], o['o_gen'], o['abs_pos'])
             if k in objs:
                 continue
             errors.append(k)
@@ -640,16 +640,16 @@ def check_not_indexed_objects(object_map: list, xref_seq: list):
             if o['o_num'] <= 0:
                 continue
             if 'env_num' in o:
-                k = (o['o_num'], 'EMB', o['env_num'], o['o_pos'])
+                k = ('EMB', o['o_num'], o['env_num'], o['o_pos'])
             else:
-                k = (o['o_num'], o['o_gen'], 'DIR', o['abs_pos'])
+                k = ('DIR', o['o_num'], o['o_gen'], o['abs_pos'])
             indexed.add(k)
     ind_objs = [x for x in object_map if x[2] == 'IND_OBJ']
     for x in ind_objs:
         if type(x[0]) == int:
-            o = (x[3]['o_num'], x[3]['o_gen'], 'DIR', x[0])
+            o = ('DIR', x[3]['o_num'], x[3]['o_gen'], x[0])
         elif type(x[0]) == float:
-            o = (x[3]['o_num'], 'EMB', x[3]['env_num'], x[1][2])
+            o = ('EMB', x[3]['o_num'], x[3]['env_num'], x[1][2])
         else:
             continue
         if o not in indexed:

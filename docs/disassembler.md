@@ -21,38 +21,40 @@ Here is the output produced for the [_Simple Text String_](https://github.com/de
 
 ```
 $ python3 -m pdfsyntax disasm samples/simple_text_string.pdf
-+ 0000 [8  ]            comment                           %PDF-1.4            
-+ 0008 [1  ]            void                                                  
-+ 0009 [70 ]            ind_obj   1,0            dict     /Catalog            
-+ 0079 [1  ]            void                                                  
-+ 0080 [48 ]            ind_obj   2,0            dict     /Outlines           
-+ 0128 [1  ]            void                                                  
-+ 0129 [62 ]            ind_obj   3,0            dict     /Pages              
-+ 0191 [1  ]            void                                                  
-+ 0192 [183]            ind_obj   4,0            dict     /Page               
-+ 0375 [1  ]            void                                                  
-+ 0376 [121] 100% _     ind_obj   5,0            stream                       
-+ 0497 [1  ]            void                                                  
-+ 0498 [27 ]            ind_obj   6,0            array                        
-+ 0525 [1  ]            void                                                  
-+ 0526 [119]            ind_obj   7,0            dict     /Font               
-+ 0645 [1  ]            void                                                  
-+ 0646 [198]            xreftable                         /Root=1,0
--                       xref      0,65535   0000 free                         
--                       xref      1,0       0009 inuse                        
--                       xref      2,0       0080 inuse                        
--                       xref      3,0       0129 inuse                        
--                       xref      4,0       0192 inuse                        
--                       xref      5,0       0376 inuse                        
--                       xref      6,0       0498 inuse                        
--                       xref      7,0       0526 inuse                        
-+ 0844 [1  ]            void                                                  
-+ 0845 [13 ]            startxref           0646                              
-+ 0858 [1  ]            void                                                  
-+ 0859 [5  ]            comment                           %%EOF               
-+ 0864 [1  ]            void                                                  
-+ 0865 [1  ]            void                                                  
 $ 
+```
++ 000 [8  ]               comment                        %PDF-1.4           
++ 008 [1  ]               void                                              
++ 009 [70 ]            @- ind_obj   1,0           dict   /Catalog  !/JS!    
++ 079 [1  ]               void                                              
++ 080 [48 ]            @- ind_obj   2,0           dict   /Outlines  !/JS!   
++ 128 [1  ]               void                                              
++ 129 [62 ]            @- ind_obj   3,0           dict   /Pages  !/JS!      
++ 191 [1  ]               void                                              
++ 192 [183]            @- ind_obj   4,0           dict   /Page  !/JS!       
++ 375 [1  ]               void                                              
++ 376 [121] 100% _     @- ind_obj   5,0           stream !/JS!              
++ 497 [1  ]               void                                              
++ 498 [27 ]            @- ind_obj   6,0           array                     
++ 525 [1  ]               void                                              
++ 526 [119]            @- ind_obj   7,0           dict   /Font  !/JS!       
++ 645 [1  ]               void                                              
++ 646 [198]               xreftable                      !/JS!  /Root=1,0   
+-                      -@ xref      0,65535   000 free                      
+-                      -@ xref      1,0       009 inuse                     
+-                      -@ xref      2,0       080 inuse                     
+-                      -@ xref      3,0       129 inuse                     
+-                      -@ xref      4,0       192 inuse                     
+-                      -@ xref      5,0       376 inuse                     
+-                      -@ xref      6,0       498 inuse                     
+-                      -@ xref      7,0       526 inuse                     
++ 844 [1  ]               void                                              
++ 845 [13 ]               startxref           646                           
++ 858 [1  ]               void                                              
++ 859 [5  ]               comment                        %%EOF              
++ 864 [1  ]               void                                              
++ 865 [1  ]               void                                              
+$
 ```
 
 This example is very basic because of its xref table and single uncompressed (100%) content stream. Inside a more complex file you would probably find something like this:
@@ -93,12 +95,13 @@ Most of the columns are collapsable in order to save horizontal space. For examp
 | `5`     | Applied filter(s)|
 | `6`     | Sequence number of embedded object|
 | `7`     | Indirect reference of **envelope** object|
-| `8`     | Region type|
-| `9`     | Indirect reference of **this** object|
-| `10`    | Addressing mode of xref, envelope or absolute|
-| `11`    | Address of xref|
-| `12`    | Type of PDF object|
-| `13`    | Some detail : most important keys for dict, excerpt for comment|
+| `8`     | Index check, @ for OK and ? for NOK|
+| `9`     | Region type|
+| `10`     | Indirect reference of **this** object|
+| `11`    | Addressing mode of xref, envelope or absolute|
+| `12`    | Address of xref|
+| `13`    | Type of PDF object|
+| `14`    | Some detail : most important keys for dict, excerpt for comment|
 
 
 > Warning: Encrypted files are not supported yet. 

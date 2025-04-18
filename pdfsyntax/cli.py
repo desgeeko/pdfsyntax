@@ -33,11 +33,12 @@ def main():
 def keys_in_line(target, keys: list) -> str:
     """."""
     res = ''
-    if '/Type' in keys:
+    if '/Type' in target:
         value = target.get('/Type')
         if value is not None:
             res += f"{value}  "
-        keys.remove('/Type')
+    if '/JS' in target:
+        res += "!/JS!  "
     for key in keys:
         value = target.get(key)
         if value is None:
@@ -88,6 +89,7 @@ def print_disasm_columns(lines: list, columns_mode: str = 'VARIABLE'):
         ['filters_l', 10],
         ['seq_num', 5],
         ['env_iref', 5],
+        ['st', 2],
         ['region_type', 9],
         ['iref', 12],
         ['addr_mode', 5],
@@ -133,6 +135,10 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
     file_obj = open(filename, 'rb')
     fdata = bdata_provider(file_obj)
     sections = file_object_map(fdata)
+    i, d, n = build_xref_sequence(fdata)
+    wrong_targets = check_index_targets(sections, i)
+    dir_not_indexed = {x for t, _, _, x in check_not_indexed_objects(sections, i) if t == 'DIR'}
+    emb_not_indexed = {(e, n) for t, n, e, _ in check_not_indexed_objects(sections, i) if t == 'EMB'}
     lines = []
     for start_pos, end_pos, region_type, content in sections:
         pos = start_pos
@@ -173,7 +179,12 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
                  'region_type': region_type.lower(), 'detail': detail
                  }
             lines.append(l)
+            if pos in wrong_targets:
+                wt = {x for _, _, _, x in wrong_targets[pos]}
+            else:
+                wt = set()
             for x in content['table']:
+                st = '-@'
                 if len(x) == 2:
                     continue
                 _, _, _, y = x
@@ -186,8 +197,10 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
                 ratio = ''
                 region_type = 'xref'
                 detail = ''
+                if addr in wt:
+                    st = '-?'
                 l = {'macro_ind': '-', 'region_type': region_type.lower(),
-                     'iref': iref, 'addr': addr, 'cl': cl
+                     'iref': iref, 'addr': addr, 'cl': cl, 'st': st
                      }
                 lines.append(l)
         elif region_type == 'IND_OBJ':
@@ -196,12 +209,18 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
             filters_l = ''
             env_iref = ''
             seq_num = ''
+            st = '@-'
             detail = ''
             env_num = content.get('env_num')
             if env_num:
                 macro_ind = '-'
                 env_pos, pos, seq_num = end_pos
                 env_iref = f"{env_num},"
+                if (env_num, seq_num) in emb_not_indexed:
+                    st = '?-'
+            else:
+                if pos in dir_not_indexed:
+                    st = '?-'
             o_num = content['o_num']
             o_gen = content['o_gen']
             o_gen = '' if o_gen is None else o_gen
@@ -210,10 +229,10 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
             cl = type(obj)
             if cl == dict:
                 cl = 'dict'
-                detail = keys_in_line(obj, ['/Type', '/Linearized'])
+                detail = keys_in_line(obj, ['/Linearized'])
             elif cl == Stream:
                 cl = 'stream'
-                detail = keys_in_line(obj['entries'], ['/Type', '/Root', '/Prev', '/N', '/First'])
+                detail = keys_in_line(obj['entries'], ['/Root', '/Prev', '/N', '/First'])
                 if len(obj['stream']):
                     ratio = f"{int(len(obj['encoded']) / len(obj['stream']) * 100)}%"
                 else:
@@ -227,12 +246,18 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
                 cl = 'other'
             l = {'macro_ind': macro_ind, 'pos': pos, 'size': size, 'ratio': ratio,
                  'filters_l': filters_l, 'env_iref': env_iref, 'seq_num': seq_num,
-                 'region_type': region_type.lower(), 'iref': iref, 'cl': cl, 'detail': detail
+                 'region_type': region_type.lower(), 'iref': iref, 'cl': cl,
+                 'st': st, 'detail': detail
                  }
             lines.append(l)
         elif region_type == 'XREFSTREAM':
             trailer = content['trailer']
+            if pos in wrong_targets:
+                wt = {x for _, _, _, x in wrong_targets[pos]}
+            else:
+                wt = set()
             for x in content['table']:
+                st = '-@'
                 _, _, _, y = x
                 _, index, x_num, x_gen, s, env_num, raw_line = y
                 iref = f"{x_num},{x_gen}"
@@ -245,9 +270,11 @@ def dump_disasm(filename: str, columns_mode: str = 'VARIABLE') -> str:
                 ratio = ''
                 region_type = 'xref'
                 detail = ''
+                if addr in wt:
+                    st = '-?'
                 l = {'macro_ind': '-', 'pos': pos,
                      'region_type': region_type.lower(), 'iref': iref,
-                     'addr_mode': addr_mode, 'addr': addr, 'cl': cl
+                     'addr_mode': addr_mode, 'addr': addr, 'cl': cl, 'st': st
                      }
                 lines.append(l)
         elif region_type == 'VOID':
