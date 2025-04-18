@@ -21,8 +21,6 @@ Here is the output produced for the [_Simple Text String_](https://github.com/de
 
 ```
 $ python3 -m pdfsyntax disasm samples/simple_text_string.pdf
-$ 
-```
 + 000 [8  ]               comment                        %PDF-1.4           
 + 008 [1  ]               void                                              
 + 009 [70 ]            @- ind_obj   1,0           dict   /Catalog  !/JS!    

@@ -27,46 +27,42 @@
 <h3>Example</h3>
 <p>Here is the output produced for the <a href='https://github.com/desgeeko/pdfsyntax/raw/main/samples/simple_text_string.pdf'><em>Simple Text String</em></a> example file from the PDF Specification:</p>
 <pre>$ python3 -m pdfsyntax disasm samples/simple_text_string.pdf
-$ 
++ 000 [8  ]               comment                        %PDF-1.4           
++ 008 [1  ]               void                                              
++ 009 [70 ]            @- ind_obj   1,0           dict   /Catalog  !/JS!    
++ 079 [1  ]               void                                              
++ 080 [48 ]            @- ind_obj   2,0           dict   /Outlines  !/JS!   
++ 128 [1  ]               void                                              
++ 129 [62 ]            @- ind_obj   3,0           dict   /Pages  !/JS!      
++ 191 [1  ]               void                                              
++ 192 [183]            @- ind_obj   4,0           dict   /Page  !/JS!       
++ 375 [1  ]               void                                              
++ 376 [121] 100% _     @- ind_obj   5,0           stream !/JS!              
++ 497 [1  ]               void                                              
++ 498 [27 ]            @- ind_obj   6,0           array                     
++ 525 [1  ]               void                                              
++ 526 [119]            @- ind_obj   7,0           dict   /Font  !/JS!       
++ 645 [1  ]               void                                              
++ 646 [198]               xreftable                      !/JS!  /Root=1,0   
+-                      -@ xref      0,65535   000 free                      
+-                      -@ xref      1,0       009 inuse                     
+-                      -@ xref      2,0       080 inuse                     
+-                      -@ xref      3,0       129 inuse                     
+-                      -@ xref      4,0       192 inuse                     
+-                      -@ xref      5,0       376 inuse                     
+-                      -@ xref      6,0       498 inuse                     
+-                      -@ xref      7,0       526 inuse                     
++ 844 [1  ]               void                                              
++ 845 [13 ]               startxref           646                           
++ 858 [1  ]               void                                              
++ 859 [5  ]               comment                        %%EOF              
++ 864 [1  ]               void                                              
++ 865 [1  ]               void                                              
+$
 </pre>
-<ul><li>000 [8  ]               comment                        %PDF-1.4           </li>
-<li>008 [1  ]               void                                              </li>
-<li>009 [70 ]            @- ind_obj   1,0           dict   /Catalog  !/JS!    </li>
-<li>079 [1  ]               void                                              </li>
-<li>080 [48 ]            @- ind_obj   2,0           dict   /Outlines  !/JS!   </li>
-<li>128 [1  ]               void                                              </li>
-<li>129 [62 ]            @- ind_obj   3,0           dict   /Pages  !/JS!      </li>
-<li>191 [1  ]               void                                              </li>
-<li>192 [183]            @- ind_obj   4,0           dict   /Page  !/JS!       </li>
-<li>375 [1  ]               void                                              </li>
-<li>376 [121] 100% <em>     @- ind</em>obj   5,0           stream !/JS!              </li>
-<li>497 [1  ]               void                                              </li>
-<li>498 [27 ]            @- ind_obj   6,0           array                     </li>
-<li>525 [1  ]               void                                              </li>
-<li>526 [119]            @- ind_obj   7,0           dict   /Font  !/JS!       </li>
-<li>645 [1  ]               void                                              </li>
-<li>646 [198]               xreftable                      !/JS!  /Root=1,0   </li>
-<li>                     -@ xref      0,65535   000 free                      </li>
-<li>                     -@ xref      1,0       009 inuse                     </li>
-<li>                     -@ xref      2,0       080 inuse                     </li>
-<li>                     -@ xref      3,0       129 inuse                     </li>
-<li>                     -@ xref      4,0       192 inuse                     </li>
-<li>                     -@ xref      5,0       376 inuse                     </li>
-<li>                     -@ xref      6,0       498 inuse                     </li>
-<li>                     -@ xref      7,0       526 inuse                     </li>
-<li>844 [1  ]               void                                              </li>
-<li>845 [13 ]               startxref           646                           </li>
-<li>858 [1  ]               void                                              </li>
-<li>859 [5  ]               comment                        %%EOF              </li>
-<li>864 [1  ]               void                                              </li>
-<li>865 [1  ]               void                                              </li>
-</ul>
-<pre>
-This example is very basic because of its xref table and single uncompressed (100%) content stream. Inside a more complex file you would probably find something like this:
-
+<p>This example is very basic because of its xref table and single uncompressed (100%) content stream. Inside a more complex file you would probably find something like this:</p>
+<pre>+ 053123 [461  ] 86%  _Flate        ind_obj   52,0               stream   /XRef  /Root=50,0   
 </pre>
-<ul><li>053123 [461  ] 86%  <em>Flate        ind</em>obj   52,0               stream   /XRef  /Root=50,0   </li>
-</ul>
 <p></p>
 <h3>Grep examples</h3>
 <p>Ignore void spaces (separators) and focus on real objects:</p>
