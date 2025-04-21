@@ -25,22 +25,28 @@ class Doc(Doc):
         return res
 
 
-def pprint_index(doc: Doc):
+def pprint_index(doc: Doc, compact: bool = False):
     """Pretty print index as tabular data."""
+    if compact:
+        W_NUM = 7
+    else:
+        W_NUM = 17
     nb_obj = len(doc.index[-1])
     ver = len(doc.index)
-    for i in range(1, nb_obj):
-        line = f"{i:<10}"
+    matrix = [[None] * nb_obj for x in range(ver)]
+    maxs = [1] * ver
+    for i in range(nb_obj):
+        line = f"{i:<{W_NUM}}"
         o_gen, o_ver, doc_ver = "", "", ""
         abs_pos, env_num, o_pos = "", "", ""
         for j in range(ver):
-            cell = '-'
+            cell = 'idem'
             x = doc.index[j][i]
             if x:
                 o_gen_new = x.get('o_gen', '')
                 o_ver_new = x.get('o_ver', '')
                 doc_ver_new = x.get('doc_ver', '')
-                abs_pos_new = x.get('abs_pos', '')
+                abs_pos_new = x.get('abs_pos', '-')
                 env_num_new = x.get('env_num', '')
                 o_pos_new = x.get('o_pos', '')
                 deleted = x.get('DELETED')
@@ -48,23 +54,37 @@ def pprint_index(doc: Doc):
                     cell = "Deleted "
                 elif o_gen_new != o_gen or o_ver_new != o_ver or doc_ver_new != doc_ver:
                     o_gen, o_ver, doc_ver = o_gen_new, o_ver_new, doc_ver_new
-                    cell = f"{o_gen}/{o_ver}/{doc_ver} "
+                    cell = f"{o_gen}/{o_ver}/{doc_ver}"
                 if abs_pos_new != abs_pos:
                     abs_pos = abs_pos_new
-                    cell += f"{abs_pos} "
+                    cell += f" {abs_pos}"
                 if env_num_new != env_num or o_pos_new != o_pos:
                     env_num, o_pos = env_num_new, o_pos_new
-                    #cell += f"{env_num}>{o_pos} "
-                    cell += f"{env_num} "
-            line += f"| {cell:25}"
-        print(line)
-    print('\n')
-    for i in 'abs_pos startxref_pos xref_table_pos xref_stream_pos xref_strean_num'.split():
-        print(f"{i:20}")
-        line = ' ' * 10
+                    cell += f" {env_num}"
+            matrix[j][i] = cell
+            if len(cell) > maxs[j]:
+                maxs[j] = len(cell)
+    for i in range(1, nb_obj):
+        line = f"{i:<{W_NUM}}"
         for j in range(ver):
-            x = doc.index[j][0].get(i, '')
-            line += f"| {x:<20}"
+            line += f"| {matrix[j][i]:{maxs[j]}} "
+        print(line)
+    print('')
+    i = 0
+    line = f"{'0 (trailer)':<{W_NUM}}"
+    if compact:
+        line += '\n' + ' ' * W_NUM
+    for j in range(ver):
+        line += f"| {matrix[j][i]:{maxs[j]}} "
+    print(line)
+    for i in 'abs_pos startxref_pos xref_table_pos xref_stream_pos xref_stream_num'.split():
+        line = f"{i:<{W_NUM}}"
+        if compact:
+            line += '\n' + ' ' * W_NUM
+        for j in range(ver):
+            x = doc.index[j][0].get(i, '-')
+            x = f"{x} "
+            line += f"| {x:{maxs[j]}} "
         print(line)
     return
 
