@@ -77,14 +77,14 @@ def pprint_index(doc: Doc, compact: bool = False):
     for j in range(ver):
         line += f"| {matrix[j][i]:{maxs[j]}} "
     print(line)
-    for i in 'abs_pos startxref_pos xref_table_pos xref_stream_pos xref_stream_num'.split():
-        line = f"{i:<{W_NUM}}"
+    for k in 'abs_pos startxref_pos xref_table_pos xref_stream_pos xref_stream_num'.split():
+        line = f"{k:<{W_NUM}}"
         if compact:
             line += '\n' + ' ' * W_NUM
         for j in range(ver):
-            x = doc.index[j][0].get(i, '-')
-            x = f"{x} "
-            line += f"| {x:{maxs[j]}} "
+            val = doc.index[j][0].get(k, '-')
+            val = f"{val} "
+            line += f"| {val:{maxs[j]}} "
         print(line)
     return
 
@@ -109,22 +109,31 @@ def pprint_cache(doc: Doc):
             print(line)
             line = ''
     print(line)
+    return
 
 
 def pprint_data_history(doc: Doc):
     """Pretty print data history across all revisions."""
-    for i, x in enumerate(doc.data):
+    W_NUM = 10
+    ver = len(doc.data)
+    hist = [{} for x in range(ver)]
+    maxs = [1] * ver
+    for i in range(ver):
         fd = doc.data[i].get('fdata')
         bd = doc.data[i].get('bdata')
         cut = doc.data[-i].get('eof_cut')
-        if fd:
-            _, _, _, sz = fd(None, -1)
-        else:
-            sz = 0
-        bdata = len(bd) if bd else "None"
-        eof_cut = cut if cut else "None"
-        line = f"[{i}] Source: {fd.__name__:16} | Length: {sz:12} | EOF cut: {eof_cut:>12} | Append: {bdata:>12}"
+        _, _, _, sz = fd(None, -1)
+        n = fd.__name__
+        hist[i]['data_f()'] = n.split('_')[0]
+        hist[i]['data_sz'] = sz
+        hist[i]['add_data'] = len(bd) if bd else "None"
+        hist[i]['eof_cut'] = cut if cut else "None"
+    for k in 'data_f() data_sz add_data eof_cut'.split():
+        line = f"{k:<{W_NUM}}"
+        for i in range(ver):
+            line += f"| {hist[i][k]:<{W_NUM}} "
         print(line)
+    return
 
 
 def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-1) -> list:
@@ -437,7 +446,6 @@ def commit(doc: Doc) -> Doc:
     if len(changes(doc)) == 0:
         return doc
     nb_rev = len(doc.index)
-    new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev}
     new_doc = copy_doc(doc, revision='NEXT')
     if 'eof_cut' not in new_doc.data[-1]:
         if nb_rev == 1:
@@ -457,6 +465,7 @@ def commit(doc: Doc) -> Doc:
             new_doc.data[-1]['fdata'] = new_prov
         new_doc.index[-1] = new_i
     new_doc.data.append({'fdata': new_doc.data[-1]['fdata']})
+    new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev}
     new_v = [new_index0] + [new_doc.index[-1][i] for i in range(1,len(new_doc.index[-1]))] 
     new_doc.index.append(new_v)
     new_trailer = doc.cache[0].copy()
