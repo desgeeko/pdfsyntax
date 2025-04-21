@@ -40,6 +40,9 @@ def pprint_index(doc: Doc, compact: bool = False):
         o_gen, o_ver, doc_ver = "", "", ""
         abs_pos, env_num, o_pos = "", "", ""
         for j in range(ver):
+            if i > len(doc.index[j]) - 1:
+                matrix[j][i] = '-'
+                continue
             cell = 'idem'
             x = doc.index[j][i]
             if x:
@@ -443,29 +446,39 @@ def merge_fdata(fdata: Callable, index: int, bdata: bytes):
 
 def commit(doc: Doc) -> Doc:
     """Add new index for incremental update."""
-    if len(changes(doc)) == 0:
+    chg = changes(doc)
+    if len(chg) == 0:
         return doc
     nb_rev = len(doc.index)
+    if 'xref_stream_num' not in doc.index[-1][0]:
+        use_xref_stream = False
+    else:
+        use_xref_stream = True
     new_doc = copy_doc(doc, revision='NEXT')
     if 'eof_cut' not in new_doc.data[-1]:
         if nb_rev == 1:
             v = version(doc)
             header = f"%PDF-{v}".encode('ascii')
             idx = len(header)
-            new_bdata, new_i = prepare_revision(doc, idx=idx)
+            new_bdata, new_i = build_revision_byte_stream(chg, doc.index[-1], doc.cache, idx, use_xref_stream)
+            #new_bdata, new_i = prepare_revision(doc, idx=idx)
             new_bdata = header + new_bdata
             new_prov = bdata_dummy(new_bdata)
         else:
             header = b''
             idx = revision_index(doc)
-            new_bdata, new_i = prepare_revision(doc, idx=idx)
+            new_bdata, new_i = build_revision_byte_stream(chg, doc.index[-1], doc.cache, idx, use_xref_stream)
+            #new_bdata, new_i = prepare_revision(doc, idx=idx)
             new_prov = merge_fdata(new_doc.data[-1]['fdata'], idx, new_bdata)
         if new_bdata:
             new_doc.data[-1]['bdata'] = new_bdata
             new_doc.data[-1]['fdata'] = new_prov
         new_doc.index[-1] = new_i
     new_doc.data.append({'fdata': new_doc.data[-1]['fdata']})
-    new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev}
+    if 'xref_stream_num' in new_doc.index[-1][0]:
+        new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev, 'xref_stream_num': 0}
+    else:
+        new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev}
     new_v = [new_index0] + [new_doc.index[-1][i] for i in range(1,len(new_doc.index[-1]))] 
     new_doc.index.append(new_v)
     new_trailer = doc.cache[0].copy()
@@ -484,10 +497,14 @@ def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
     chg = changes(doc, rev)
     if not chg:
         return b''
-    for c, _ in chg:
-        num = int(c.imag)
-        memoize_obj_in_cache(doc.index, doc.data[rev]['fdata'], num, doc.cache, rev=-1)
-    if version(doc) < '1.5':
+    #for c, _ in chg:
+    #    num = int(c.imag)
+    #    memoize_obj_in_cache(doc.index, doc.data[rev]['fdata'], num, doc.cache, rev=-1)
+    #if version(doc) < '1.5':
+    #    use_xref_stream = False
+    #else:
+    #    use_xref_stream = True
+    if 'xref_stream_num' not in doc.index[rev][0]:
         use_xref_stream = False
     else:
         use_xref_stream = True
