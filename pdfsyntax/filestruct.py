@@ -426,11 +426,11 @@ def format_xref_table(elems: list, trailer: dict, next_free: dict) -> bytes:
     return build_xref_table
 
 
-def format_xref_stream(elems: list, trailer: dict, next_free: dict) -> bytes:
+def format_xref_stream(elems: list, trailer: dict, next_free: dict, o_num: int) -> bytes:
     """Build XREF stream object."""
     xref_stream = []
     index = []
-    o_num = trailer['/Size'] - 1
+    #o_num = trailer['/Size'] - 1
     trailer['/Type'] = '/XRef'
     trailer['/Length'] = -1
     #trailer['/Filter'] = '/ASCIIHexDecode'
@@ -526,7 +526,7 @@ def finalize_stream(envelope):
 
 def build_revision_byte_stream(
         changes: list, current_index: list, cache: list,
-        starting_pos: int, use_xref_stream: bool) -> tuple:
+        starting_pos: int, xref_stream_num: int) -> tuple:
     """List the sequence of byte blocks that make the update."""
     fragments = []
     xref_table = []
@@ -562,21 +562,20 @@ def build_revision_byte_stream(
                 new_index[num]['abs_pos'] = counter
                 new_index[num]['abs_next'] = counter + len(block)
             counter += len(block)
-    if not use_xref_stream:
+    if not xref_stream_num:
         cache[0]['/Size'] = len(current_index)
         built_xref = format_xref_table(xref_table, cache[0], next_free)
         new_index[0]['xref_table_pos'] = counter
-        new_index[0]['abs_pos'] = starting_pos + built_xref.rfind(b'trailer')
-        new_index[0]['abs_next'] = starting_pos + len(built_xref)
+        new_index[0]['abs_pos'] = counter + built_xref.rfind(b'trailer')
+        new_index[0]['abs_next'] = counter + len(built_xref)
     else:
-        if cache[0].get('/DecodeParms'):
-            del cache[0]['/DecodeParms']
-        cache[0]['/Size'] = len(current_index) + 1
-        xref_table.append(('n', len(current_index), 0, counter, None))
-        built_xref = format_xref_stream(xref_table, cache[0], next_free)
+        xref_table.append(('n', xref_stream_num, 0, counter, None))
+        built_xref = format_xref_stream(xref_table, cache[0], next_free, xref_stream_num)
+        new_index[xref_stream_num]['abs_pos'] = counter
+        new_index[xref_stream_num]['abs_next'] = counter + len(block)
         new_index[0]['xref_stream_pos'] = counter
-        new_index[0]['abs_pos'] = starting_pos
-        new_index[0]['abs_next'] = starting_pos + len(built_xref)
+        new_index[0]['abs_pos'] = counter
+        new_index[0]['abs_next'] = counter + len(built_xref)
     fragments.append(built_xref)
     fragments.append(f'startxref\n{counter}\n'.encode('ascii'))
     fragments.append(b'%%EOF\n')

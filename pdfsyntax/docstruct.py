@@ -449,67 +449,49 @@ def commit(doc: Doc) -> Doc:
     chg = changes(doc)
     if len(chg) == 0:
         return doc
+    current_index = doc.index[-1]
     nb_rev = len(doc.index)
-    if 'xref_stream_num' not in doc.index[-1][0]:
-        use_xref_stream = False
-    else:
-        use_xref_stream = True
     new_doc = copy_doc(doc, revision='NEXT')
+    new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev}
+    x_num = current_index[0].get('xref_stream_num')
+    if x_num:
+        new_index0['xref_stream_num'] = -1
+        if x_num == -1:
+            x_num = len(current_index)
+            new_index_xs = {'o_num': x_num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': nb_rev-1}
+            new_doc.index[-1].append(new_index_xs)
+            new_doc.index[-1][0]['xref_stream_num'] = x_num
+            new_doc.cache[0]['/Size'] = x_num + 1
+            if new_doc.cache[0].get('/DecodeParms'):
+                del new_doc.cache[0]['/DecodeParms']
     if 'eof_cut' not in new_doc.data[-1]:
         if nb_rev == 1:
             v = version(doc)
             header = f"%PDF-{v}".encode('ascii')
             idx = len(header)
-            new_bdata, new_i = build_revision_byte_stream(chg, doc.index[-1], doc.cache, idx, use_xref_stream)
-            #new_bdata, new_i = prepare_revision(doc, idx=idx)
+            new_bdata, new_i = build_revision_byte_stream(chg, new_doc.index[-1], doc.cache, idx, x_num)
             new_bdata = header + new_bdata
             new_prov = bdata_dummy(new_bdata)
         else:
             header = b''
             idx = revision_index(doc)
-            new_bdata, new_i = build_revision_byte_stream(chg, doc.index[-1], doc.cache, idx, use_xref_stream)
-            #new_bdata, new_i = prepare_revision(doc, idx=idx)
+            new_bdata, new_i = build_revision_byte_stream(chg, new_doc.index[-1], doc.cache, idx, x_num)
             new_prov = merge_fdata(new_doc.data[-1]['fdata'], idx, new_bdata)
         if new_bdata:
             new_doc.data[-1]['bdata'] = new_bdata
             new_doc.data[-1]['fdata'] = new_prov
         new_doc.index[-1] = new_i
     new_doc.data.append({'fdata': new_doc.data[-1]['fdata']})
-    if 'xref_stream_num' in new_doc.index[-1][0]:
-        new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev, 'xref_stream_num': 0}
-    else:
-        new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev}
     new_v = [new_index0] + [new_doc.index[-1][i] for i in range(1,len(new_doc.index[-1]))] 
     new_doc.index.append(new_v)
-    new_trailer = doc.cache[0].copy()
+    new_trailer = new_doc.cache[0]
     if type(new_doc.index[-2][0]) == list: #Linearized
         new_trailer['/Prev'] = new_doc.index[-2][1].get('xref_table_pos') or new_doc.index[-2][1].get('xref_stream_pos')
     else:
         new_trailer['/Prev'] = new_doc.index[-2][0].get('xref_table_pos') or new_doc.index[-2][0].get('xref_stream_pos')
     if '/XRefStm' in new_trailer:
         del new_trailer['/XRefStm']
-    new_doc.cache[0] = new_trailer
     return new_doc
-
-
-def prepare_revision(doc: Doc, rev:int = -1, idx:int = 0) -> tuple:
-    """Build bytes representing incremental update."""
-    chg = changes(doc, rev)
-    if not chg:
-        return b''
-    #for c, _ in chg:
-    #    num = int(c.imag)
-    #    memoize_obj_in_cache(doc.index, doc.data[rev]['fdata'], num, doc.cache, rev=-1)
-    #if version(doc) < '1.5':
-    #    use_xref_stream = False
-    #else:
-    #    use_xref_stream = True
-    if 'xref_stream_num' not in doc.index[rev][0]:
-        use_xref_stream = False
-    else:
-        use_xref_stream = True
-    fragments, new_index = build_revision_byte_stream(chg, doc.index[rev], doc.cache, idx, use_xref_stream)
-    return fragments, new_index
 
 
 def rewind(doc: Doc) -> Doc:
@@ -535,7 +517,10 @@ def copy_doc(doc: Doc, revision='SAME') -> Doc:
         new_doc.index[-2] = new_doc.index[-2].copy()
         new_doc.data[-2] = new_doc.data[-2].copy()
     elif revision == 'NEXT':
-        new_doc = Doc(doc.index.copy(), len(doc.index[-1]) * [None], doc.data.copy())
+        #new_doc = Doc(doc.index.copy(), len(doc.index[-1]) * [None], doc.data.copy())
+        new_doc = Doc(doc.index.copy(), doc.cache.copy(), doc.data.copy())
+        new_doc.cache[0] = doc.cache[0].copy()
+        new_doc.index[-1] = new_doc.index[-1].copy()
         new_doc.data[-1] = new_doc.data[-1].copy()
     else:
         return None
