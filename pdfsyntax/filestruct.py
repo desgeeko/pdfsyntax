@@ -511,13 +511,14 @@ def finalize_stream(envelope):
     """Add index at the beginning of stream and count objects."""
     header = b''
     entries = envelope['entries'].copy()
-    tokens = entries['/FirstLine']
-    for i in tokens:
-        header += f'{i} '.encode('ascii')
-    header += b'\n'
-    entries['/First'] = len(header)
-    entries['/N'] = len(tokens) // 2
-    del entries['/FirstLine']
+    if '/First' not in entries and '/N' not in entries:
+        tokens = entries['/FirstLine']
+        for i in tokens:
+            header += f'{i} '.encode('ascii')
+        header += b'\n'
+        entries['/First'] = len(header)
+        entries['/N'] = len(tokens) // 2
+        del entries['/FirstLine']
     entries['/Length'] = -1
     new_ser = header + envelope['stream']
     envelope, _ = forge_stream(entries, new_ser)

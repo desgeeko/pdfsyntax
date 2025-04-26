@@ -286,6 +286,8 @@ def changes(doc: Doc, rev: int=-1):
         iref = get_iref(doc, i, rev)
         if not iref:
             continue
+        if 'xref_stream_num' in current[0] and current[0]['xref_stream_num'] == i:
+            continue
         if i > len(previous)-1:
             res.append((iref, 'a'))
         elif i < len(previous) and previous[i] == current[i]:
@@ -517,7 +519,6 @@ def copy_doc(doc: Doc, revision='SAME') -> Doc:
         new_doc.index[-2] = new_doc.index[-2].copy()
         new_doc.data[-2] = new_doc.data[-2].copy()
     elif revision == 'NEXT':
-        #new_doc = Doc(doc.index.copy(), len(doc.index[-1]) * [None], doc.data.copy())
         new_doc = Doc(doc.index.copy(), doc.cache.copy(), doc.data.copy())
         new_doc.cache[0] = doc.cache[0].copy()
         new_doc.index[-1] = new_doc.index[-1].copy()
@@ -562,6 +563,22 @@ def add_object(doc: Doc, new_o, immut=True) -> tuple:
     new_doc.cache.append(None)
     new_doc.cache[num] = new_o
     return new_doc, complex(0, num)
+
+
+def force_xref_stream(doc: Doc, placeholder: bool = False) -> tuple:
+    """Activate xref stream and optionally add placeholder at the end of current index."""
+    if placeholder:
+        #new_obj = {'/Filter': '/ASCIIHexDecode'}
+        new_obj = {'/Filter': '/FlateDecode'}
+        new_doc, new_iref = add_object(doc, new_obj)
+        x_num = int(new_iref.imag)
+        new_doc.index[-1][0] = deepcopy(new_doc.index[-1][0])
+        new_doc.index[-1][0]['xref_stream_num'] = x_num
+    else:
+        new_doc = copy_doc(doc, revision='SAME')
+        new_doc.index[-1][0] = deepcopy(new_doc.index[-1][0])
+        new_doc.index[-1][0]['xref_stream_num'] = -1
+    return new_doc
 
 
 def max_num(doc: Doc, rev: int=-1) -> int:
@@ -676,8 +693,13 @@ def defragment_map(current_index: list, excluded={}) -> tuple:
             continue
         else:
             nb += 1
-            old_ref = complex(o['o_gen'], o['o_num']) 
-            new_index.append({'o_num': nb, 'o_gen': 0, 'o_ver': 0, 'doc_ver': 0, 'OLD_REF': old_ref})
+            old_ref = complex(o['o_gen'], o['o_num'])
+            new_o = deepcopy(o)
+            new_o['o_gen'] = 0
+            new_o['o_ver'] = 0
+            new_o['doc_ver'] = 0
+            new_o['OLD_REF'] = old_ref
+            new_index.append(new_o)
             new_ref = complex(0, nb) 
             if old_ref != new_ref:
                 mapping[old_ref] = new_ref
@@ -687,14 +709,17 @@ def defragment_map(current_index: list, excluded={}) -> tuple:
 def squash(doc: Doc) -> Doc:
     """Group all revisions into a single one."""
     obj_stms = envelope_objects(doc)
-    for rev in range(len(doc.index)-1):
-        xref_stream_num = doc.index[rev][0].get('xref_stream_num')
-        if xref_stream_num:
-            obj_stms.add(xref_stream_num)
+    xref_stream_num = doc.index[0][0].get('xref_stream_num')
     old_index = doc.index[-1]
-    new_index, mapping = defragment_map(old_index, obj_stms)
+    new_index, mapping = defragment_map(old_index, set())
     if new_index[0] is None:
         new_index[0] = {}
+        new_index[0]['o_num'] = 0
+        new_index[0]['o_gen'] = 0
+        new_index[0]['o_ver'] = 0
+        new_index[0]['doc_ver'] = 0
+        if xref_stream_num:
+            new_index[0]['xref_stream_num'] = xref_stream_num
     new_cache = len(new_index) * [None]
     new_data = [{}]
     new_cache[0] = trailer(doc)
@@ -708,18 +733,13 @@ def squash(doc: Doc) -> Doc:
     chg = changes(new_doc)
     if not chg:
         return b''
-    v = version(doc)
-    if v < '1.5':
-        use_xref_stream = False
-    else:
-        use_xref_stream = True
     del new_doc.cache[0]['/Prev']
-    header = f"%PDF-{v}".encode('ascii')
+    header = f"%PDF-{version(doc)}".encode('ascii')
     new_bdata, new_i = build_revision_byte_stream(chg,
-                                               new_doc.index[0],
-                                               new_doc.cache,
-                                               len(header),
-                                               use_xref_stream)
+                                                  new_doc.index[0],
+                                                  new_doc.cache,
+                                                  len(header),
+                                                  xref_stream_num)
     new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
     new_doc.index[0] = new_i
     new_doc = commit(new_doc) #TODO: keep?
