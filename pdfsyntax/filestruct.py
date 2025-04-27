@@ -430,11 +430,8 @@ def format_xref_stream(elems: list, trailer: dict, next_free: dict, o_num: int) 
     """Build XREF stream object."""
     xref_stream = []
     index = []
-    #o_num = trailer['/Size'] - 1
     trailer['/Type'] = '/XRef'
     trailer['/Length'] = -1
-    #trailer['/Filter'] = '/ASCIIHexDecode'
-    trailer['/Filter'] = '/FlateDecode'
     max_counter = max([e[3] for e in elems if e[3] is not None])
     b = (int(math.log2(max_counter+1)) // 8) + 1
     trailer['/W'] = [1, b, b]

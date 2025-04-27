@@ -464,8 +464,8 @@ def commit(doc: Doc) -> Doc:
             new_doc.index[-1].append(new_index_xs)
             new_doc.index[-1][0]['xref_stream_num'] = x_num
             new_doc.cache[0]['/Size'] = x_num + 1
-            if new_doc.cache[0].get('/DecodeParms'):
-                del new_doc.cache[0]['/DecodeParms']
+        if new_doc.cache[0].get('/DecodeParms'):
+            del new_doc.cache[0]['/DecodeParms']
     if 'eof_cut' not in new_doc.data[-1]:
         if nb_rev == 1:
             v = version(doc)
@@ -565,12 +565,10 @@ def add_object(doc: Doc, new_o, immut=True) -> tuple:
     return new_doc, complex(0, num)
 
 
-def force_xref_stream(doc: Doc, placeholder: bool = False) -> tuple:
+def force_xref_stream(doc: Doc, placeholder: bool = False, filt: str = '/FlateDecode') -> tuple:
     """Activate xref stream and optionally add placeholder at the end of current index."""
     if placeholder:
-        #new_obj = {'/Filter': '/ASCIIHexDecode'}
-        new_obj = {'/Filter': '/FlateDecode'}
-        new_doc, new_iref = add_object(doc, new_obj)
+        new_doc, new_iref = add_object(doc, {})
         x_num = int(new_iref.imag)
         new_doc.index[-1][0] = deepcopy(new_doc.index[-1][0])
         new_doc.index[-1][0]['xref_stream_num'] = x_num
@@ -578,6 +576,7 @@ def force_xref_stream(doc: Doc, placeholder: bool = False) -> tuple:
         new_doc = copy_doc(doc, revision='SAME')
         new_doc.index[-1][0] = deepcopy(new_doc.index[-1][0])
         new_doc.index[-1][0]['xref_stream_num'] = -1
+    new_doc.cache[0]['/Filter'] = filt
     return new_doc
 
 
@@ -597,7 +596,10 @@ def concatenate(doc1: Doc, doc2: Doc) -> Doc:
     pages_iref2 = cat2['/Pages']
     pages2 = get_object(doc2, pages_iref2)
     pcount2 = get_object(doc2, pages2['/Count'])
-    doc2 = update_object(doc2, int(cat_iref2.imag), None) #TODO: remove xref stream
+    doc2 = update_object(doc2, int(cat_iref2.imag), None)
+    x_num = doc2.index[-1][0].get('xref_stream_num')
+    if x_num and x_num > 0:
+        doc2 = update_object(doc2, x_num, None)
     objs = in_use(doc2)
     ir = complex(0, start_num)
     for iref in objs:
@@ -683,7 +685,7 @@ def remove_pages(doc: Doc, del_pages) -> Doc:
 
 def defragment_map(current_index: list, excluded={}) -> tuple:
     """Build new index without excluded slots (ie deleted objects)."""
-    new_index = [None]
+    new_index = [{'o_num': 0, 'o_gen': 0, 'o_ver': 0, 'doc_ver': 0}]
     mapping = {}
     nb = 0
     for i, o in enumerate(current_index):
@@ -712,17 +714,11 @@ def squash(doc: Doc) -> Doc:
     xref_stream_num = doc.index[0][0].get('xref_stream_num')
     old_index = doc.index[-1]
     new_index, mapping = defragment_map(old_index, set())
-    if new_index[0] is None:
-        new_index[0] = {}
-        new_index[0]['o_num'] = 0
-        new_index[0]['o_gen'] = 0
-        new_index[0]['o_ver'] = 0
-        new_index[0]['doc_ver'] = 0
-        if xref_stream_num:
-            new_index[0]['xref_stream_num'] = xref_stream_num
+    if xref_stream_num:
+        new_index[0]['xref_stream_num'] = xref_stream_num
     new_cache = len(new_index) * [None]
     new_data = [{}]
-    new_cache[0] = trailer(doc)
+    new_cache[0] = {'/Root': trailer(doc)['/Root']}
     new_cache[0] = deep_ref_retarget(new_cache[0], mapping)
     for i in range(1, len(new_index)):
         old_ref = new_index[i]['OLD_REF']
@@ -733,7 +729,6 @@ def squash(doc: Doc) -> Doc:
     chg = changes(new_doc)
     if not chg:
         return b''
-    del new_doc.cache[0]['/Prev']
     header = f"%PDF-{version(doc)}".encode('ascii')
     new_bdata, new_i = build_revision_byte_stream(chg,
                                                   new_doc.index[0],
