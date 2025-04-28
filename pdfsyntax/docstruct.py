@@ -17,12 +17,52 @@ INHERITABLE_ATTRS = '/Resources /MediaBox /CropBox /Rotate'.split()
 Doc = namedtuple('Doc', 'index cache data')
 
 class Doc(Doc):
+
     def __repr__(self):
+        """Summarize for REPL."""
         res = "<PDF Doc"
         rev = len(self.index) - 1
         mods = len(changes(self))
         res += f" in revision {rev} with {mods} modified object(s)>"
         return res
+
+    def __getitem__(self, key):
+        """Return immutable slice of pages with the square brackets syntax."""
+        n = number_pages(self)
+        if type(key) == int:
+            page = key % n
+            pages = {page}
+        elif type(key) == slice:
+            start, stop, step = key.indices(n)
+            pages = set(range(start, stop, step))
+        new_doc = keep_pages(self, pages)
+        return new_doc
+
+    def __iter__(self):
+        """Return new iterator instance."""
+        return DocIterator(self)
+
+    def __add__(self, other):
+        """Implement + operator for concatenation."""
+        new_doc = concatenate(self, other)
+        return new_doc
+
+class DocIterator:
+
+    def __init__(self, doc):
+        """Constructor."""
+        self.doc = doc
+        self.current = 0
+        self.end = number_pages(doc)
+
+    def __next__(self):
+        """Iterate over the doc pages."""
+        if self.current < self.end:
+            new_doc = keep_pages(self.doc, self.current)
+            self.current += 1
+            return new_doc
+        else:
+            raise StopIteration
 
 
 def pprint_index(doc: Doc, compact: bool = False):
@@ -642,11 +682,21 @@ def dependencies(doc: Doc, obj: Any) -> set:
         return set()
 
 
+def keep_pages(doc: Doc, pages) -> Doc:
+    """Keep one (an int) or more (an array of int) pages and remove the others."""
+    n = number_pages(doc)
+    if type(pages) != set:
+        pages = {pages}
+    del_pages = set(range(n)) - pages
+    new_doc = remove_pages(doc, del_pages)
+    return new_doc
+
+
 def remove_pages(doc: Doc, del_pages) -> Doc:
     """Remove one (an int) or more (an array of int) pages."""
     new_doc = copy_doc(doc, revision='SAME')
-    if type(del_pages) != list:
-        del_pages = [del_pages]
+    if type(del_pages) != set:
+        del_pages = {del_pages}
     pages = flat_page_tree(new_doc)
     del_ref = {pages[p][0] for p in del_pages}
     keep_ref = {p[0] for p in pages} - del_ref
