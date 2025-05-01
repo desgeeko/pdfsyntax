@@ -500,7 +500,7 @@ def append_to_stream_fragment(num, obj, envelope):
 def get_pos_in_stream(envelope):
     """Calculate current object position in the stream."""
     entries = envelope['entries']
-    pos = len(entries['/FirstLine']) // 2
+    pos = (len(entries['/FirstLine']) // 2) - 1
     return pos
 
 
@@ -533,9 +533,17 @@ def build_revision_byte_stream(
     counter = starting_pos + len(MARGIN)
     fragments.append(MARGIN)
     next_free = circular_deleted(changes)
-    for c, action in ([(0j, 'd')] + changes):
+    l = [(0j, 'd')] + changes
+    for c, action in l:
         num = int(c.imag)
-        env_num = None
+        o_gen = current_index[num]['o_gen']
+        env_num = current_index[num].get('env_num')
+        if action != 'd' and env_num:
+            new_env = append_to_stream_fragment(num, cache[num], cache[env_num])
+            cache[env_num] = new_env
+            xref_table.append(('n', num, o_gen, get_pos_in_stream(new_env), env_num))
+    for c, action in l:
+        num = int(c.imag)
         if action == 'd':
             if num == 0:
                 o_gen = 65535 - 1
@@ -545,12 +553,7 @@ def build_revision_byte_stream(
         else:
             o_gen = current_index[num]['o_gen']
             env_num = current_index[num].get('env_num')
-            if env_num:
-                new_env = append_to_stream_fragment(num, cache[num], cache[env_num])
-                cache[env_num] = new_env
-                block = b''
-                xref_table.append(('n', num, o_gen, get_pos_in_stream(new_env), env_num))
-            else:
+            if not env_num:
                 obj = cache[num]
                 if type(obj) == Stream and obj['entries'].get('/Type') == '/ObjStm':
                     obj = finalize_stream(obj)
@@ -559,7 +562,8 @@ def build_revision_byte_stream(
                 xref_table.append(('n', num, o_gen, counter, env_num))
                 new_index[num]['abs_pos'] = counter
                 new_index[num]['abs_next'] = counter + len(block)
-            counter += len(block)
+                counter += len(block)
+    xref_table.sort(key=lambda xr: xr[1])
     if not xref_stream_num:
         cache[0]['/Size'] = len(current_index)
         built_xref = format_xref_table(xref_table, cache[0], next_free)

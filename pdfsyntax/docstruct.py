@@ -341,20 +341,18 @@ def changes(doc: Doc, rev: int=-1):
     return res
 
 
-#def group_obj_into_stream(doc: Doc):
-#    """Provision a ObjStm object and tag all changes to target this envelope."""
-#    doc2, _ = add_object(doc, b'')
-#    current = doc2.index[-1]
-#    o_num = current[-2]['o_num']
-#    chgs = changes(doc)
-#    for c, _ in chgs:
-#        i = int(c.imag)
-#        if i == o_num:
-#            continue
-#        current[i]['env_num'] = o_num
-#    d = {'/Type': '/ObjStm', '/Length': 0, '/N': 0, '/First': 0, '/FirstLine': []}
-#    doc2.cache[o_num] = Stream(d, b'', b'')
-#    return doc2
+def group_obj_into_stream(doc: Doc , o_nums: set = None):
+    """Provision a ObjStm object and tag all changes to target this envelope."""
+    new_doc, iref = add_object(doc, b'')
+    env_num = int(iref.imag)
+    current = new_doc.index[-1]
+    if not o_nums:
+        chgs = changes(doc)
+        o_nums = set([int(iref.imag) for iref, _ in chgs])
+    for o in o_nums:
+        current[o]['env_num'] = env_num
+    new_doc.cache[env_num] = Stream({'/Type': '/ObjStm'}, b'', b'')
+    return new_doc
 
 
 def envelope_objects(doc: Doc):
