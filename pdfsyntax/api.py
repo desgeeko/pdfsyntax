@@ -1,5 +1,6 @@
 """Module pdfsyntax.api: Application Programming Interface"""
 
+import sys
 from copy import deepcopy
 from .docstruct import *
 from .filestruct import *
@@ -71,7 +72,7 @@ def readfile(filename: str) -> Doc:
     return doc
 
 
-def writefile(doc: Doc, filename: str) -> Doc:
+def writefile(doc: Doc, filename: str = None) -> Doc:
     """Write doc into file"""
     bdata = b''
     idx = 0
@@ -96,9 +97,13 @@ def writefile(doc: Doc, filename: str) -> Doc:
         fragment = doc.data[i]['bdata']
         bdata += fragment
         idx += len(fragment)
-    bfile = open(filename, 'wb')
-    bfile.write(bdata)
-    bfile.close()
+    if filename:
+        bfile = open(filename, 'wb')
+        bfile.write(bdata)
+        bfile.close()
+    else:
+        sys.stdout.buffer.write(bdata)
+        sys.stdout.buffer.flush()
     return doc
 
 
@@ -180,7 +185,7 @@ def list_streams(doc: Doc) -> list:
     return ret
 
 
-def apply_filter(doc: Doc, streams: list, flt: str = '') -> Doc:
+def apply_filter(doc: Doc, streams: list, flt: str = '/FlateDecode') -> Doc:
     """Force new filter state, for example /FlateDecode."""
     for o_num in streams:
         o = doc.obj(o_num)

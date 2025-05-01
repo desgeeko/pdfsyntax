@@ -350,6 +350,14 @@ def group_obj_into_stream(doc: Doc , o_nums: set = None):
         chgs = changes(doc)
         o_nums = set([int(iref.imag) for iref, _ in chgs])
     for o in o_nums:
+        x = new_doc.obj(o)
+        if type(x) == Stream:
+            continue
+        elif type(x) == dict and 'Length' in x:
+            continue
+        elif current[o]['o_gen'] != 0:
+            continue
+        # TODO Add another elif for encryption dict
         current[o]['env_num'] = env_num
     new_doc.cache[env_num] = Stream({'/Type': '/ObjStm'}, b'', b'')
     return new_doc
@@ -614,7 +622,8 @@ def force_xref_stream(doc: Doc, placeholder: bool = False, filt: str = '/FlateDe
         new_doc = copy_doc(doc, revision='SAME')
         new_doc.index[-1][0] = deepcopy(new_doc.index[-1][0])
         new_doc.index[-1][0]['xref_stream_num'] = -1
-    new_doc.cache[0]['/Filter'] = filt
+    if filt:
+        new_doc.cache[0]['/Filter'] = filt
     return new_doc
 
 

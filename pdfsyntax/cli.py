@@ -14,9 +14,10 @@ def main():
                                      description='Navigate through the structure of a PDF file')
     parser.add_argument('command',
                         type=str,
-                        choices=['browse', 'disasm', 'overview', 'fonts', 'text'],
+                        choices=['browse', 'disasm', 'overview', 'fonts', 'text', 'compress'],
                         help='Command')
-    parser.add_argument('filename', type=str, help='PDF file name')
+    parser.add_argument('filename', type=str, help='PDF file name (input)')
+    parser.add_argument('-o', '--output', type=str, help='output file')
     args = parser.parse_args()
     if args.command == 'browse':
         browse(args.filename)
@@ -28,6 +29,8 @@ def main():
         print_fonts(args.filename)
     elif args.command == 'text':
         spatial(args.filename)
+    elif args.command == 'compress':
+        compress(args.filename, args.output)
 
 
 def keys_in_line(target, keys: list) -> str:
@@ -361,7 +364,26 @@ def browse(filename: str) -> None:
     s = structure(doc)
     pages = flat_page_tree(doc)
     print(build_html(sections, index, cross, filename, pages, s, file_size))
+    return
 
+
+def compress(filename: str, output: str) -> None:
+    """Compress file."""
+    doc = readfile(filename)
+    doc = squash(doc)
+    doc = rewind(doc)
+    v = version(doc)
+    if v < '1.5':
+        doc = update_version(doc, '1.5')
+    #for debug:
+    #doc = force_xref_stream(doc, False, '/ASCIIHexDecode')
+    doc = force_xref_stream(doc)
+    doc = group_obj_into_stream(doc)
+    s = list_streams(doc)
+    doc = apply_filter(doc, s)
+    doc = commit(doc)
+    writefile(doc, output)
+    return
 
 
 
