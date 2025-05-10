@@ -565,7 +565,7 @@ def build_revision_byte_stream(
                 counter += len(block)
     xref_table.sort(key=lambda xr: xr[1])
     if not xref_stream_num:
-        cache[0]['/Size'] = len(current_index)
+        #cache[0]['/Size'] = len(current_index)
         built_xref = format_xref_table(xref_table, cache[0], next_free)
         new_index[0]['xref_table_pos'] = counter
         new_index[0]['abs_pos'] = counter + built_xref.rfind(b'trailer')

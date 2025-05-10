@@ -525,21 +525,21 @@ def commit(doc: Doc) -> Doc:
             new_index_xs = {'o_num': x_num, 'o_gen': 0, 'o_ver': 0, 'doc_ver': nb_rev-1}
             new_doc.index[-1].append(new_index_xs)
             new_doc.index[-1][0]['xref_stream_num'] = x_num
-            new_doc.cache[0]['/Size'] = x_num + 1
         if new_doc.cache[0].get('/DecodeParms'):
             del new_doc.cache[0]['/DecodeParms']
+    new_doc.cache[0]['/Size'] = len(new_doc.index[-1])
     if 'eof_cut' not in new_doc.data[-1]:
         if nb_rev == 1:
             v = version(doc)
             header = f"%PDF-{v}".encode('ascii')
             idx = len(header)
-            new_bdata, new_i = build_revision_byte_stream(chg, new_doc.index[-1], doc.cache, idx, x_num)
+            new_bdata, new_i = build_revision_byte_stream(chg, new_doc.index[-1], new_doc.cache, idx, x_num)
             new_bdata = header + new_bdata
             new_prov = bdata_dummy(new_bdata)
         else:
             header = b''
             idx = revision_index(doc)
-            new_bdata, new_i = build_revision_byte_stream(chg, new_doc.index[-1], doc.cache, idx, x_num)
+            new_bdata, new_i = build_revision_byte_stream(chg, new_doc.index[-1], new_doc.cache, idx, x_num)
             new_prov = merge_fdata(new_doc.data[-1]['fdata'], idx, new_bdata)
         if new_bdata:
             new_doc.data[-1]['bdata'] = new_bdata
