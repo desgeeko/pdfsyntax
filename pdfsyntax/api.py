@@ -271,6 +271,29 @@ def fonts(doc: Doc) -> dict:
     return ret
 
 
+def compress(doc: Doc) -> Doc:
+    """Compress file."""
+    doc = squash(doc)
+    v = version(doc)
+    if v < '1.5':
+        doc = update_version(doc, '1.5')
+    #for debug:
+    #doc = force_xref_stream(doc, False, '/ASCIIHexDecode')
+    ##
+    doc = force_xref_stream(doc)
+    envs = envelopes(doc)
+    l = list(envs.keys())
+    if l:
+        env1 = l[0]
+    else:
+        env1 = None
+    doc = group_obj_into_stream(doc, env_num = env1)
+    s = list_streams(doc)
+    doc = apply_filter(doc, s)
+    doc = commit(doc)
+    return doc
+
+
 def get_page_contents(doc: Doc, page_num: int) -> list:
     """List all content streams of a page."""
     ret = []

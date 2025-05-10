@@ -341,10 +341,26 @@ def changes(doc: Doc, rev: int=-1):
     return res
 
 
-def group_obj_into_stream(doc: Doc , o_nums: set = None):
+def envelopes(doc: Doc):
+    """Map objects nums belonging to objects streams."""
+    res = {}
+    current = doc.index[-1]
+    for i, x in enumerate(current):
+        env_num = x.get('env_num')
+        if env_num:
+            if env_num not in res:
+                res[env_num] = []
+            res[env_num].append(i)
+    return res
+
+
+def group_obj_into_stream(doc: Doc , env_num: int = None, o_nums: set = None):
     """Provision a ObjStm object and tag all changes to target this envelope."""
-    new_doc, iref = add_object(doc, b'')
-    env_num = int(iref.imag)
+    if not env_num:
+        new_doc, iref = add_object(doc, b'')
+        env_num = int(iref.imag)
+    else:
+        new_doc = copy_doc(doc, revision='SAME')
     current = new_doc.index[-1]
     if not o_nums:
         chgs = changes(doc)
@@ -613,7 +629,12 @@ def add_object(doc: Doc, new_o, immut=True) -> tuple:
 
 def force_xref_stream(doc: Doc, placeholder: bool = False, filt: str = '/FlateDecode') -> tuple:
     """Activate xref stream and optionally add placeholder at the end of current index."""
-    if placeholder:
+    if 'xref_stream_num' in doc.index[-1][0]:
+        if '/Filter' in doc.cache[0] and doc.cache[0]['/Filter'] == filt:
+            return doc
+        else:
+            new_doc = copy_doc(doc, revision='SAME')
+    elif placeholder:
         new_doc, new_iref = add_object(doc, {})
         x_num = int(new_iref.imag)
         new_doc.index[-1][0] = deepcopy(new_doc.index[-1][0])
@@ -758,6 +779,8 @@ def defragment_map(current_index: list, excluded={}) -> tuple:
             new_o['o_ver'] = 0
             new_o['doc_ver'] = 0
             new_o['OLD_REF'] = old_ref
+            del new_o['abs_pos']
+            del new_o['abs_next']
             new_index.append(new_o)
             new_ref = complex(0, nb) 
             if old_ref != new_ref:
@@ -768,7 +791,10 @@ def defragment_map(current_index: list, excluded={}) -> tuple:
 def squash(doc: Doc) -> Doc:
     """Group all revisions into a single one."""
     obj_stms = envelope_objects(doc)
-    xref_stream_num = doc.index[0][0].get('xref_stream_num')
+    if type(doc.index[0][0]) == dict:
+        xref_stream_num = doc.index[0][0].get('xref_stream_num')
+    else: #TODO
+        xref_stream_num = doc.index[0][0][0].get('xref_stream_num')
     old_index = doc.index[-1]
     new_index, mapping = defragment_map(old_index, set())
     if xref_stream_num:
@@ -787,14 +813,15 @@ def squash(doc: Doc) -> Doc:
     if not chg:
         return b''
     header = f"%PDF-{version(doc)}".encode('ascii')
-    new_bdata, new_i = build_revision_byte_stream(chg,
-                                                  new_doc.index[0],
-                                                  new_doc.cache,
-                                                  len(header),
-                                                  xref_stream_num)
-    new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
-    new_doc.index[0] = new_i
-    new_doc = commit(new_doc) #TODO: keep?
+    #new_bdata, new_i = build_revision_byte_stream(chg,
+    #                                              new_doc.index[0],
+    #                                              new_doc.cache,
+    #                                              len(header),
+    #                                              xref_stream_num)
+    #new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
+    new_data[-1]['fdata'] = bdata_dummy(header)
+    #new_doc.index[0] = new_i
+    #new_doc = commit(new_doc) #TODO: keep?
     return new_doc
 
 

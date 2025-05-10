@@ -24,6 +24,9 @@ classifiers = [
     "Topic :: Utilities"
 ]
 
+[project.scripts]
+pdfsyntax = "pdfsyntax.cli:main"
+
 [project.urls]
 "Homepage" = "https://github.com/desgeeko/pdfsyntax"
 "Bug Tracker" = "https://github.com/desgeeko/pdfsyntax/issues"

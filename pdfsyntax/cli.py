@@ -8,29 +8,79 @@ from .api import *
 from .display import build_html
 
 
+COMMANDS = {
+    'browse': {
+        'help': 'HTML visualization to browse the internal structure',
+        'description': '',
+        'epilog': '',
+        'arguments': ['input_f']
+        },
+    'disasm': {
+        'help': 'Dump of the file structure',
+        'description': '',
+        'epilog': '',
+        'arguments': ['input_f']
+        },
+    'overview': {
+        'help': 'General info',
+        'description': '',
+        'epilog': '',
+        'arguments': ['input_f']
+        },
+    'fonts': {
+        'help': 'List of fonts',
+        'description': '',
+        'epilog': '',
+        'arguments': ['input_f']
+        },
+    'text': {
+        'help': 'Text extraction',
+        'description': '',
+        'epilog': '',
+        'arguments': ['input_f']
+        },
+    'compress': {
+        'help': 'Lossless compression',
+        'description': '',
+        'epilog': '',
+        'arguments': ['input_f', 'output']
+        }
+    }
+
+
 def main():
     """Entry point."""
-    parser = argparse.ArgumentParser(prog='python3 -m pdfsyntax',
-                                     description='Navigate through the structure of a PDF file')
-    parser.add_argument('command',
-                        type=str,
-                        choices=['browse', 'disasm', 'overview', 'fonts', 'text', 'compress'],
-                        help='Command')
-    parser.add_argument('filename', type=str, help='PDF file name (input)')
-    parser.add_argument('-o', '--output', type=str, help='output file')
+    parser = argparse.ArgumentParser(prog='pdfsyntax',
+                                     description='A collection of commands to inspect or transform PDF files',
+                                     epilog='Use %(prog)s COMMAND -h to see arguments for COMMAND')
+    subparsers = parser.add_subparsers(metavar='COMMAND',
+                                       dest='command',
+                                       required=True,
+                                       help=f'1 of {len(COMMANDS)} values:')
+    for c in COMMANDS:
+        parser_sub = subparsers.add_parser(c, help=COMMANDS[c]['help'])
+        for a in COMMANDS[c]['arguments']:
+            if a == 'input_f':
+                parser_sub.add_argument('input_f', type=str, metavar='FILE', help='input PDF file')
+            elif a == 'output':
+                parser_sub.add_argument('-o', '--output',
+                                        dest='output_f',
+                                        type=str,
+                                        metavar='FILE',
+                                        help='output PDF file')
     args = parser.parse_args()
     if args.command == 'browse':
-        browse(args.filename)
+        browse(args.input_f)
     elif args.command == 'disasm':
-        dump_disasm(args.filename)
+        dump_disasm(args.input_f)
     elif args.command == 'overview':
-        overview(args.filename)
+        overview(args.input_f)
     elif args.command == 'fonts':
-        print_fonts(args.filename)
+        print_fonts(args.input_f)
     elif args.command == 'text':
-        spatial(args.filename)
+        spatial(args.input_f)
     elif args.command == 'compress':
-        compress(args.filename, args.output)
+        compress_file(args.input_f, args.output_f)
 
 
 def keys_in_line(target, keys: list) -> str:
@@ -367,22 +417,11 @@ def browse(filename: str) -> None:
     return
 
 
-def compress(filename: str, output: str) -> None:
+def compress_file(filename: str, output: str) -> None:
     """Compress file."""
     doc = readfile(filename)
-    doc = squash(doc)
-    doc = rewind(doc)
-    v = version(doc)
-    if v < '1.5':
-        doc = update_version(doc, '1.5')
-    #for debug:
-    #doc = force_xref_stream(doc, False, '/ASCIIHexDecode')
-    doc = force_xref_stream(doc)
-    doc = group_obj_into_stream(doc)
-    s = list_streams(doc)
-    doc = apply_filter(doc, s)
-    doc = commit(doc)
-    writefile(doc, output)
+    new_doc = compress(doc)
+    writefile(new_doc, output)
     return
 
 
