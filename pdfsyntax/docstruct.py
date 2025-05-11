@@ -517,7 +517,10 @@ def commit(doc: Doc) -> Doc:
     nb_rev = len(doc.index)
     new_doc = copy_doc(doc, revision='NEXT')
     new_index0 = {'o_num': 0, 'o_gen': 0, 'o_ver': nb_rev, 'doc_ver': nb_rev}
-    x_num = current_index[0].get('xref_stream_num')
+    if type(doc.index[0][0]) == dict:
+        x_num = doc.index[0][0].get('xref_stream_num')
+    else: #TODO
+        x_num = doc.index[0][0][0].get('xref_stream_num')
     if x_num:
         new_index0['xref_stream_num'] = -1
         if x_num == -1:

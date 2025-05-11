@@ -24,7 +24,7 @@ PDFSyntax can be installed from the GitHub repo (no dependency) or from PyPI:
 
 Redirect the standard output to a file that you can open in your browser:
 
-    python3 -m pdfsyntax browse file.pdf > inspection_file.html
+    pdfsyntax browse file.pdf > inspection_file.html
 
 ### Features
 The generated HTML "looks" like an augmented raw PDF file with the following additional work:

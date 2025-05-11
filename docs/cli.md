@@ -3,6 +3,10 @@
 ### Usage
 The general form of the CLI usage is:
 
+    pdfsyntax COMMAND FILE
+
+Or this longer form if you installed from source:
+
     python3 -m pdfsyntax COMMAND FILE
 
 You can get quick insights on a PDF file with these commands:
@@ -35,7 +39,7 @@ The output shows a list of fonts used in the file, with the following tabular da
 This command generates HTML output that looks like the raw PDF file with additionnal hyperlinks and information that expose its internal structure and relations between its objects.
 Redirect the standard output to a file that you can open in your browser:
 
-    python3 -m pdfsyntax browse file.pdf > inspection_file.html
+    pdfsyntax browse file.pdf > inspection_file.html
 
 Please refer to the [Browse article](https://github.com/desgeeko/pdfsyntax/blob/main/docs/browse.md) for details.
 

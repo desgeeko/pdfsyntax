@@ -14,7 +14,7 @@ PDFSyntax can be installed from the GitHub repo (no dependency) or from PyPI:
 
 Then the following command prints a dump on the standard output:
 
-    python3 -m pdfsyntax disasm FILE
+    pdfsyntax disasm FILE
 
 ### Example
 Here is the output produced for the [_Simple Text String_](https://github.com/desgeeko/pdfsyntax/raw/main/samples/simple_text_string.pdf) example file from the PDF Specification:

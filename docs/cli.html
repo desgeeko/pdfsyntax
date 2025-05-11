@@ -15,6 +15,9 @@
 <p></p>
 <h3>Usage</h3>
 <p>The general form of the CLI usage is:</p>
+<pre>    pdfsyntax COMMAND FILE
+</pre>
+<p>Or this longer form if you installed from source:</p>
 <pre>    python3 -m pdfsyntax COMMAND FILE
 </pre>
 <p>You can get quick insights on a PDF file with these commands:</p>
@@ -42,7 +45,7 @@
 </ul>
 <h3><code>browse</code></h3>
 <p>This command generates HTML output that looks like the raw PDF file with additionnal hyperlinks and information that expose its internal structure and relations between its objects.Redirect the standard output to a file that you can open in your browser:</p>
-<pre>    python3 -m pdfsyntax browse file.pdf &gt; inspection_file.html
+<pre>    pdfsyntax browse file.pdf &gt; inspection_file.html
 </pre>
 <p>Please refer to the <a href='https://github.com/desgeeko/pdfsyntax/blob/main/docs/browse.md'>Browse article</a> for details.</p>
 <p></p>

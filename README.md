@@ -36,6 +36,10 @@ Please refer to the [CLI README](https://github.com/desgeeko/pdfsyntax/blob/main
 
 The general form of the CLI usage is:
 
+    pdfsyntax COMMAND FILE
+
+Or this longer form if you installed from source:
+
     python3 -m pdfsyntax COMMAND FILE
 
 You can get quick insights on a PDF file with these commands:
