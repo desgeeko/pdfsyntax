@@ -83,13 +83,16 @@ def bdata_all(bdata: Callable) -> bytes:
     return bdata
 
 
-def hexdump(bdata: Callable, start: int = None, length: int = None) -> str:
+def hexdump(bdata: Callable, start: int = None, stop: int = None) -> str:
     """Build a string similar to hexdump -C for binary data exploration"""
     LN = 10
     ret = ''
+    _, _, _, sz = bdata(None, -1)
     if start is None:
         start = 0
-        _, _, _, length = bdata(None, -1)
+    if stop is None or stop > sz:
+        stop = sz
+    length = stop - start
     idx = (start // LN) * LN
     buf, d0, i0, sz0 = bdata(idx, length+(start-idx))
     i = d0 + i0

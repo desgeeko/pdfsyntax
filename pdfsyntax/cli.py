@@ -44,6 +44,12 @@ COMMANDS = {
         'description': '',
         'epilog': '',
         'arguments': ['input_f', 'output']
+        },
+    'hexdump': {
+        'help': 'Canonical hex and ascii file dump',
+        'description': '',
+        'epilog': '',
+        'arguments': ['input_f']
         }
     }
 
@@ -81,6 +87,8 @@ def main():
         spatial(args.input_f)
     elif args.command == 'compress':
         compress_file(args.input_f, args.output_f)
+    elif args.command == 'hexdump':
+        hexdump_cli(args.input_f)
 
 
 def keys_in_line(target, keys: list) -> str:
@@ -424,5 +432,12 @@ def compress_file(filename: str, output: str) -> None:
     writefile(new_doc, output)
     return
 
+
+def hexdump_cli(filename: str) -> None:
+    """Print hex dump of file."""
+    file_obj = open(filename, 'rb')
+    fdata = bdata_provider(file_obj)
+    print(hexdump(fdata))
+    return
 
 
