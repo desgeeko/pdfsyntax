@@ -323,9 +323,19 @@ def build_index_from_xref_sequence(xref_seq: list, nxt: dict, nb: int) -> list:
     prev_pos = 0
     xref_seq = xref_seq[:]
     xref_seq.reverse()
+    new_xref_seq = []
     for x in xref_seq:
+        if x[0].get('xref_stm'):
+            p = new_xref_seq[-1]
+            p = deepcopy(p)
+            p[0]['xref_stm'] = True
+            p[0]['abs_pos'] = x[0]['abs_pos']
+            new_xref_seq[-1] = p
+        else:
+            new_xref_seq.append(x)
+    for x in new_xref_seq:
         trailer = x[0]
-        if trailer['abs_pos'] > prev_pos or trailer.get('xref_stm'):
+        if trailer['abs_pos'] > prev_pos: # or trailer.get('xref_stm'):
             m = m[:]
             index.append(m)
             doc_ver += 1

@@ -86,6 +86,8 @@ def pprint_index(doc: Doc, compact: bool = False):
             cell = 'idem'
             x = doc.index[j][i]
             if x:
+                if type(x) == list:
+                    x = x[0]
                 o_gen_new = x.get('o_gen', '')
                 o_ver_new = x.get('o_ver', '')
                 doc_ver_new = x.get('doc_ver', '')
@@ -125,7 +127,10 @@ def pprint_index(doc: Doc, compact: bool = False):
         if compact:
             line += '\n' + ' ' * W_NUM
         for j in range(ver):
-            val = doc.index[j][0].get(k, '-')
+            if type(doc.index[j][0]) == list:
+                val = 'multiple'
+            else:
+                val = doc.index[j][0].get(k, '-')
             val = f"{val} "
             line += f"| {val:{maxs[j]}} "
         print(line)
