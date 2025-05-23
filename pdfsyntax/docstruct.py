@@ -184,6 +184,33 @@ def pprint_data_history(doc: Doc):
     return
 
 
+def pprint_page_hierarchy(doc: Doc, iref: complex = None, n: int = 0, level: int = 0, accu: str =''):
+    """Pretty print the tree hierarchy of pages."""
+    if not iref:
+        cat, cat_iref = catalog(doc)
+        pages = get_object(doc, cat['/Pages'])
+        pcount = get_object(doc, pages['/Count'])
+        accu += f"Page count = {pcount}\n"
+        iref = cat['/Pages']
+        node = pages
+    else:
+        node = get_object(doc, iref)
+    level += 1
+    offset = "    " * level
+    if node['/Type'] == '/Pages':
+        kids = node['/Kids']
+        accu += f"{offset} /Pages node at {iref}, kids count = {len(kids)}:\n"
+        for kid in kids:
+            accu, n = pprint_page_hierarchy(doc, kid, n, level, accu)
+    elif node['/Type'] == '/Page':
+        accu += f"{offset} /Page [{n}] at {iref} with content(s) at {node.get('/Contents')}\n"
+        n += 1
+    level -= 1
+    if level == 0:
+        print(accu)
+    return accu, n
+
+
 def memoize_obj_in_cache(idx: list, fdata: Callable, key: int, cache=None, rev=-1) -> list:
     """Parse indirect object whose number is [key] and return a cache filled at index [key].
 
@@ -661,37 +688,48 @@ def max_num(doc: Doc, rev: int=-1) -> int:
     return len(doc.index[rev]) - 1
 
 
-def concatenate(doc1: Doc, doc2: Doc) -> Doc:
-    """Add pages from doc2 at the end of doc1."""
+def concatenate(doc_left: Doc, doc_right: Doc, target_left: bool = True) -> Doc:
+    """Add pages from doc_right at the end of doc_left.
+
+    target_left arg specifies to which doc incremental update is applied
+    """
+    if target_left:
+        new_doc = copy_doc(doc_left, revision='SAME')
+        source_doc = doc_right
+    else:
+        new_doc = copy_doc(doc_right, revision='SAME')
+        source_doc = doc_left
     mapping = {}
-    new_doc = copy_doc(doc1, revision='SAME')
     start_num = max_num(new_doc) + 1
     cat, cat_iref = catalog(new_doc)
-    doc2 = squash(doc2)
-    cat2, cat_iref2 = catalog(doc2)
-    pages_iref2 = cat2['/Pages']
-    pages2 = get_object(doc2, pages_iref2)
-    pcount2 = get_object(doc2, pages2['/Count'])
-    doc2 = update_object(doc2, int(cat_iref2.imag), None)
-    x_num = doc2.index[-1][0].get('xref_stream_num')
+    source_doc = squash(source_doc)
+    source_cat, source_cat_iref = catalog(source_doc)
+    source_pages_iref = source_cat['/Pages']
+    source_pages = get_object(source_doc, source_pages_iref)
+    source_pcount = get_object(source_doc, source_pages['/Count'])
+    source_doc = update_object(source_doc, int(source_cat_iref.imag), None)
+    x_num = source_doc.index[-1][0].get('xref_stream_num')
     if x_num and x_num > 0:
-        doc2 = update_object(doc2, x_num, None)
-    objs = in_use(doc2)
+        source_doc = update_object(source_doc, x_num, None)
+    objs = in_use(source_doc)
     ir = complex(0, start_num)
     for iref in objs:
         mapping[iref] = ir
         ir += 1j
     for iref in objs:
-        obj = get_object(doc2, iref)
+        obj = get_object(source_doc, iref)
         new_obj = deep_ref_retarget(obj, mapping)
         new_doc, _ = add_object(new_doc, new_obj, immut=False)
     pages_iref = cat['/Pages']
     pages = get_object(new_doc, pages_iref)
     pcount = get_object(new_doc, pages['/Count'])
     kids = get_object(new_doc, pages['/Kids'])
-    kids.append(mapping[pages_iref2])
+    if target_left:
+        kids.append(mapping[source_pages_iref])
+    else:
+        kids.insert(0, mapping[source_pages_iref])
     pages['/Kids'] = kids
-    pages['/Count'] = pcount + pcount2
+    pages['/Count'] = pcount + source_pcount
     new_doc = update_object(new_doc, int(pages_iref.imag), pages, immut=False)
     return new_doc
 
