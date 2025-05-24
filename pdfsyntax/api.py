@@ -23,20 +23,20 @@ def mm2pt(millimeters: int) -> int:
 
 
 PAPER_SIZES = {
-    (in2pt(11.0), in2pt(17.0)): "US Tabloid",
-    (in2pt( 8.5), in2pt(14.0)): "US Legal",
-    (in2pt( 8.5), in2pt(11.0)): "US Letter",
-    (mm2pt( 841), mm2pt(1189)): "A0",
-    (mm2pt( 594), mm2pt( 841)): "A1",
-    (mm2pt( 420), mm2pt( 594)): "A2",
-    (mm2pt( 297), mm2pt( 420)): "A3",
-    (mm2pt( 210), mm2pt( 297)): "A4",
-    (mm2pt( 148), mm2pt( 210)): "A5",
-    (mm2pt( 105), mm2pt( 148)): "A6",
-    (mm2pt(  74), mm2pt( 105)): "A7",
-    (mm2pt(  52), mm2pt(  74)): "A8",
-    (mm2pt(  37), mm2pt(  52)): "A9",
-    (mm2pt(  26), mm2pt(  37)): "A10",
+    "US Tabloid": (in2pt(11.0), in2pt(17.0)),
+    "US Legal":   (in2pt( 8.5), in2pt(14.0)),
+    "US Letter":  (in2pt( 8.5), in2pt(11.0)),
+    "A0":         (mm2pt( 841), mm2pt(1189)),
+    "A1":         (mm2pt( 594), mm2pt( 841)),
+    "A2":         (mm2pt( 420), mm2pt( 594)),
+    "A3":         (mm2pt( 297), mm2pt( 420)),
+    "A4":         (mm2pt( 210), mm2pt( 297)),
+    "A5":         (mm2pt( 148), mm2pt( 210)),
+    "A6":         (mm2pt( 105), mm2pt( 148)),
+    "A7":         (mm2pt(  74), mm2pt( 105)),
+    "A8":         (mm2pt(  52), mm2pt(  74)),
+    "A9":         (mm2pt(  37), mm2pt(  52)),
+    "A10":        (mm2pt(  26), mm2pt(  37)),
 }
 
 
@@ -51,6 +51,29 @@ def doc_constructor(fdata: Callable) -> Doc:
     doc_initial = Doc(index, cache, data)
     doc_new_rev = commit(doc_initial)
     return doc_new_rev
+
+
+def blank(size: str = "A4") -> Doc:
+    """."""
+    VER = '1.4'
+    header = f"%PDF-{VER}".encode('ascii')
+    data = [{}]
+    data[-1]['fdata'] = bdata_dummy(header)
+    index = [[{}]]
+    index[0][0] = {'o_num': 0, 'o_gen': 0, 'o_ver': 0, 'doc_ver': 0}
+    cache = [None]
+    doc = Doc(index, cache, data)
+    x, y = PAPER_SIZES[size]
+    mb = [0, 0, x, y]
+    cat = {'/Type': '/Catalog', '/Pages': 2j}
+    doc, _ = add_object(doc, cat, immut=False) #1
+    pages = {'/Type': '/Pages', '/Kids': [3j], '/Count': 1}
+    doc, _ = add_object(doc, pages, immut=False) #2
+    page = {'/Type': '/Page', '/Parent': 2j, '/MediaBox': mb, '/Resources': {}}
+    doc, _ = add_object(doc, page, immut=False) #3
+    cache[0] = {'/Root': 1j}
+    doc = commit(doc)
+    return doc
 
 
 def load(file_obj, mode: str = "SINGLE") -> Doc:
@@ -145,7 +168,10 @@ def metadata(doc: Doc) -> dict:
 def paper(mediabox: list) -> str:
     """Detect paper size."""
     x, y = mediabox[2] - mediabox[0], mediabox[3] - mediabox[1]
-    ptype = PAPER_SIZES.get((x, y)) or PAPER_SIZES.get((y, x)) or "unknown"
+    ptype = 'unknown'
+    for t in PAPER_SIZES:
+        if PAPER_SIZES[t] == (x, y):
+            ptype = t
     pdim = f'{int(x*25.4/72)}x{int(y*25.4/72)}mm or {round(x/72, 2)}x{round(y/72, 2)}in'
     return pdim + f' ({ptype})'
 

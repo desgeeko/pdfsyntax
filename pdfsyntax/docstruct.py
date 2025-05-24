@@ -859,14 +859,7 @@ def squash(doc: Doc) -> Doc:
     if not chg:
         return b''
     header = f"%PDF-{version(doc)}".encode('ascii')
-    #new_bdata, new_i = build_revision_byte_stream(chg,
-    #                                              new_doc.index[0],
-    #                                              new_doc.cache,
-    #                                              len(header),
-    #                                              xref_stream_num)
-    #new_data[-1]['fdata'] = bdata_dummy(header + new_bdata)
     new_data[-1]['fdata'] = bdata_dummy(header)
-    #new_doc.index[0] = new_i
     #new_doc = commit(new_doc) #TODO: keep?
     return new_doc
 
