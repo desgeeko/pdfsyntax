@@ -13,7 +13,9 @@
 <main>
 <h2>API</h2>
 <p></p>
-<h3>Usage</h3>
+<h3>Principles </h3>
+<p></p>
+<h4>Pure functions</h4>
 <p>Most functions are pure and are exposed both as basic functions and as instance methods of a Doc object: in the function signatures found in the following sections, a <code>doc</code> first argument can read as <code>self</code>. For example both samples are equivalent:</p>
 <pre>&gt;&gt;&gt; #Function pattern
 &gt;&gt;&gt; from pdfsyntax import readfile, metadata
@@ -25,6 +27,45 @@
 &gt;&gt;&gt; import pdfsyntax as pdf
 &gt;&gt;&gt; doc = pdf.readfile("samples/simple_text_string.pdf")
 &gt;&gt;&gt; m = doc.metadata()
+</pre>
+<p>Every time a function is applied to a Doc object, the function returns a new object built as a shallow copy of the input.</p>
+<h4>Incremental updates</h4>
+<p>PDFSyntax tracks document incremental updates made possible by appending new or updated objects at the end of an original PDF file (and the matching XREF section). A revision, if greater than 0, indicates that incremental updates have been appended.By default, a newly opened document by PDFSyntax is ready to write modifications in the next revision.The <code>rewind</code> function rolls back to the previous revision. The <code>commit</code> function closes the current revision and open the next one.</p>
+<p>For example this file contains 2 revisions (0 and 1) and PDFSyntax has initialized the doc object to open revision 2:</p>
+<pre>&gt;&gt;&gt; import pdfsyntax as pdf
+&gt;&gt;&gt; doc = pdf.readfile("samples/add_text_annotation.pdf")
+&gt;&gt;&gt; doc
+&lt;PDF Doc in revision 2 with 0 modified object(s)&gt;
+</pre>
+<p>The <code>rewind</code> function rolls back to the previous revision. Let's rewind to revision 0:</p>
+<pre>&gt;&gt;&gt; doc = pdf.rewind(doc) # to revision 1
+&gt;&gt;&gt; doc = pdf.rewind(doc) # to revision 0
+&gt;&gt;&gt; doc
+&lt;PDF Doc in revision 0 with 7 modified object(s)&gt;
+</pre>
+<p>After one or several modifications, the <code>commit</code> function closes the current revision and opens the next one:</p>
+<pre>&gt;&gt;&gt; doc = pdf.rotate(doc)
+&gt;&gt;&gt; doc = pdf.commit(doc)
+&gt;&gt;&gt; doc
+&lt;PDF Doc in revision 1 with 0 modified object(s)&gt;
+</pre>
+<p></p>
+<h4>Squashing</h4>
+<p>By default incremental updates stack up but it is possible to <code>squash</code> a document in order to combine all revisions into a single one. in this example the last document is equivalent to the first one (same appearance), but it is only made of one revision. As this revision is like a document started from scratch, its revision is 0 and all its 7 internal objects look like new ones:</p>
+<pre>&gt;&gt;&gt; doc90 = pdf.rotate(doc)
+&gt;&gt;&gt; doc90
+&lt;PDF Doc in revision 1 with 1 modified object(s)&gt;
+&gt;&gt;&gt; docs = pdf.squash(doc90)
+&gt;&gt;&gt; docs
+&lt;PDF Doc in revision 0 with 7 modified object(s)&gt;
+</pre>
+<p></p>
+<h4>File I/O</h4>
+<p>The <code>writefile</code> function dumps the document with all the incremental updates appended at the end of the original data. </p>
+<pre>&gt;&gt;&gt; from pdfsyntax import readfile, writefile
+&gt;&gt;&gt; doc = readfile("samples/simple_text_string.pdf")
+&gt;&gt;&gt; doc90 = pdf.rotate(doc)
+&gt;&gt;&gt; writefile(doc90, "rotated_doc.pdf")
 </pre>
 <p></p>
 <h3>File information</h3>
@@ -38,7 +79,41 @@
 {'Title': None, 'Author': None, 'Subject': None, 'Keywords': None, 'Creator': None, 'Producer': None, 'CreationDate': None, 'ModDate': None}
 </pre>
 <p></p>
-<h3>Low-level access to object tree</h3>
+<h3>High-level transformation</h3>
+<p><code>rotate</code> turns pages relatively to their current position by multiples of 90 degrees clockwise. NB: It takes into account the inherited attributes from the page hierarchy.</p>
+<pre>&gt;&gt;&gt; #Default rotation applies 90 degrees to all pages
+&gt;&gt;&gt; doc90 = rotate(doc)
+
+&gt;&gt;&gt; #Apply 180 degrees to first two page
+&gt;&gt;&gt; doc180 = doc.rotate(180, [0, 1])
+</pre>
+<p><em>WARNING</em>: To REMOVE something means it still exists but it is hidden.</p>
+<p><code>remove_pages</code> cuts a set of pages from the document as incremental update: they are not permanently deleted because it is still possible to revert to the previous revision.</p>
+<pre>&gt;&gt;&gt; #Remove first 3 pages of a 6-page doc
+&gt;&gt;&gt; second_half_doc = pdf.remove_pages(doc, {0, 1, 2})
+</pre>
+<p><code>keep_pages</code> does the opposite:</p>
+<pre>&gt;&gt;&gt; #Keep last 3 pages of a 6-page doc
+&gt;&gt;&gt; second_half_doc = pdf.keep_pages(doc, {3, 4, 5})
+</pre>
+<p><code>concat</code> merges documents:</p>
+<pre>&gt;&gt;&gt; #Concatenate doc2 pages after doc1 pages into a new doc
+&gt;&gt;&gt; doc = pdf.concat(doc1, doc2)
+</pre>
+<p>A Doc object can also be seen as a partial implementation of a list of pages. It is possible to use operators to slice or concatenate:</p>
+<pre>&gt;&gt;&gt; #Equivalent to pdf.keep_pages(doc, {3, 4, 5})
+&gt;&gt;&gt; last_3_pages = doc[3:]
+
+&gt;&gt;&gt; #Equivalent to pdf.concat(doc1, doc2)
+&gt;&gt;&gt; doc = doc1 + doc2
+</pre>
+<p><code>add_text_annotation</code> inserts a simple text annotation in a page.</p>
+<pre>&gt;&gt;&gt; annotated_doc = add_text_annotation(doc, 0, "abcdefg", [100, 100, 100, 100])
+</pre>
+<p></p>
+<h3>Low-level access and modification</h3>
+<p></p>
+<h4>Objects</h4>
 <p><code>trailer</code> and <code>catalog</code> give access to the starting point of the object tree. </p>
 <pre>&gt;&gt;&gt; #Access to document trailer
 &gt;&gt;&gt; doc.trailer()
@@ -56,7 +131,7 @@
 {'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
 </pre>
 <p></p>
-<h3>Pages</h3>
+<h4>Pages</h4>
 <p>Page index is a tree structure where attributes can be inherited from parent nodes. For convenience <code>flat_page_tree</code> returns an ordered list of document pages and specifies inherited attributes that should apply to each page.</p>
 <pre>&gt;&gt;&gt; #Each item of the list is a tuple with the page object reference and its inherited attributes
 &gt;&gt;&gt; doc = pdf.readfile("samples/simple_text_string.pdf")
@@ -72,42 +147,6 @@
   '/MediaBox': [0, 0, 612, 792],
   '/Parent': 3j,
   '/Type': '/Page'}]
-</pre>
-<p></p>
-<h3>Incremental updates</h3>
-<p>PDFSyntax tracks document incremental updates made possible by appending new or updated objects at the end of an original PDF file (and the matching XREF section). The <code>Revisions</code> entry of the <code>structure</code> function result, if greater than 1, indicates that incremental updates have been appended.By default, a newly opened document by PDFSyntax is ready to write modifications in the next revision.The <code>rewind</code> function rolls back to the previous revision. The <code>commit</code> function closes the current revision and open the next one.</p>
-<pre>&gt;&gt;&gt; import pdfsyntax as pdf
-&gt;&gt;&gt; doc = pdf.readfile("samples/add_text_annotation.pdf")
-&gt;&gt;&gt; doc.structure()
-{'Version': '1.4', 'Pages': 1, 'Revisions': 2, 'Encrypted': False, 'Paper of 1st page': '215x279mm or 8.5x11.0in (US Letter)'}
-
-&gt;&gt;&gt; #This file contains 2 revisions and PDFSyntax has initialized the doc object for a future revision 3
-
-&gt;&gt;&gt; doc.get_object(4j)
-{'/Annots': 8j, '/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j}, '/Contents': 5j, '/MediaBox': [0, 0, 612, 792], '/Parent': 3j, '/Type': '/Page'}
-
-&gt;&gt;&gt; #In its current state, the page (object 4) contains an annotation
-&gt;&gt;&gt; #Let's rewind to revision 1
-
-&gt;&gt;&gt; doc = doc.rewind() # to revision 2
-&gt;&gt;&gt; doc = doc.rewind() # to revision 1
-
-&gt;&gt;&gt; doc.get_object(4j)
-{'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j}, '/Contents': 5j, '/MediaBox': [0, 0, 612, 792], '/Parent': 3j, '/Type': '/Page'}
-
-&gt;&gt;&gt; #The annotation was not present in the initial revision of the file
-</pre>
-<p></p>
-<h3>High-level transformation</h3>
-<p><code>add_text_annotation</code> inserts a simple text annotation in a page.</p>
-<pre>&gt;&gt;&gt; annotated_doc = add_text_annotation(doc, 0, "abcdefg", [100, 100, 100, 100])
-</pre>
-<p><code>rotate</code> turns pages relatively to their current position by multiples of 90 degrees clockwise. NB: It takes into account the inherited attributes from the page hierarchy.</p>
-<pre>&gt;&gt;&gt; #Default rotation applies 90 degrees to all pages
-&gt;&gt;&gt; doc90 = rotate(doc)
-
-&gt;&gt;&gt; #Apply 180 degrees to first two page
-&gt;&gt;&gt; doc180 = doc.rotate(180, [1, 2])
 </pre>
 <p></p>
 <blockquote><p> TO BE CONTINUED</p>

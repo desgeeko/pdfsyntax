@@ -38,13 +38,17 @@ class Doc(Doc):
         new_doc = keep_pages(self, pages)
         return new_doc
 
+    def __len__(self):
+        """Return new iterator instance."""
+        return number_pages(self)
+
     def __iter__(self):
         """Return new iterator instance."""
         return DocIterator(self)
 
     def __add__(self, other):
         """Implement + operator for concatenation."""
-        new_doc = concatenate(self, other)
+        new_doc = concat(self, other)
         return new_doc
 
 class DocIterator:
@@ -600,9 +604,12 @@ def rewind(doc: Doc) -> Doc:
     new_doc = copy_doc(doc, revision='PREVIOUS')
     new_doc.index.pop()
     new_doc.data.pop()
+    objs = in_use(new_doc)
     if 'eof_cut' in new_doc.data[-1]:
         del new_doc.data[-1]['eof_cut']
     new_doc.cache.extend(build_cache(doc.data[-1]['fdata'], new_doc.index))
+    for o in objs:
+        get_object(new_doc, o)
     return new_doc
 
 
@@ -688,7 +695,7 @@ def max_num(doc: Doc, rev: int=-1) -> int:
     return len(doc.index[rev]) - 1
 
 
-def concatenate(doc_left: Doc, doc_right: Doc, target_left: bool = True) -> Doc:
+def concat(doc_left: Doc, doc_right: Doc, target_left: bool = True) -> Doc:
     """Add pages from doc_right at the end of doc_left.
 
     target_left arg specifies to which doc incremental update is applied
@@ -757,7 +764,7 @@ def dependencies(doc: Doc, obj: Any) -> set:
 
 
 def keep_pages(doc: Doc, pages) -> Doc:
-    """Keep one (an int) or more (an array of int) pages and remove the others."""
+    """Keep one (an int) or more (a set of int) pages and remove the others."""
     n = number_pages(doc)
     if type(pages) != set:
         pages = {pages}
@@ -767,7 +774,7 @@ def keep_pages(doc: Doc, pages) -> Doc:
 
 
 def remove_pages(doc: Doc, del_pages) -> Doc:
-    """Remove one (an int) or more (an array of int) pages."""
+    """Remove one (an int) or more (a set of int) pages."""
     new_doc = copy_doc(doc, revision='SAME')
     if type(del_pages) != set:
         del_pages = {del_pages}
@@ -825,8 +832,10 @@ def defragment_map(current_index: list, excluded={}) -> tuple:
             new_o['o_ver'] = 0
             new_o['doc_ver'] = 0
             new_o['OLD_REF'] = old_ref
-            del new_o['abs_pos']
-            del new_o['abs_next']
+            if 'abs_pos' in new_o:
+                del new_o['abs_pos']
+            if 'abs_next' in new_o:
+                del new_o['abs_next']
             new_index.append(new_o)
             new_ref = complex(0, nb) 
             if old_ref != new_ref:
