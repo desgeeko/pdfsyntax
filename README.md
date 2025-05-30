@@ -32,7 +32,7 @@ You can install from PyPI:
 
 ## CLI overview
 
-Please refer to the [CLI README](cli.md) for details.
+Please refer to the [CLI README](docs/cli.md) for details.
 
 The general form of the CLI usage is:
 
@@ -51,7 +51,7 @@ You can get quick insights on a PDF file with these commands:
 
 ## API overview
 
-Please refer to the [API README](api.md) for details.
+Please refer to the [API README](docs/api.md) for details.
 
 PDFSyntax is mostly made of simple functions. Example:
 
@@ -100,7 +100,7 @@ You then can write the modified PDF to disk. Note that the resulting file contai
 
 ## Open-Source, not Open-Contribution yet
 
-PDFSyntax is [MIT licensed](https://github.com/desgeeko/pdfsyntax/blob/main/LICENCE) but is currently closed to contributions.
+PDFSyntax is [MIT licensed](LICENCE) but is currently closed to contributions.
 > Personal note: this is a pet projet of mine and my time is limited. First I need to focus on my roadmap (new features and refactoring) and then I will happily accept contributions when everything is a little more stabilised. 
 
 
