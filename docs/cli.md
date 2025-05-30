@@ -22,7 +22,7 @@ The output shows information about:
 
 ### `disasm`
 The output shows a terse and greppable view of the file internal structure.
-Please refer to the [Disassembler article](https://github.com/desgeeko/pdfsyntax/blob/main/docs/disassembler.md) for details.
+Please refer to the [Disassembler article](disassembler.md) for details.
 
 ### `text`
 The output shows a full extract of the text content, with a spatial awareness: the algorithm *tries* to respect the original layout, as if characters of all sizes were approximately rendered on a fixed-size grid.
@@ -41,7 +41,7 @@ Redirect the standard output to a file that you can open in your browser:
 
     pdfsyntax browse file.pdf > inspection_file.html
 
-Please refer to the [Browse article](https://github.com/desgeeko/pdfsyntax/blob/main/docs/browse.md) for details.
+Please refer to the [Browse article](browse.md) for details.
 
 
 > TO BE CONTINUED

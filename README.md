@@ -32,7 +32,7 @@ You can install from PyPI:
 
 ## CLI overview
 
-Please refer to the [CLI README](https://github.com/desgeeko/pdfsyntax/blob/main/docs/cli.md) for details.
+Please refer to the [CLI README](cli.md) for details.
 
 The general form of the CLI usage is:
 
@@ -51,7 +51,7 @@ You can get quick insights on a PDF file with these commands:
 
 ## API overview
 
-Please refer to the [API README](https://github.com/desgeeko/pdfsyntax/blob/main/docs/api.md) for details.
+Please refer to the [API README](api.md) for details.
 
 PDFSyntax is mostly made of simple functions. Example:
 

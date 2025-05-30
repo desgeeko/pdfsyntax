@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="pdfsyntax.css">
+    <title>PDFSyntax</title>
+</head>
+<body>
+<header>
+<a href="https://pdfsyntax.dev"><img src="logo.svg" width="50"/></a>
+</header>
+<main>
+<h2>Low-level API</h2>
+<p></p>
+<h3>Objects</h3>
+<p><code>trailer</code> and <code>catalog</code> give access to the starting point of the object tree. </p>
+<pre>&gt;&gt;&gt; #Access to document trailer
+&gt;&gt;&gt; doc.trailer()
+{'/Root': 1j, '/Size': 8, '/Prev': 603}
+
+&gt;&gt;&gt; #Access to document catalog as specified in the /Root entry of the trailer
+&gt;&gt;&gt; doc.catalog()
+{'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
+</pre>
+<p><code>1j</code> is a complex number (!) representing indirect reference <code>1 0 R</code>. Why? Because the approach is to map PDF object types to Python basic built-in types as much as possible, and it is a concise way to show both the object number (as the imaginary part) and the generation number (as the real part). Moreover the generation is very often equal to zero, so the real part is not shown.You may think of the <code>j</code> as a "jump" to another object :)</p>
+<p><code>get_object</code> gives direct access to indirect objects.</p>
+<pre>&gt;&gt;&gt; #Access to document catalog, given that the trailer redirects to 1j for root
+&gt;&gt;&gt; #(equivalent to catalog fonction)
+&gt;&gt;&gt; doc.get_object(1j)
+{'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
+</pre>
+<p></p>
+<h3>Pages</h3>
+<p>Page index is a tree structure where attributes can be inherited from parent nodes. For convenience <code>flat_page_tree</code> returns an ordered list of document pages and specifies inherited attributes that should apply to each page.</p>
+<pre>&gt;&gt;&gt; #Each item of the list is a tuple with the page object reference and its inherited attributes
+&gt;&gt;&gt; doc = pdf.readfile("samples/simple_text_string.pdf")
+&gt;&gt;&gt; pdf.flat_page_tree(doc)
+[(4j, {})]
+&gt;&gt;&gt; #(In this example, nothing is inherited from upper nodes)
+</pre>
+<p>The <code>page</code> function goes further by merging inherited attributes with local attributes of each page and giving the result in a list.</p>
+<pre>&gt;&gt;&gt; #Equivalent list with computed page attribues
+&gt;&gt;&gt; pdf.pages(doc)
+[{'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j},
+  '/Contents': 5j,
+  '/MediaBox': [0, 0, 612, 792],
+  '/Parent': 3j,
+  '/Type': '/Page'}]
+</pre>
+<p></p>
+<blockquote><p> TO BE CONTINUED</p>
+</blockquote>
+<p></p>
+
+</main>
+<footer>
+&copy; 2025 <a href="mailto:desgeeko@gmail.com">Martin D.</a> &lt;desgeeko@gmail.com&gt;
+</footer>
+</body>
+</html>

@@ -12,10 +12,12 @@
 </header>
 <main>
 <h2>API</h2>
-<p></p>
-<h3>Principles </h3>
-<p></p>
-<h4>Pure functions</h4>
+<p>This article introduces the principles.</p>
+<p>Quick access to specific articles:</p>
+<ul><li><a href='api_high.html'>High-level API</a></li>
+<li><a href='api_low.html'>Low-level API</a> </li>
+</ul>
+<h3>Pure functions</h3>
 <p>Most functions are pure and are exposed both as basic functions and as instance methods of a Doc object: in the function signatures found in the following sections, a <code>doc</code> first argument can read as <code>self</code>. For example both samples are equivalent:</p>
 <pre>&gt;&gt;&gt; #Function pattern
 &gt;&gt;&gt; from pdfsyntax import readfile, metadata
@@ -29,7 +31,7 @@
 &gt;&gt;&gt; m = doc.metadata()
 </pre>
 <p>Every time a function is applied to a Doc object, the function returns a new object built as a shallow copy of the input.</p>
-<h4>Incremental updates</h4>
+<h3>Incremental updates</h3>
 <p>PDFSyntax tracks document incremental updates made possible by appending new or updated objects at the end of an original PDF file (and the matching XREF section). A revision, if greater than 0, indicates that incremental updates have been appended.By default, a newly opened document by PDFSyntax is ready to write modifications in the next revision.The <code>rewind</code> function rolls back to the previous revision. The <code>commit</code> function closes the current revision and open the next one.</p>
 <p>For example this file contains 2 revisions (0 and 1) and PDFSyntax has initialized the doc object to open revision 2:</p>
 <pre>&gt;&gt;&gt; import pdfsyntax as pdf
@@ -50,7 +52,7 @@
 &lt;PDF Doc in revision 1 with 0 modified object(s)&gt;
 </pre>
 <p></p>
-<h4>Squashing</h4>
+<h3>Squashing</h3>
 <p>By default incremental updates stack up but it is possible to <code>squash</code> a document in order to combine all revisions into a single one. in this example the last document is equivalent to the first one (same appearance), but it is only made of one revision. As this revision is like a document started from scratch, its revision is 0 and all its 7 internal objects look like new ones:</p>
 <pre>&gt;&gt;&gt; doc90 = pdf.rotate(doc)
 &gt;&gt;&gt; doc90
@@ -60,93 +62,12 @@
 &lt;PDF Doc in revision 0 with 7 modified object(s)&gt;
 </pre>
 <p></p>
-<h4>File I/O</h4>
-<p>The <code>writefile</code> function dumps the document with all the incremental updates appended at the end of the original data. </p>
+<h3>File I/O</h3>
+<p>The <code>writefile</code> function dumps the document with all the incremental updates appended at the end of the original data.</p>
 <pre>&gt;&gt;&gt; from pdfsyntax import readfile, writefile
 &gt;&gt;&gt; doc = readfile("samples/simple_text_string.pdf")
 &gt;&gt;&gt; doc90 = pdf.rotate(doc)
 &gt;&gt;&gt; writefile(doc90, "rotated_doc.pdf")
-</pre>
-<p></p>
-<h3>File information</h3>
-<p><code>structure</code> and <code>metadata</code> are functions showing general information about the document.</p>
-<pre>&gt;&gt;&gt; #File structure
-&gt;&gt;&gt; structure(doc)
-{'Version': '1.4', 'Pages': 1, 'Revisions': 1, 'Encrypted': False, 'Paper of 1st page': '215x279mm or 8.5x11.0in (US Letter)'}
-
-&gt;&gt;&gt; #File metadata
-&gt;&gt;&gt; metadata(doc)
-{'Title': None, 'Author': None, 'Subject': None, 'Keywords': None, 'Creator': None, 'Producer': None, 'CreationDate': None, 'ModDate': None}
-</pre>
-<p></p>
-<h3>High-level transformation</h3>
-<p><code>rotate</code> turns pages relatively to their current position by multiples of 90 degrees clockwise. NB: It takes into account the inherited attributes from the page hierarchy.</p>
-<pre>&gt;&gt;&gt; #Default rotation applies 90 degrees to all pages
-&gt;&gt;&gt; doc90 = rotate(doc)
-
-&gt;&gt;&gt; #Apply 180 degrees to first two page
-&gt;&gt;&gt; doc180 = doc.rotate(180, [0, 1])
-</pre>
-<p><em>WARNING</em>: To REMOVE something means it still exists but it is hidden.</p>
-<p><code>remove_pages</code> cuts a set of pages from the document as incremental update: they are not permanently deleted because it is still possible to revert to the previous revision.</p>
-<pre>&gt;&gt;&gt; #Remove first 3 pages of a 6-page doc
-&gt;&gt;&gt; second_half_doc = pdf.remove_pages(doc, {0, 1, 2})
-</pre>
-<p><code>keep_pages</code> does the opposite:</p>
-<pre>&gt;&gt;&gt; #Keep last 3 pages of a 6-page doc
-&gt;&gt;&gt; second_half_doc = pdf.keep_pages(doc, {3, 4, 5})
-</pre>
-<p><code>concat</code> merges documents:</p>
-<pre>&gt;&gt;&gt; #Concatenate doc2 pages after doc1 pages into a new doc
-&gt;&gt;&gt; doc = pdf.concat(doc1, doc2)
-</pre>
-<p>A Doc object can also be seen as a partial implementation of a list of pages. It is possible to use operators to slice or concatenate:</p>
-<pre>&gt;&gt;&gt; #Equivalent to pdf.keep_pages(doc, {3, 4, 5})
-&gt;&gt;&gt; last_3_pages = doc[3:]
-
-&gt;&gt;&gt; #Equivalent to pdf.concat(doc1, doc2)
-&gt;&gt;&gt; doc = doc1 + doc2
-</pre>
-<p><code>add_text_annotation</code> inserts a simple text annotation in a page.</p>
-<pre>&gt;&gt;&gt; annotated_doc = add_text_annotation(doc, 0, "abcdefg", [100, 100, 100, 100])
-</pre>
-<p></p>
-<h3>Low-level access and modification</h3>
-<p></p>
-<h4>Objects</h4>
-<p><code>trailer</code> and <code>catalog</code> give access to the starting point of the object tree. </p>
-<pre>&gt;&gt;&gt; #Access to document trailer
-&gt;&gt;&gt; doc.trailer()
-{'/Root': 1j, '/Size': 8, '/Prev': 603}
-
-&gt;&gt;&gt; #Access to document catalog as specified in the /Root entry of the trailer
-&gt;&gt;&gt; doc.catalog()
-{'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
-</pre>
-<p><code>1j</code> is a complex number (!) representing indirect reference <code>1 0 R</code>. Why? Because the approach is to map PDF object types to Python basic built-in types as much as possible, and it is a concise way to show both the object number (as the imaginary part) and the generation number (as the real part). Moreover the generation is very often equal to zero, so the real part is not shown.You may think of the <code>j</code> as a "jump" to another object :)</p>
-<p><code>get_object</code> gives direct access to indirect objects.</p>
-<pre>&gt;&gt;&gt; #Access to document catalog, given that the trailer redirects to 1j for root
-&gt;&gt;&gt; #(equivalent to catalog fonction)
-&gt;&gt;&gt; doc.get_object(1j)
-{'/Pages': 3j, '/Outlines': 2j, '/Type': '/Catalog'}
-</pre>
-<p></p>
-<h4>Pages</h4>
-<p>Page index is a tree structure where attributes can be inherited from parent nodes. For convenience <code>flat_page_tree</code> returns an ordered list of document pages and specifies inherited attributes that should apply to each page.</p>
-<pre>&gt;&gt;&gt; #Each item of the list is a tuple with the page object reference and its inherited attributes
-&gt;&gt;&gt; doc = pdf.readfile("samples/simple_text_string.pdf")
-&gt;&gt;&gt; pdf.flat_page_tree(doc)
-[(4j, {})]
-&gt;&gt;&gt; #(In this example, nothing is inherited from upper nodes)
-</pre>
-<p>The <code>page</code> function goes further by merging inherited attributes with local attributes of each page and giving the result in a list.</p>
-<pre>&gt;&gt;&gt; #Equivalent list with computed page attribues
-&gt;&gt;&gt; pdf.pages(doc)
-[{'/Resources': {'/Font': {'/F1': 7j}, '/ProcSet': 6j},
-  '/Contents': 5j,
-  '/MediaBox': [0, 0, 612, 792],
-  '/Parent': 3j,
-  '/Type': '/Page'}]
 </pre>
 <p></p>
 <blockquote><p> TO BE CONTINUED</p>

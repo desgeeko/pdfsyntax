@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="pdfsyntax.css">
+    <title>PDFSyntax</title>
+</head>
+<body>
+<header>
+<a href="https://pdfsyntax.dev"><img src="logo.svg" width="50"/></a>
+</header>
+<main>
+<h2>High-level API</h2>
+<p></p>
+<h3>File information</h3>
+<p><code>structure</code> and <code>metadata</code> are functions showing general information about the document.</p>
+<pre>&gt;&gt;&gt; #File structure
+&gt;&gt;&gt; structure(doc)
+{'Version': '1.4', 'Pages': 1, 'Revisions': 1, 'Encrypted': False, 'Paper of 1st page': '215x279mm or 8.5x11.0in (US Letter)'}
+
+&gt;&gt;&gt; #File metadata
+&gt;&gt;&gt; metadata(doc)
+{'Title': None, 'Author': None, 'Subject': None, 'Keywords': None, 'Creator': None, 'Producer': None, 'CreationDate': None, 'ModDate': None}
+</pre>
+<p></p>
+<h3>Basic text extraction</h3>
+<p>The function outputs a full extract of the text content, with a spatial awareness: the algorithm tries to respect the original layout, as if characters of all sizes were approximately rendered on a fixed-size grid.</p>
+<pre>&gt;&gt;&gt; #Extracting text of first page
+&gt;&gt;&gt; text = pdf.extract_page_text(doc, 0)
+&gt;&gt;&gt; print(text)
+Hello World
+</pre>
+<p></p>
+<h3>High-level transformation</h3>
+<p><code>rotate</code> turns pages relatively to their current position by multiples of 90 degrees clockwise. NB: It takes into account the inherited attributes from the page hierarchy.</p>
+<pre>&gt;&gt;&gt; #Default rotation applies 90 degrees to all pages
+&gt;&gt;&gt; doc90 = rotate(doc)
+
+&gt;&gt;&gt; #Apply 180 degrees to first two page
+&gt;&gt;&gt; doc180 = doc.rotate(180, [0, 1])
+</pre>
+<p><em>WARNING</em>: To REMOVE something means it still exists but it is hidden.</p>
+<p><code>remove_pages</code> cuts a set of pages from the document as incremental update: they are not permanently deleted because it is still possible to revert to the previous revision.</p>
+<pre>&gt;&gt;&gt; #Remove first 3 pages of a 6-page doc
+&gt;&gt;&gt; second_half_doc = pdf.remove_pages(doc, {0, 1, 2})
+</pre>
+<p><code>keep_pages</code> does the opposite:</p>
+<pre>&gt;&gt;&gt; #Keep last 3 pages of a 6-page doc
+&gt;&gt;&gt; second_half_doc = pdf.keep_pages(doc, {3, 4, 5})
+</pre>
+<p><code>concat</code> merges documents:</p>
+<pre>&gt;&gt;&gt; #Concatenate doc2 pages after doc1 pages into a new doc
+&gt;&gt;&gt; doc = pdf.concat(doc1, doc2)
+</pre>
+<p>A Doc object can also be seen as a virtual list of pages. It is possible to use operators to slice or concatenate:</p>
+<pre>&gt;&gt;&gt; #Equivalent to pdf.keep_pages(doc, {3, 4, 5})
+&gt;&gt;&gt; last_3_pages = doc[3:]
+
+&gt;&gt;&gt; #Equivalent to pdf.concat(doc1, doc2)
+&gt;&gt;&gt; doc = doc1 + doc2
+</pre>
+<p><code>add_text_annotation</code> inserts a simple text annotation in a page.</p>
+<pre>&gt;&gt;&gt; annotated_doc = add_text_annotation(doc, 0, "abcdefg", [100, 100, 100, 100])
+</pre>
+<p></p>
+<blockquote><p> TO BE CONTINUED</p>
+</blockquote>
+<p></p>
+
+</main>
+<footer>
+&copy; 2025 <a href="mailto:desgeeko@gmail.com">Martin D.</a> &lt;desgeeko@gmail.com&gt;
+</footer>
+</body>
+</html>

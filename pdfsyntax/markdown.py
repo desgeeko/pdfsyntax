@@ -43,7 +43,10 @@ def link(string: str) -> str:
         else:
             j = p2
             res += string[i:b1-1]
-            res += f"<a href='{string[p1:p2-1]}'>{string[b1:b2]}</a>"
+            l = string[p1:p2-1]
+            if l[-3:] == '.md':
+                l = l[:-3] + '.html'
+            res += f"<a href='{l}'>{string[b1:b2]}</a>"
         i = p2
     res += string[j:]
     return res
