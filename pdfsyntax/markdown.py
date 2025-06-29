@@ -298,3 +298,88 @@ def render_html(md: str):
     return html
 
 
+def tokenize(md: str) -> list:
+    """."""
+    res = []
+    i = 0
+    last_nl = 0
+    before_nl = 0
+    tok = ''
+    UNDER2FRONT = {'=': '#', '-': '##'}
+    while i < len(md):
+        c = md[i]
+        if c in '\n[]()>.*_':
+            if c == '\n':
+                before_nl = last_nl
+                last_nl = len(res) - 1
+            if tok:
+                if tok == '=' * len(tok) or tok == '-' * len(tok):
+                    res.insert(before_nl+1, UNDER2FRONT[tok[0]])
+                    tok = ''
+                else:
+                    res.append(tok)
+                    tok = ''
+            if res and res[-1][-1] in '*_' and c in '*_':
+                res[-1] = res[-1] + c
+            else:
+                res.append(c)
+        elif tok and tok[-1] in '#-' and tok[0] in '#-' and c not in '#-':
+            res.append(tok)
+            tok = c
+        else:
+            tok += c
+        i += 1
+    return res
+
+
+def name_tokens(toks: list) -> list:
+    """."""
+    res = []
+    i = 0
+    while i < len(toks):
+        if i > 0 and toks[i] == '\n' and toks[i-1] == '\n':
+            res.append('%0')
+        elif i == 0 and toks[i] == '\n':
+            res.append('%0')
+        elif toks[i][0] == '#' and toks[i-1] == '\n':
+            if toks[i] == '#' * len(toks[i]):
+                res.append(f'%h{len(toks[i])}')
+            else:
+                res.append(toks[i])
+        elif toks[i] in '*-' and toks[i-1] == '\n':
+            res.append('%ul')
+        else:
+            res.append(toks[i])
+        i += 1
+    return res
+
+
+def emit_html(toks: list, start = 0, context = ''):
+    """."""
+    res = ''
+    i = start
+    while i < len(toks):
+        #print(f"{i} {context} {toks[i]}")
+        if context == 'para':
+            if toks[i] == '%0':
+                return i+1, res
+            elif len(toks[i]) == 3 and toks[i][:2] == '%h':
+                return i, res
+            else:
+                res += f'{toks[i]}'
+                i += 1
+        elif context[:2] == '%h':
+            if toks[i] == '\n':
+                return i, res
+            else:
+                res += f'{toks[i]}'
+                i += 1
+        elif len(toks[i]) == 3 and toks[i][:2] == '%h':
+            h = toks[i][1:]
+            i, r = emit_html(toks, i+1, toks[i])
+            res += f'<{h}>{r}</{h}>'
+        else:
+            i, r = emit_html(toks, i, 'para')
+            res += f'<p>{r}</p>'
+    return i, res
+
