@@ -300,7 +300,7 @@ def render_html(md: str):
 
 def tokenize(md: str) -> list:
     """."""
-    res = []
+    res = ['\n']
     i = 0
     last_nl = 0
     before_nl = 0
@@ -308,7 +308,7 @@ def tokenize(md: str) -> list:
     UNDER2FRONT = {'=': '#', '-': '##'}
     while i < len(md):
         c = md[i]
-        if c in '\n[]()>.*_':
+        if c in '\n[]()>*_`':
             if c == '\n':
                 before_nl = last_nl
                 last_nl = len(res) - 1
@@ -332,54 +332,84 @@ def tokenize(md: str) -> list:
     return res
 
 
-def name_tokens(toks: list) -> list:
-    """."""
-    res = []
-    i = 0
-    while i < len(toks):
-        if i > 0 and toks[i] == '\n' and toks[i-1] == '\n':
-            res.append('%0')
-        elif i == 0 and toks[i] == '\n':
-            res.append('%0')
-        elif toks[i][0] == '#' and toks[i-1] == '\n':
-            if toks[i] == '#' * len(toks[i]):
-                res.append(f'%h{len(toks[i])}')
-            else:
-                res.append(toks[i])
-        elif toks[i] in '*-' and toks[i-1] == '\n':
-            res.append('%ul')
-        else:
-            res.append(toks[i])
-        i += 1
-    return res
-
-
 def emit_html(toks: list, start = 0, context = ''):
     """."""
     res = ''
     i = start
     while i < len(toks):
-        #print(f"{i} {context} {toks[i]}")
+        tk = toks[i]
+        if tk == '\n':
+            tk = '\\n'
+        print(f"{i:2} {context:10} {tk}")
         if context == 'para':
-            if toks[i] == '%0':
+            if toks[i-1] == '\n' and toks[i] == '\n':
                 return i+1, res
-            elif len(toks[i]) == 3 and toks[i][:2] == '%h':
+            elif toks[i-1] == '\n' and toks[i] == len(toks[i]) * '#':
                 return i, res
-            else:
-                res += f'{toks[i]}'
-                i += 1
-        elif context[:2] == '%h':
+        elif context == 'blockquote':
+            if i > 0 and toks[i-1] == '\n' and toks[i] != '>':
+                return i, res
+            #if toks[i] == '>':
+            #    toks[i] = ''
+        elif context and context == 'ul':
+            if toks[i-1] == '\n' and toks[i] == '\n':
+                return i, res
+            elif toks[i-1] == '\n' and toks[i][0] not in '*-':
+                return i, res
+        elif context and context == 'li':
             if toks[i] == '\n':
                 return i, res
-            else:
-                res += f'{toks[i]}'
-                i += 1
-        elif len(toks[i]) == 3 and toks[i][:2] == '%h':
-            h = toks[i][1:]
-            i, r = emit_html(toks, i+1, toks[i])
-            res += f'<{h}>{r}</{h}>'
+        elif context and context[0] == 'h':
+            if toks[i] == '\n':
+                return i, res
+        elif context and context == 'code':
+            if toks[i] == '`':
+                return i+1, res
+        elif context and context == 'em':
+            if toks[i] in '*_':
+                return i+1, res
+        elif context and context == 'strong':
+            if toks[i].replace('_', '*') == '**':
+                return i+1, res
+        elif context and context == 'em&strong':
+            if toks[i].replace('_', '*') == '***':
+                return i+1, res
+        if i == 0 and toks[0] == '\n':
+            i += 1
+        elif toks[i-1] == '\n' and toks[i] and toks[i] == len(toks[i]) * '#':
+            hx = f'h{len(toks[i])}'
+            i, r = emit_html(toks, i+1, hx)
+            res += f'<{hx}>{r}</{hx}>'
+        elif toks[i] == '`':
+            i, r = emit_html(toks, i+1, 'code')
+            res += f'<code>{r}</code>'
+        elif toks[i-1] != '\n' and toks[i] in '*_':
+            i, r = emit_html(toks, i+1, 'em')
+            res += f'<em>{r}</em>'
+        elif toks[i-1] != '\n' and toks[i].replace('_', '*') == '**':
+            i, r = emit_html(toks, i+1, 'strong')
+            res += f'<strong>{r}</strong>'
+        elif toks[i-1] != '\n' and toks[i].replace('_', '*') == '***':
+            i, r = emit_html(toks, i+1, 'em&strong')
+            res += f'<em><strong>{r}</strong></em>'
+        elif context == 'ul' and toks[i-1] == '\n' and toks[i] in '*-':
+            i, r = emit_html(toks, i, 'li')
+            res += f'<li>{r}</li>'
+        elif context != 'li' and toks[i-1] == '\n' and toks[i] in '*-':
+            i, r = emit_html(toks, i, 'ul')
+            res += f'<ul>{r}</ul>'
+        elif context != 'blockquote' and toks[i-1] == '\n' and toks[i] == '>':
+            i, r = emit_html(toks, i, 'blockquote')
+            res += f'<blockquote>{r}</blockquote>'
+        elif context:
+            res += f'{toks[i]}'
+            i += 1
         else:
-            i, r = emit_html(toks, i, 'para')
-            res += f'<p>{r}</p>'
+            if toks[i] == '\n':
+                i += 1
+            else:
+                i, r = emit_html(toks, i, 'para')
+                res += f'<p>{r}</p>'
     return i, res
+
 
