@@ -306,62 +306,55 @@ def render_htmlV2(md: str):
 
 
 def tokenize(md: str) -> list:
-    """."""
-    res = ['\n']
-    i = 0
+    """Split input string and transform some tokens to facilitate further processing."""
+    res = ['\n', '\n']
+    i = 2
     last_nl = 0
     before_nl = 0
     tok = ''
     UNDER2FRONT = {'=': '#', '-': '##'}
     while i < len(md):
-        #if res[-1] == '.':
-            #print(i)
-            #print(res)
         c = md[i]
+        #y, z = res[-2], res[-1]
         if c in '\n[]()>*_`-+.':
             if c == '\n':
                 before_nl = last_nl
                 last_nl = len(res) - 1
             if tok and (tok == '=' * len(tok) or tok == '-' * len(tok)):
+                # Turn setext into atx style heading
                 res.insert(before_nl+1, UNDER2FRONT[tok[0]])
                 tok = ''
             elif len(res) > 1 and res[-2] == '\n' and res[-1] in '>>>>>' and c == '>':
+                # Concatenate gt signs for nested blockquotes
                 res[-1] = res[-1] + c
             elif len(res) > 1 and res[-2] == '\n' and res[-1] in '``' and c == '`':
+                # Concatenate backquotes signs for fenced code
                 res[-1] = res[-1] + c
             elif res[-1][-1] in '*_' and tok == '' and c in '*_':
+                # Concatenate signs for em & strong styles
                 res[-1] = res[-1] + c
-            elif len(res) > 1 and res[-2] == '\n' and res[-1] in '*+-':
-                res[-1] = ''
-                res.append('$$UL')
-                res.append(tok.lstrip())
-                res.append(c)
+            elif len(res) > 1 and res[-2] == '\n' and res[-1] in '-*+':
+                # Normalize sign for ul and add empty space when no indent
+                del res[-1]
+                res += ['', '-*+', tok.lstrip(), c]
                 tok = ''
-            elif len(res) > 2 and res[-3] == '\n' and res[-2] == len(res[-2]) * ' ' and res[-1] in '*+-':
-                #res[-2] = f'$${len(res[-2])}'
-                res[-2] = len(res[-2]) * ' '
-                res[-1] = '$$UL'
-                res.append(tok.lstrip())
-                res.append(c)
+            elif len(res) > 2 and res[-3] == '\n' and res[-2] == len(res[-2]) * ' ' and res[-1] in '-*+':
+                # Normalize sign for ul
+                del res[-1]
+                res += ['-*+', tok.lstrip(), c]
                 tok = ''
-            elif len(res) > 2 and res[-3] == '\n' and res[-2].isdigit() and res[-1] == '.':
-                dgts = res[-2]
-                res[-2] = ''
-                res[-1] = f'$$OL{dgts}'
-                res.append(tok.lstrip())
-                res.append(c)
+            elif len(res) > 2 and res[-1] == '\n' and len(tok) != len(tok.lstrip(' ')) and tok.lstrip(' '):
+                # Isolate spaces
+                t = tok.lstrip(' ')
+                nb_sp = len(tok) - len(t)
+                res += [nb_sp * ' ', t, c]
                 tok = ''
-            elif len(res) > 2 and res[-3] == '\n' and res[-2][0] == ' ' and res[-1] == '.':
-                dgts = res[-2].lstrip()
-                res[-2] = f'$${len(res[-2])-len(dgts)}'
-                res[-1] = '$$OL'
-                res.append(tok.lstrip())
-                res.append(c)
-                tok = ''
-            elif res[-1] == '\n' and len(tok) > 4 and tok[:4] == 4 * ' ':
-                res.append('$$SP4')
-                res.append(tok[4:])
-                res.append('\n')
+            elif len(res) > 2 and res[-3] == '\n' and res[-2].lstrip(' ').isdigit() and res[-1] == '.':
+                # Isolate spaces before ol
+                dgts = res[-2].lstrip(' ')
+                nb_sp = len(res[-2]) - len(dgts)
+                del res[-2:]
+                res += [nb_sp * ' ', f"{dgts}.", tok.lstrip(), c]
                 tok = ''
             else:
                 if tok:
@@ -369,6 +362,7 @@ def tokenize(md: str) -> list:
                     tok = ''
                 res.append(c)
         elif tok and tok[-1] in '#' and tok[0] in '#' and c not in '#':
+            # Concatenate atx style heading
             res.append(tok)
             tok = ''
         else:
@@ -377,124 +371,138 @@ def tokenize(md: str) -> list:
     return res
 
 
-def isXChar(txt: str, char: str):
-    """."""
-    return txt == len(txt) * char
-
-
-def emit_html(toks: list, start = 0, stack = ['']):
+def emit_html(toks: list, start = 2, stack = ['']):
     """."""
     res = ''
     i = start
     while i < len(toks):
         context = stack[-1]
-        tk = toks[i]
-        if tk == '\n':
-            tk = '\\n'
+        x, y, z = toks[i-2], toks[i-1], toks[i]
+        tk = f'\\n' if toks[i] == '\n' else toks[i]
         print(f"{i:2} | {'/'.join(stack):20} | {tk}")
-        if context == 'para':
-            if toks[i-1] == '\n' and toks[i] == '\n':
+        if not context:
+            pass
+        elif context == 'p':
+            if y == '\n' and z == '\n':
                 return i+1, res
-            elif toks[i-1] == '\n' and toks[i] == len(toks[i]) * '#':
+            elif y == '\n' and z == len(toks[i]) * '#':
                 return i, res
-            elif toks[i-1] == '\n' and toks[i] in '>>>>>>' and len(stack) > 1 and stack[-2] in '>>>>>>':
+            elif y == '\n' and z in '>>>>>>' and len(stack) > 1 and stack[-2] in '>>>>>>':
                 return i, res
-        elif context and context in '>>>>>>':
-            if i > 0 and toks[i-1] == '\n' and (toks[i] == context[:-1] or toks[i][0] != '>'):
+        elif context in '>>>>>>':
+            if i > 0 and y == '\n' and (z == context[:-1] or z[0] != '>'):
+               return i+1, res
+        elif context == 'indented':
+            if i > 0 and y == '\n' and z != '    ':
+                return i, res
+        elif context == 'fenced':
+            if i > 0 and y == '\n' and (z == '```' or z == '~~~'):
                 return i+1, res
-        elif context and context == 'indented':
-            if i > 0 and toks[i-1] == '\n' and toks[i] != '$$SP4':
+        elif context[:2] == 'ul':
+            if x == '\n' and y == len(y) * ' ' and z == '-*+' and len(y) < int(context[2:]):
                 return i, res
-        elif context and context == 'fenced':
-            if i > 0 and toks[i-1] == '\n' and (toks[i] == '```' or toks[i] == '~~~'):
+            elif x == '\n' and y == '\n' and z and z[0] != ' ':
+                return i, res
+        elif context[:2] == 'ol':
+            if x == '\n' and y == len(y) * ' ' and z[-1] == '.' and len(y) < int(context[2:]):
+                return i, res
+            elif x == '\n' and y == '\n' and z and z[0] != ' ':
+                return i, res
+        elif context == 'li':
+            if x == '\n' and y == len(y) * ' ' and z == '-*+' and len(y) <= int(stack[-2][2:]):
+                return i, res
+            elif x == '\n' and y == len(y) * ' ' and z[-1] == '.' and len(y) <= int(stack[-2][2:]):
+                return i, res
+            elif x == '\n' and y == '\n' and z and z[0] != ' ':
+                return i, res
+        elif context[0] == 'h':
+            if z == '\n':
+                return i, res
+        elif context == 'code':
+            if z == '`':
                 return i+1, res
-        elif context and context[:2] == 'ul':
-            if toks[i-2] == '\n' and isXChar(toks[i-1], ' ') and toks[i] == '$$UL' and len(toks[i-1]) < int(context[2:]):
-                return i, res
-            elif toks[i-2] == '\n' and toks[i-1] == '\n' and toks[i] and toks[i][0] != ' ':
-                return i, res
-        elif context and context == 'li':
-            if toks[i-2] == '\n' and isXChar(toks[i-1], ' ') and toks[i] == '$$UL' and len(toks[i-1]) <= int(stack[-2][2:]):
-                return i, res
-            elif toks[i-2] == '\n' and toks[i-2] == '\n' and toks[i] and toks[i][0] != ' ':
-                return i, res
-        elif context and context[0] == 'h':
-            if toks[i] == '\n':
-                return i, res
-        elif context and context == 'code':
-            if toks[i] == '`':
+        elif context == 'link_text':
+            if z == ']':
                 return i+1, res
-        elif context and context == 'em':
-            if toks[i] in '*_':
+        elif context == 'link_url':
+            if z == ')':
                 return i+1, res
-        elif context and context == 'strong':
-            if toks[i].replace('_', '*') == '**':
+        elif context == 'em':
+            if z in '*_':
                 return i+1, res
-        elif context and context == 'em&strong':
-            if toks[i].replace('_', '*') == '***':
+        elif context == 'strong':
+            if z.replace('_', '*') == '**':
                 return i+1, res
+        elif context == 'em&strong':
+            if z.replace('_', '*') == '***':
+                return i+1, res
+
         if i == 0 and toks[0] == '\n':
             i += 1
-        elif toks[i-1] == '\n' and toks[i] and toks[i] == len(toks[i]) * '#':
-            hx = f'h{len(toks[i])}'
+        elif y == '\n' and z and z == len(z) * '#':
+            hx = f'h{len(z)}'
             i, r = emit_html(toks, i+1, stack + [hx])
             res += f'\n<{hx}>{r}</{hx}>'
-        elif toks[i-1] == '\n' and (toks[i] == '```' or toks[i] == '~~~'):
+        elif y == '\n' and (z == '```' or z == '~~~'):
             if i < len(toks) -1 and toks[i+1] != '\n':
                 i, r = emit_html(toks, i+2, stack + ['fenced'])
             else:
                 i, r = emit_html(toks, i+1, stack + ['fenced'])
             res += f'\n<pre><code>{r}</code></pre>'
-        elif toks[i] == '`':
+        elif z == '[':
+            i, r1 = emit_html(toks, i+1, stack + ['link_text'])
+            i, r2 = emit_html(toks, i+1, stack + ['link_url'])
+            res += f'<a href="{r2}">{r1}</a>'
+        elif z == '`':
             i, r = emit_html(toks, i+1, stack + ['code'])
             res += f'<code>{r}</code>'
-        elif toks[i-1] != '\n' and toks[i] in '*_':
+        elif y != '\n' and z and z in '*_':
             i, r = emit_html(toks, i+1, stack + ['em'])
             res += f'<em>{r}</em>'
-        elif toks[i-1] != '\n' and toks[i].replace('_', '*') == '**':
+        elif y != '\n' and z.replace('_', '*') == '**':
             i, r = emit_html(toks, i+1, stack + ['strong'])
             res += f'<strong>{r}</strong>'
-        elif toks[i-1] != '\n' and toks[i].replace('_', '*') == '***':
+        elif y != '\n' and z.replace('_', '*') == '***':
             i, r = emit_html(toks, i+1, stack + ['em&strong'])
             res += f'<em><strong>{r}</strong></em>'
-        elif context[:2] == 'ul' and toks[i-2] == '\n' and isXChar(toks[i-1], ' ') and toks[i] == '$$UL':
+        elif context[:2] == 'ul' and x == '\n' and y == len(y) * ' ' and z == '-*+':
             i, r = emit_html(toks, i+1, stack + ['li'])
-            res += f'\n<li>{r}</li>'
-        elif context[:2] == 'ol' and toks[i-2] == '\n' and isXChar(toks[i-1], ' ') and toks[i][:4] == '$$OL':
+            res += f'\n<li>{r.rstrip("\n")}</li>'
+        elif context[:2] == 'ol' and x == '\n' and y == len(y) * ' ' and z[-1] == '.':
             i, r = emit_html(toks, i+1, stack + ['li'])
-            res += f'\n<li>{r}</li>'
-        elif toks[i-2] == '\n' and isXChar(toks[i-1], ' ') and toks[i] == '$$UL':
+            res += f'\n<li>{r.rstrip("\n")}</li>'
+        elif x == '\n' and y == len(y) * ' ' and z == '-*+':
             i, r = emit_html(toks, i, stack + [f'ul{len(toks[i-1])}'])
             res += f'\n<ul>{r}\n</ul>'
-        elif toks[i-2] == '\n' and isXChar(toks[i-1], ' ')  and toks[i][:4] == '$$OL':
-            i, r = emit_html(toks, i, stack + [f'ol{len(toks[i-1])}'])
+        elif x == '\n' and y == len(y) * ' '  and z[-1] == '.':
+            i, r = emit_html(toks, i, stack + [f'ol{len(y)}'])
             res += f'\n<ol>{r}\n</ol>'
-        elif context != 'pre&code' and toks[i-1] == '\n' and toks[i] == '%%SP4':
-            i, r = emit_html(toks, i+1, stack + ['indented'])
-            res += f'\n<pre><code>{r}</code></pre>'
-        elif context != '>' and toks[i-1] == '\n' and toks[i] == '>':
+        elif context != '>' and y == '\n' and z == '>':
             if i < len(toks) - 1:
                 toks[i+1] = toks[i+1].lstrip()
             i, r = emit_html(toks, i+1, stack + ['>'])
-            res += f'\n<blockquote>{r}</blockquote>'
-        elif context in '>>>>>' and toks[i-1] == '\n' and toks[i] == context + '>':
+            res += f'\n<blockquote>{r}\n</blockquote>'
+        elif context in '>>>>>' and y == '\n' and z == context + '>':
             if i < len(toks) - 1:
                 toks[i+1] = toks[i+1].lstrip()
             i, r = emit_html(toks, i, stack + [toks[i]])
-            res += f'\n<blockquote>{r}</blockquote>'
-        elif context == 'pre&code' and toks[i-1] == '\n' and toks[i] == '$$SP4':
+            res += f'\n<blockquote>{r}\n</blockquote>'
+        elif context in '>>>>>' and toks[i-1] == '\n' and toks[i] == '    ':
+            i, r = emit_html(toks, i+1, stack + ['indented'])
+            res += f'\n<pre><code>{r}</code></pre>'
+        elif context == 'pre&code' and y == '\n' and z == '    ':
             i += 1
-        elif context and context[:2] not in ['ul', 'ol']:
-            res += toks[i]
+        elif context and context[:2] in ['ul', 'ol'] and z == len(z) * ' ':
             i += 1
-        elif context and context[:2] in ['ul', 'ol'] and isXChar(toks[i], ' '):
+        elif context and context[:2] not in ['ul', 'ol'] and context not in '>>>>>':
+            res += z
             i += 1
         else:
-            if toks[i] == '' or toks[i] == '\n':
+            if z == '' or z == '\n':
                 i += 1
             else:
-                i, r = emit_html(toks, i, stack + ['para'])
-                res += f'\n<p>{r}</p>'
+                i, r = emit_html(toks, i, stack + ['p'])
+                res += f'\n<p>{r.rstrip("\n")}</p>'
     return i, res
 
 
