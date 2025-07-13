@@ -308,14 +308,14 @@ def render_htmlV2(md: str):
 def tokenize(md: str) -> list:
     """Split input string and transform some tokens to facilitate further processing."""
     res = ['\n', '\n']
-    i = 2
+    i = 0
     last_nl = 0
     before_nl = 0
     tok = ''
     UNDER2FRONT = {'=': '#', '-': '##'}
     while i < len(md):
         c = md[i]
-        #y, z = res[-2], res[-1]
+        print(tok)
         if c in '\n[]()>*_`-+.':
             if c == '\n':
                 before_nl = last_nl
@@ -387,16 +387,20 @@ def emit_html(toks: list, start = 2, stack = ['']):
                 return i+1, res
             elif y == '\n' and z == len(toks[i]) * '#':
                 return i, res
-            elif y == '\n' and z in '>>>>>>' and len(stack) > 1 and stack[-2] in '>>>>>>':
+            elif y == '\n' and z[:1] == '>' and len(stack) > 1 and stack[-2] != f'>{len(z)}':
                 return i, res
-        elif context in '>>>>>>':
-            if i > 0 and y == '\n' and (z == context[:-1] or z[0] != '>'):
+            elif y == '\n' and z[:1] != '>' and len(stack) > 1 and stack[-2][:1] == '>':
+                return i, res
+        elif context[:1] == '>':
+            if y == '\n' and z[:1] == '>' and int(context[1:]) > len(z):
+               return i+1, res
+            elif y == '\n' and z[:1] != '>':
                return i+1, res
         elif context == 'indented':
-            if i > 0 and y == '\n' and z != '    ':
+            if y == '\n' and z != '    ':
                 return i, res
         elif context == 'fenced':
-            if i > 0 and y == '\n' and (z == '```' or z == '~~~'):
+            if y == '\n' and (z == '```' or z == '~~~'):
                 return i+1, res
         elif context[:2] == 'ul':
             if x == '\n' and y == len(y) * ' ' and z == '-*+' and len(y) < int(context[2:]):
@@ -477,25 +481,24 @@ def emit_html(toks: list, start = 2, stack = ['']):
         elif x == '\n' and y == len(y) * ' '  and z[-1] == '.':
             i, r = emit_html(toks, i, stack + [f'ol{len(y)}'])
             res += f'\n<ol>{r}\n</ol>'
-        elif context != '>' and y == '\n' and z == '>':
-            if i < len(toks) - 1:
-                toks[i+1] = toks[i+1].lstrip()
-            i, r = emit_html(toks, i+1, stack + ['>'])
+        elif not context and y == '\n' and z == '>':
+            i, r = emit_html(toks, i+1, stack + ['>1'])
             res += f'\n<blockquote>{r}\n</blockquote>'
-        elif context in '>>>>>' and y == '\n' and z == context + '>':
-            if i < len(toks) - 1:
-                toks[i+1] = toks[i+1].lstrip()
-            i, r = emit_html(toks, i, stack + [toks[i]])
+        elif context[:1] == '>' and y == '\n' and z == (int(context[1:])+1) * '>':
+            i, r = emit_html(toks, i, stack + [f'>{len(z)}'])
             res += f'\n<blockquote>{r}\n</blockquote>'
-        elif context in '>>>>>' and toks[i-1] == '\n' and toks[i] == '    ':
+        elif context[:1] == '>' and toks[i-1] == '\n' and toks[i] == '    ':
             i, r = emit_html(toks, i+1, stack + ['indented'])
             res += f'\n<pre><code>{r}</code></pre>'
         elif context == 'pre&code' and y == '\n' and z == '    ':
             i += 1
-        elif context and context[:2] in ['ul', 'ol'] and z == len(z) * ' ':
+        elif context[:2] in ['ul', 'ol'] and z == len(z) * ' ':
             i += 1
-        elif context and context[:2] not in ['ul', 'ol'] and context not in '>>>>>':
-            res += z
+        elif context and context[:1] not in ['u', 'o', '>']:
+            if context == 'p' and len(stack) > 1 and stack[-2][:1] == '>' and z in '>>>>>':
+                pass
+            else:
+                res += z
             i += 1
         else:
             if z == '' or z == '\n':
