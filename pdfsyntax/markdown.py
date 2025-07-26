@@ -307,205 +307,182 @@ def render_htmlV2(md: str):
 
 def tokenize(md: str) -> list:
     """Split input string and transform some tokens to facilitate further processing."""
-    res = ['\n', '\n']
+    res = [[''], ['']]
     i = 0
-    last_nl = 0
-    before_nl = 0
     tok = ''
-    UNDER2FRONT = {'=': '#', '-': '##'}
+    line = []
     while i < len(md):
         c = md[i]
-        print(tok)
-        if c in '\n[]()>*_`-+.':
-            if c == '\n':
-                before_nl = last_nl
-                last_nl = len(res) - 1
-            if tok and (tok == '=' * len(tok) or tok == '-' * len(tok)):
-                # Turn setext into atx style heading
-                res.insert(before_nl+1, UNDER2FRONT[tok[0]])
+        #print(f"{i:2} | {'\\n' if c == '\n' else c} | {tok} | {line}")
+        if c != '#' and not line and tok and tok == len(tok) * '#':
+            # 
+            line.append(tok)
+            tok = '' if c == ' ' else c
+        elif c in '-' and line and line[-1][0] in '-' and line[-1] == len(line[-1]) * '-':
+            # 
+            line[-1] = line[-1] + c
+        elif c == '`' and line and not tok and line[-1] in '``':
+            # Concatenate backquotes signs for fenced code
+            line[-1] = line[-1] + c
+        elif c in '*_' and line and line[-1][-1] in '*_' and tok == '':
+            # Concatenate signs for em & strong styles
+            line[-1] = line[-1] + c
+        elif c in '\n[]()-+.>*_`':
+            if tok:
+                line.append(tok)
                 tok = ''
-            elif len(res) > 1 and res[-2] == '\n' and res[-1] in '>>>>>' and c == '>':
-                # Concatenate gt signs for nested blockquotes
-                res[-1] = res[-1] + c
-            elif len(res) > 1 and res[-2] == '\n' and res[-1] in '``' and c == '`':
-                # Concatenate backquotes signs for fenced code
-                res[-1] = res[-1] + c
-            elif res[-1][-1] in '*_' and tok == '' and c in '*_':
-                # Concatenate signs for em & strong styles
-                res[-1] = res[-1] + c
-            elif len(res) > 1 and res[-2] == '\n' and res[-1] in '-*+':
-                # Normalize sign for ul and add empty space when no indent
-                del res[-1]
-                res += ['', '-*+', tok.lstrip(), c]
-                tok = ''
-            elif len(res) > 2 and res[-3] == '\n' and res[-2] == len(res[-2]) * ' ' and res[-1] in '-*+':
-                # Normalize sign for ul
-                del res[-1]
-                res += ['-*+', tok.lstrip(), c]
-                tok = ''
-            elif len(res) > 2 and res[-1] == '\n' and len(tok) != len(tok.lstrip(' ')) and tok.lstrip(' '):
-                # Isolate spaces
-                t = tok.lstrip(' ')
-                nb_sp = len(tok) - len(t)
-                res += [nb_sp * ' ', t, c]
-                tok = ''
-            elif len(res) > 2 and res[-3] == '\n' and res[-2].lstrip(' ').isdigit() and res[-1] == '.':
-                # Isolate spaces before ol
-                dgts = res[-2].lstrip(' ')
-                nb_sp = len(res[-2]) - len(dgts)
-                del res[-2:]
-                res += [nb_sp * ' ', f"{dgts}.", tok.lstrip(), c]
-                tok = ''
-            else:
-                if tok:
-                    res.append(tok)
-                    tok = ''
-                res.append(c)
-        elif tok and tok[-1] in '#' and tok[0] in '#' and c not in '#':
-            # Concatenate atx style heading
-            res.append(tok)
-            tok = ''
+            line.append(c)
         else:
             tok += c
+
+        if line and line[-1] == '\n':
+            del line[-1]
+            if line and line[-1] == len(line[-1]) * '=':
+                res[-1].insert(0, '#')
+            elif line and line[-1] == len(line[-1]) * '-':
+                res[-1].insert(0, '##')
+            else:
+                if not line:
+                    line = ['']
+                res.append(line)
+            line = []
         i += 1
     return res
 
 
-def emit_html(toks: list, start = 2, stack = ['']):
+def putLineInContext(line: list, stack: list):
+    """."""
+    k = -1
+    j = 0
+    while j < len(line) and k <= len(stack) - 1:
+        if not line[0] and stack and stack[-1][0] in 'pul':
+            k += 1
+            break
+        elif line[j] == '    ' and stack and stack[k+1][0] == 'u':
+            k += 2
+        elif stack and stack[k+1][0] == 'h':
+            k += 1
+            break
+        elif line[j] in '-*+' and stack and k<len(stack)-2 and stack[k+2][0] == 'l':
+            k += 1
+            break
+        elif line[j] == '>' and stack and stack[k+1][0] == '>':
+            k += 1
+        else:
+            break
+        j += 1
+    return (j, k)
+
+
+def detectNewBlock(tok, stack: list):
+    """."""
+    if tok and tok == len(tok) * '#':
+        return f'h{len(tok)}', f'h{len(tok)}', 1
+    elif tok and tok in '>':
+        return '>', 'blockquote', 1
+    elif stack and stack[-1][:2] == 'ul' and tok in '-*+':
+        return 'li', 'li', 1
+    elif (not stack or stack[-1][:2] != 'ul') and tok and tok in '*+-':
+        return f'ul{len("")}', 'ul', 0
+    elif not stack and tok:
+        return 'p', 'p', 0
+    else:
+        return None, None, 0
+
+
+def detectNewOrClosingSpan(tok, stack: list):
+    """."""
+    h = [
+        ('`', 'code', '`'),
+        ('_', 'em',   '_'),
+    ]
+    for opening, element, closing in h:
+        if opening == closing and tok == opening:
+            if element not in stack:
+                return 'opening', element
+            else:
+                return 'closing', element
+        elif tok == opening:
+            return 'opening', element
+        elif tok == closing:
+            return 'closing', element
+    return None, None
+
+
+#######################################################################
+# OLD CODE TO RECYCLE
+#
+#        elif y == '\n' and (z == '```' or z == '~~~'):
+#            if i < len(toks) -1 and toks[i+1] != '\n':
+#                i, r = emit_html(toks, i+2, stack + ['fenced'])
+#            else:
+#                i, r = emit_html(toks, i+1, stack + ['fenced'])
+#            res += f'\n<pre><code>{r}</code></pre>'
+#        elif z == '[':
+#            i, r1 = emit_html(toks, i+1, stack + ['link_text'])
+#            i, r2 = emit_html(toks, i+1, stack + ['link_url'])
+#            res += f'<a href="{r2}">{r1}</a>'
+#        elif y != '\n' and z and z in '*_':
+#            i, r = emit_html(toks, i+1, stack + ['em'])
+#            res += f'<em>{r}</em>'
+#        elif y != '\n' and z.replace('_', '*') == '**':
+#            i, r = emit_html(toks, i+1, stack + ['strong'])
+#            res += f'<strong>{r}</strong>'
+#        elif y != '\n' and z.replace('_', '*') == '***':
+#            i, r = emit_html(toks, i+1, stack + ['em&strong'])
+#            res += f'<em><strong>{r}</strong></em>'
+#        elif stack[-1][:1] == '>' and y == '\n' and z == '    ':
+#            i, r = emit_html(toks, i+1, stack + ['indented'])
+#            res += f'\n<pre><code>{r}</code></pre>'
+########################################################################
+
+
+def html_text(element: str, text: str):
+    """."""
+    res = f'\n<{element}>{text}</{element}>'
+    return res
+
+
+def emit_html(toks: list, lstart = 2, tstart = 0, stack = [], isLineCtx = True):
     """."""
     res = ''
-    i = start
-    while i < len(toks):
-        context = stack[-1]
-        x, y, z = toks[i-2], toks[i-1], toks[i]
-        tk = f'\\n' if toks[i] == '\n' else toks[i]
-        print(f"{i:2} | {'/'.join(stack):20} | {tk}")
-        if not context:
-            pass
-        elif context == 'p':
-            if y == '\n' and z == '\n':
-                return i+1, res
-            elif y == '\n' and z == len(toks[i]) * '#':
-                return i, res
-            elif y == '\n' and z[:1] == '>' and len(stack) > 1 and stack[-2] != f'>{len(z)}':
-                return i, res
-            elif y == '\n' and z[:1] != '>' and len(stack) > 1 and stack[-2][:1] == '>':
-                return i, res
-        elif context[:1] == '>':
-            if y == '\n' and z[:1] == '>' and int(context[1:]) > len(z):
-               return i+1, res
-            elif y == '\n' and z[:1] != '>':
-               return i+1, res
-        elif context == 'indented':
-            if y == '\n' and z != '    ':
-                return i, res
-        elif context == 'fenced':
-            if y == '\n' and (z == '```' or z == '~~~'):
-                return i+1, res
-        elif context[:2] == 'ul':
-            if x == '\n' and y == len(y) * ' ' and z == '-*+' and len(y) < int(context[2:]):
-                return i, res
-            elif x == '\n' and y == '\n' and z and z[0] != ' ':
-                return i, res
-        elif context[:2] == 'ol':
-            if x == '\n' and y == len(y) * ' ' and z[-1] == '.' and len(y) < int(context[2:]):
-                return i, res
-            elif x == '\n' and y == '\n' and z and z[0] != ' ':
-                return i, res
-        elif context == 'li':
-            if x == '\n' and y == len(y) * ' ' and z == '-*+' and len(y) <= int(stack[-2][2:]):
-                return i, res
-            elif x == '\n' and y == len(y) * ' ' and z[-1] == '.' and len(y) <= int(stack[-2][2:]):
-                return i, res
-            elif x == '\n' and y == '\n' and z and z[0] != ' ':
-                return i, res
-        elif context[0] == 'h':
-            if z == '\n':
-                return i, res
-        elif context == 'code':
-            if z == '`':
-                return i+1, res
-        elif context == 'link_text':
-            if z == ']':
-                return i+1, res
-        elif context == 'link_url':
-            if z == ')':
-                return i+1, res
-        elif context == 'em':
-            if z in '*_':
-                return i+1, res
-        elif context == 'strong':
-            if z.replace('_', '*') == '**':
-                return i+1, res
-        elif context == 'em&strong':
-            if z.replace('_', '*') == '***':
-                return i+1, res
+    i = lstart
+    j = tstart
+    while i < len(toks) and j <= len(toks[i]):
+        print(f'{i} {j} | {isLineCtx} | {stack} | {toks[i]}')
+        line = toks[i]
+        if not isLineCtx:
+            j, k = putLineInContext(line, stack)
+            if 0 <= k <= len(stack) - 1:
+                print(f"back! with k={k}")
+                return i, 0, res
 
-        if i == 0 and toks[0] == '\n':
-            i += 1
-        elif y == '\n' and z and z == len(z) * '#':
-            hx = f'h{len(z)}'
-            i, r = emit_html(toks, i+1, stack + [hx])
-            res += f'\n<{hx}>{r}</{hx}>'
-        elif y == '\n' and (z == '```' or z == '~~~'):
-            if i < len(toks) -1 and toks[i+1] != '\n':
-                i, r = emit_html(toks, i+2, stack + ['fenced'])
-            else:
-                i, r = emit_html(toks, i+1, stack + ['fenced'])
-            res += f'\n<pre><code>{r}</code></pre>'
-        elif z == '[':
-            i, r1 = emit_html(toks, i+1, stack + ['link_text'])
-            i, r2 = emit_html(toks, i+1, stack + ['link_url'])
-            res += f'<a href="{r2}">{r1}</a>'
-        elif z == '`':
-            i, r = emit_html(toks, i+1, stack + ['code'])
-            res += f'<code>{r}</code>'
-        elif y != '\n' and z and z in '*_':
-            i, r = emit_html(toks, i+1, stack + ['em'])
-            res += f'<em>{r}</em>'
-        elif y != '\n' and z.replace('_', '*') == '**':
-            i, r = emit_html(toks, i+1, stack + ['strong'])
-            res += f'<strong>{r}</strong>'
-        elif y != '\n' and z.replace('_', '*') == '***':
-            i, r = emit_html(toks, i+1, stack + ['em&strong'])
-            res += f'<em><strong>{r}</strong></em>'
-        elif context[:2] == 'ul' and x == '\n' and y == len(y) * ' ' and z == '-*+':
-            i, r = emit_html(toks, i+1, stack + ['li'])
-            res += f'\n<li>{r.rstrip("\n")}</li>'
-        elif context[:2] == 'ol' and x == '\n' and y == len(y) * ' ' and z[-1] == '.':
-            i, r = emit_html(toks, i+1, stack + ['li'])
-            res += f'\n<li>{r.rstrip("\n")}</li>'
-        elif x == '\n' and y == len(y) * ' ' and z == '-*+':
-            i, r = emit_html(toks, i, stack + [f'ul{len(toks[i-1])}'])
-            res += f'\n<ul>{r}\n</ul>'
-        elif x == '\n' and y == len(y) * ' '  and z[-1] == '.':
-            i, r = emit_html(toks, i, stack + [f'ol{len(y)}'])
-            res += f'\n<ol>{r}\n</ol>'
-        elif not context and y == '\n' and z == '>':
-            i, r = emit_html(toks, i+1, stack + ['>1'])
-            res += f'\n<blockquote>{r}\n</blockquote>'
-        elif context[:1] == '>' and y == '\n' and z == (int(context[1:])+1) * '>':
-            i, r = emit_html(toks, i, stack + [f'>{len(z)}'])
-            res += f'\n<blockquote>{r}\n</blockquote>'
-        elif context[:1] == '>' and toks[i-1] == '\n' and toks[i] == '    ':
-            i, r = emit_html(toks, i+1, stack + ['indented'])
-            res += f'\n<pre><code>{r}</code></pre>'
-        elif context == 'pre&code' and y == '\n' and z == '    ':
-            i += 1
-        elif context[:2] in ['ul', 'ol'] and z == len(z) * ' ':
-            i += 1
-        elif context and context[:1] not in ['u', 'o', '>']:
-            if context == 'p' and len(stack) > 1 and stack[-2][:1] == '>' and z in '>>>>>':
-                pass
-            else:
-                res += z
-            i += 1
+        tok = line[j] if j < len(line) else ''
+        tst = None
+        node, ht, offset = detectNewBlock(tok, stack)
+        if not node:
+            tst = detectNewOrClosingSpan(tok, stack)
+
+        if node:
+            i, j, r = emit_html(toks, i, j+offset, stack + [node])
+            res += html_text(ht, r)
+        elif tst and tst[0] == 'opening':
+            i, j, r = emit_html(toks, i, j+1, stack + [tst[1]])
+            res += html_text(tst[1], r)
+        elif tst and tst[0] == 'closing':
+            return i, j+1, res
+        elif stack:
+            res += tok
+            j += 1
         else:
-            if z == '' or z == '\n':
-                i += 1
-            else:
-                i, r = emit_html(toks, i, stack + ['p'])
-                res += f'\n<p>{r.rstrip("\n")}</p>'
-    return i, res
+            j += 1
+
+        if j >= len(line):
+            i += 1
+            j = 0
+        if j == 0:
+            isLineCtx = False
+    print(f'ret {i} {j}')
+    return i, j, res
 
 
