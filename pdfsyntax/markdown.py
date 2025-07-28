@@ -350,31 +350,34 @@ def tokenize(md: str) -> list:
     return res
 
 
-def putLineInContext(line: list, stack: list):
+def putLineInContext(stack: list, line: list):
     """."""
-    k = -1
     j = 0
-    while j < len(line) and k <= len(stack) - 1:
-        if not line[0] and stack and stack[-1][0] in 'pul':
-            k += 1
-            break
-        elif line[j] == '    ' and stack and stack[k+1][0] == 'u':
-            k += 2
-        elif stack and stack[k+1][0] == 'h':
-            k += 1
-            break
-        elif line[j] in '-*+' and stack and k<len(stack)-2 and stack[k+2][0] == 'l':
-            k += 1
-            break
-        elif line[j] == '>' and stack and stack[k+1][0] == '>':
-            k += 1
+    k = 0
+    while j < len(line) and k < len(stack):
+        if stack[k][0] == 'u':
+            j -= 1
+        elif stack[k] == 'li':
+            if line[j] in '-*+':
+                break
+        elif stack[k] == '>':
+            if line[j] != '>':
+                break
+        elif stack[k][0] == 'h':
+                break
+        elif stack[k][0] == 'p':
+            if line[j] in ['', '#', '##']:
+                break
         else:
             break
         j += 1
-    return (j, k)
+        k += 1
+    bol = 0 if j >= len(line) -1 else j
+    keepers = -1 if k >= len(stack) else k
+    return (bol, keepers)
 
 
-def detectNewBlock(tok, stack: list):
+def detectNewBlock(tok, prev_tok, stack: list):
     """."""
     if tok and tok == len(tok) * '#':
         return f'h{len(tok)}', f'h{len(tok)}', 1
@@ -383,7 +386,7 @@ def detectNewBlock(tok, stack: list):
     elif stack and stack[-1][:2] == 'ul' and tok in '-*+':
         return 'li', 'li', 1
     elif (not stack or stack[-1][:2] != 'ul') and tok and tok in '*+-':
-        return f'ul{len("")}', 'ul', 0
+        return f'ul{len(prev_tok)}', 'ul', 0
     elif not stack and tok:
         return 'p', 'p', 0
     else:
@@ -393,8 +396,9 @@ def detectNewBlock(tok, stack: list):
 def detectNewOrClosingSpan(tok, stack: list):
     """."""
     h = [
-        ('`', 'code', '`'),
-        ('_', 'em',   '_'),
+        ('`',  'code',   '`'),
+        ('_',  'em',     '_'), # or *
+        ('__', 'strong', '__'),# or **
     ]
     for opening, element, closing in h:
         if opening == closing and tok == opening:
@@ -422,15 +426,6 @@ def detectNewOrClosingSpan(tok, stack: list):
 #            i, r1 = emit_html(toks, i+1, stack + ['link_text'])
 #            i, r2 = emit_html(toks, i+1, stack + ['link_url'])
 #            res += f'<a href="{r2}">{r1}</a>'
-#        elif y != '\n' and z and z in '*_':
-#            i, r = emit_html(toks, i+1, stack + ['em'])
-#            res += f'<em>{r}</em>'
-#        elif y != '\n' and z.replace('_', '*') == '**':
-#            i, r = emit_html(toks, i+1, stack + ['strong'])
-#            res += f'<strong>{r}</strong>'
-#        elif y != '\n' and z.replace('_', '*') == '***':
-#            i, r = emit_html(toks, i+1, stack + ['em&strong'])
-#            res += f'<em><strong>{r}</strong></em>'
 #        elif stack[-1][:1] == '>' and y == '\n' and z == '    ':
 #            i, r = emit_html(toks, i+1, stack + ['indented'])
 #            res += f'\n<pre><code>{r}</code></pre>'
@@ -443,31 +438,89 @@ def html_text(element: str, text: str):
     return res
 
 
-def emit_html(toks: list, lstart = 2, tstart = 0, stack = [], isLineCtx = True):
+def emit_html(toks: list, lstart = 2, tstart = 0):
+    """."""
+    accu = ['']
+    stack = []
+    isLineCtx = True
+    i = lstart
+    j = tstart
+    while i < len(toks) and j <= len(toks[i]):
+        print(f'{i} {j} | {isLineCtx:1} | {".".join(stack):15} |  | {toks[i]} ')
+        print(accu[-1])
+        line = toks[i]
+        if not isLineCtx:
+            j, k = putLineInContext(stack, line)
+            if 0 <= k <= len(stack) - 1:
+                j = 0
+                elt = stack.pop()
+                last = accu.pop()
+                accu[-1] += html_text(elt, last)
+                continue
+
+        tok = line[j] if j < len(line) else ''
+        prev_tok = line[j-1] if j > 0 else ''
+        tst = None
+        node, ht, offset = detectNewBlock(tok, prev_tok, stack)
+        if not node:
+            tst = detectNewOrClosingSpan(tok, stack)
+
+        if node:
+            isLineCtx = True
+            j += offset
+            stack += [node]
+            accu += ['']
+        elif tst and tst[0] == 'opening':
+            isLineCtx = True
+            j += 1
+            stack += [tst[1]]
+            accu += ['']
+            continue
+        elif tst and tst[0] == 'closing':
+            j += 1
+            elt = stack.pop()
+            last = accu.pop()
+            accu[-1] += html_text(elt, last)
+            continue
+        elif stack:
+            accu[-1] += tok
+            j += 1
+        else:
+            j += 1
+
+        if j >= len(line):
+            i += 1
+            j = 0
+            isLineCtx = False
+    return i, j, accu[0]
+
+
+def emit_html_recursive(toks: list, lstart = 2, tstart = 0, stack = [], isLineCtx = True):
     """."""
     res = ''
     i = lstart
     j = tstart
     while i < len(toks) and j <= len(toks[i]):
-        print(f'{i} {j} | {isLineCtx} | {stack} | {toks[i]}')
+        print(f'{i} {j} | {isLineCtx:1} | {".".join(stack):15} | {toks[i]} ')
         line = toks[i]
         if not isLineCtx:
-            j, k = putLineInContext(line, stack)
+            j, k = putLineInContext(stack, line)
             if 0 <= k <= len(stack) - 1:
-                print(f"back! with k={k}")
+                #print(f"back! k={k}")
                 return i, 0, res
 
         tok = line[j] if j < len(line) else ''
+        prev_tok = line[j-1] if j > 0 else ''
         tst = None
-        node, ht, offset = detectNewBlock(tok, stack)
+        node, ht, offset = detectNewBlock(tok, prev_tok, stack)
         if not node:
             tst = detectNewOrClosingSpan(tok, stack)
 
         if node:
-            i, j, r = emit_html(toks, i, j+offset, stack + [node])
+            i, j, r = emit_html_recursive(toks, i, j+offset, stack + [node])
             res += html_text(ht, r)
         elif tst and tst[0] == 'opening':
-            i, j, r = emit_html(toks, i, j+1, stack + [tst[1]])
+            i, j, r = emit_html_recursive(toks, i, j+1, stack + [tst[1]])
             res += html_text(tst[1], r)
         elif tst and tst[0] == 'closing':
             return i, j+1, res
@@ -484,5 +537,4 @@ def emit_html(toks: list, lstart = 2, tstart = 0, stack = [], isLineCtx = True):
             isLineCtx = False
     print(f'ret {i} {j}')
     return i, j, res
-
 
