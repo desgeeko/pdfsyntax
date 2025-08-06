@@ -339,12 +339,6 @@ def tokenize(md: str) -> list:
         elif c in '*_' and line and line[-1][-1] in '*_' and tok == '':
             # Concatenate signs for em & strong styles
             line[-1] = line[-1] + c
-        elif c in '![' and check_link_or_image(md, i):
-            if c == '[':
-                t = 'lnk['
-            else:
-                t = 'img['
-                i += 1
             if tok:
                 line.append(tok)
                 tok = ''
@@ -404,9 +398,6 @@ def put_line_in_context(stack: list, line: list, list_indent: int):
             if line[j] != '    ':
                 j -= 1
                 break
-        #elif stack[k] == 'a':
-        #    if line[j-1] == ')':
-        #        break
         elif stack[k][0] == 'p':
             if line[j] in ['', '#', '##']:
                 break
@@ -432,10 +423,6 @@ def detect_new_block(tok, prev_tok, stack: list, list_indent: int):
         return 'indented', 1
     elif tok and tok in '>':
         return 'blockquote', 1
-    #elif tok and tok == 'lnk[' and stack[-1] != 'a':
-    #    return 'a', 0
-    elif tok and tok == 'img[' and stack[-1] != 'img':
-        return 'img', 0
     elif stack and stack[-1][:2] == 'ul' and tok in '-*+':
         return 'li', 1
     elif (not stack or stack[-1][:2] != 'ul') and tok and tok in '*+-':
@@ -446,24 +433,24 @@ def detect_new_block(tok, prev_tok, stack: list, list_indent: int):
         return None, 0
 
 
-def check_link_or_image(md: str, start: int):
-    """."""
-    obj = False
-    url = False
-    i = start
-    if md[start] == '!' and i+1 < len(md) and md[i+1] == '[':
-        i += 1
-    while i < len(md):
-        if md[i] == '\n':
-            return False
-        elif md[i-1:i+1] == '](':
-            obj = True
-        elif md[i] == ')':
-            url = True
-        if obj and url:
-            return True
-        i += 1
-    return False
+#def check_link_or_image(md: str, start: int):
+#    """."""
+#    obj = False
+#    url = False
+#    i = start
+#    if md[start] == '!' and i+1 < len(md) and md[i+1] == '[':
+#        i += 1
+#    while i < len(md):
+#        if md[i] == '\n':
+#            return False
+#        elif md[i-1:i+1] == '](':
+#            obj = True
+#        elif md[i] == ')':
+#            url = True
+#        if obj and url:
+#            return True
+#        i += 1
+#    return False
 
 
 def check_hr(line: list):
@@ -487,8 +474,6 @@ def check_hr(line: list):
         else:
             return False
         i += 1
-    print(char)
-    print(nb)
     if nb > 2:
         return True
     else:
@@ -498,22 +483,23 @@ def check_hr(line: list):
 def detect_new_or_closing_span(tok: str, stack: list):
     """."""
     h = [
-        ('`',  1,  'code',   '`',  1),
-        ('_',  1,  'em',     '_',  1), # or *
-        ('__', 1,  'strong', '__', 1), # or **
-        ('[',  0,  'a',      ')',  1),
-        ('[',  1,  'obj',    ']',  1),
-        ('(',  1,  'url',    ')',  0),
+        ('`',  1,  'code',   '`',  1, None),
+        ('_',  1,  'em',     '_',  1, None), # or *
+        ('__', 1,  'strong', '__', 1, None), # or **
+        ('[',  0,  'a',      ')',  1, None),
+        ('[',  1,  'obj',    ']',  1, ['a']),
+        ('(',  1,  'url',    ')',  0, ['a']),
     ]
     if stack and stack[-1] in ['url'] and tok != ')':
         return None, None, 1
-    for p_o, o_o, element, p_c, o_c in h:
-        if stack and tok == p_o and element == stack[-1]:
-            continue
-        elif stack and tok == p_c and element == stack[-1]:
+    for p_o, o_o, element, p_c, o_c, auths in h:
+        if stack and tok == p_c and element == stack[-1]:
             return 'closing', element, o_c
+        elif stack and tok == p_o and element == stack[-1]:
+            continue
         elif tok == p_o:
-            return 'opening', element, o_o
+            if not auths or (stack and stack[-1] in auths):
+                return 'opening', element, o_o
     return None, None, 1
 
 
@@ -525,8 +511,10 @@ def html_text(element: str, content):
     elif element in ['a', 'img']:
         title = f' title="{content["title"]}"' if 'title' in content else ''
         res = f'<{element} href="{content["url"]}"{title}>{content["obj"]}</a>'
-    else:
+    elif element in ['p']:
         res = f'{isBlock}<{element}>{content[:-1]}</{element}>'
+    else:
+        res = f'{isBlock}<{element}>{content}</{element}>'
     return res
 
 
@@ -534,12 +522,14 @@ def emit_html(toks: list, lstart = 2, tstart = 0):
     """."""
     accu = ['']
     stack = []
+    checkpoints = []
     isLineCtx = True
     i = lstart
     j = tstart
     list_indent = 0
+    skip = False
     while i < len(toks) and j <= len(toks[i]):
-        print(f'{i:2} {j:2} | {isLineCtx:1} | {".".join(stack):20} | {str(accu[-1])[:40].replace('\n','.')} ')
+        #print(f'{i:2} {j:2} | {isLineCtx:1} | {".".join(stack):20} | {str(accu[-1])[:40].replace('\n','.')} ')
         line = toks[i]
         if not isLineCtx:
             j, k = put_line_in_context(stack, line, list_indent)
@@ -549,8 +539,13 @@ def emit_html(toks: list, lstart = 2, tstart = 0):
                 else:
                     j = 0
                 elt = stack.pop()
+                cp = checkpoints.pop()
                 last = accu.pop()
-                accu[-1] += html_text(elt, last)
+                if elt not in ['a', 'obj', 'url']:
+                    accu[-1] += html_text(elt, last)
+                if elt in ['a']:
+                    i, j = cp
+                    skip = True
                 continue
 
         tok = line[j] if j < len(line) else ''
@@ -566,24 +561,22 @@ def emit_html(toks: list, lstart = 2, tstart = 0):
             isLineCtx = True
             j += offset
             stack += [node]
-            #if node in ['a', 'img']:
-            #    accu += [{'url':''}]
-            #else:
-            #    accu += ['']
             accu += ['']
-        elif tst and tst[0] == 'opening':
+            checkpoints += [(i, j)]
+        elif not skip and tst and tst[0] == 'opening':
             #isLineCtx = True
-            j += tst[2]
             stack += [tst[1]]
-            #accu += ['']
+            checkpoints += [(i, j)]
             if tst[1] in ['a', 'img']:
                 accu += [{'url':''}]
             else:
                 accu += ['']
+            j += tst[2]
             continue
-        elif tst and tst[0] == 'closing':
+        elif not skip and tst and tst[0] == 'closing':
             j += tst[2]
             elt = stack.pop()
+            checkpoints.pop()
             last = accu.pop()
             if elt == 'obj':
                 accu[-1][elt] = last
@@ -599,6 +592,8 @@ def emit_html(toks: list, lstart = 2, tstart = 0):
                 accu[-1] += html_text(elt, last)
             continue
         elif stack:
+            skip = False
+            isLineCtx = True
             if stack[-1] not in ['a', 'img']:
                 accu[-1] += tok
                 if j == len(line) - 1:
