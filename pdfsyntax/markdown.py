@@ -298,16 +298,17 @@ def render_html(md: str):
     return html
 
 
-def render_htmlV2(md: str):
+def transform(md: str):
     """Render HTML from markdown string."""
-    t = tokenize(md)
-    _, _, html = emit_html(t)
+    t, _ = tokenize(md)
+    html = render(t)
     return html
 
 
 def tokenize(md: str) -> list:
     """Split input string and transform some tokens to facilitate further processing."""
     res = [[''], ['']]
+    links = {}
     i = 0
     tok = ''
     line = []
@@ -315,6 +316,18 @@ def tokenize(md: str) -> list:
     while i < len(md):
         c = md[i]
         #print(f"#{tok}# @{c}@")
+        if i == 0 or md[i-1] == '\n':
+            link_id, url, title, eolink = check_link_id(md, i)
+            if link_id:
+                links[link_id] = (url, title, eolink)
+                i = eolink
+                continue
+        if i == 0 or md[i-1] == '\n':
+            hr, eolink = check_hr(md, i)
+            if hr:
+                res.append(['<hr />'])
+                i = eolink
+                continue
         if c == '<' or html:
             #
             html = True
@@ -365,11 +378,11 @@ def tokenize(md: str) -> list:
             line = []
         i += 1
     res.append([''])
-    return res
+    return res, links
 
 
 def put_line_in_context(stack: list, line: list, list_indent: int):
-    """."""
+    """Align context stack with current line."""
     j = 0
     k = 0
     list_indent = 4 if not list_indent else list_indent
@@ -414,7 +427,7 @@ def put_line_in_context(stack: list, line: list, list_indent: int):
 
 
 def detect_new_block(tok, prev_tok, stack: list, list_indent: int):
-    """."""
+    """Match patterns for opening blocks."""
     if tok and tok == len(tok) * '#':
         return f'h{len(tok)}', 1
     elif tok and tok == '```' or tok == '~~~':
@@ -427,69 +440,116 @@ def detect_new_block(tok, prev_tok, stack: list, list_indent: int):
         return 'li', 1
     elif (not stack or stack[-1][:2] != 'ul') and tok and tok in '*+-':
         return 'ul', 0
+    elif tok and tok == '<hr />':
+        return 'hr /', 1
     elif not stack and tok:
         return 'p', 0
     else:
         return None, 0
 
 
-#def check_link_or_image(md: str, start: int):
-#    """."""
-#    obj = False
-#    url = False
-#    i = start
-#    if md[start] == '!' and i+1 < len(md) and md[i+1] == '[':
-#        i += 1
-#    while i < len(md):
-#        if md[i] == '\n':
-#            return False
-#        elif md[i-1:i+1] == '](':
-#            obj = True
-#        elif md[i] == ')':
-#            url = True
-#        if obj and url:
-#            return True
-#        i += 1
-#    return False
-
-
-def check_hr(line: list):
-    """."""
-    if not line or not line[0]:
-        return False
-    i = -1
-    char = ''
-    nb = 0
-    while i < len(line) - 1:
-        i += 1
-        x = line[i]
-        if not x or x == len(x) * ' ':
+def str_between_spaces_tabs_nls(md: str, start: int, stop: int):
+    """Skip spaces, tabs, newlines, and return following sequence."""
+    res = ''
+    i = start
+    while i < stop:
+        if not res and md[i] in ' \t\n':
+            i += 1
             continue
-        elif x in ['*', '_', '-']:
-            char = x if not char else char
-            if x != char:
-                return False
-            nb += 1
-            continue
+        if md[i] not in ' \t\n':
+            res += md[i]
         else:
-            return False
+            break
         i += 1
-    if nb > 2:
-        return True
+    return res, i
+
+
+def check_link_id(md: str, start = 0):
+    """Dedicated detection of out-of-band link definition."""
+    url = ''
+    title = ''
+    i = start
+    if md[i] not in ' [':
+        return False, False, False, -1
+    c = md.find('[', i, i+4)
+    if c == -1 or md[i:c] != ' ' * (c - i):
+        return False, False, False, -1
+    i = c + 1
+    c = md.find('\n', i)
+    eol = c if c != -1 else len(md)
+    c = md.find(']', i, eol)
+    if c == -1:
+        return False, False, False, -1
+    link_id = md[i:c]
+    i = c + 1
+    if md[i] != ':':
+        return False, False, False, -1
+    i += 1
+    if md[i] not in ' \t\n':
+        return False, False, False, -1
+    c = md.find('\n', i)
+    c = md.find('\n', c+1)
+    eol = c if c != -1 else len(md)
+    url, i = str_between_spaces_tabs_nls(md, i, eol)
+    if url and url[0] == '<' and url[-1] == '>':
+        url = url[1:-1]
+    c = md.find('\n', i)
+    c = md.find('\n', c+1)
+    eol = c if c != -1 else len(md)
+    title, i = str_between_spaces_tabs_nls(md, i, eol)
+    c = md.find('\n', i)
+    eol = c if c != -1 else len(md)
+    if title and title[0] in '"(' and title[-1] in '")':
+        title = title[1:-1]
+    elif title:
+        return False, False, False, -1
     else:
-        return False
+        pass
+    return (link_id, url, title, eol)
+
+
+def check_hr(md: str, start = 0):
+    """Dedicated detection of horizontal rule."""
+    toks = ''
+    i = start
+    c = md.find('\n', i)
+    eol = c if c != -1 else len(md)
+    while i < eol:
+        if not toks:
+            if md[i] in '*_-':
+                toks = md[i]
+            elif md[i] == ' ':
+                pass
+            else:
+                return False, -1
+            i += 1
+            continue
+        if md[i] != ' ' and md[i] != toks[0]:
+            return False, -1
+        elif md[i] in toks:
+            toks += md[i]
+        elif md[i] == ' ':
+            pass
+        i += 1
+    res = True if len(toks) >= 3 else False
+    c = md.find('\n', i)
+    eol = c if c != -1 else len(md)
+    return res, eol
 
 
 def detect_new_or_closing_span(tok: str, stack: list):
-    """."""
+    """Return matching opening or closing element."""
     h = [
         ('`',  1,  'code',   '`',  1, None),
         ('_',  1,  'em',     '_',  1, None), # or *
         ('__', 1,  'strong', '__', 1, None), # or **
         ('[',  0,  'a',      ')',  1, None),
+        ('[',  0,  'a',      ']',  1, None),
+        ('![', 0, 'img',   ')',  1, None),
         ('[',  1,  'obj',    ']',  1, ['a']),
         ('(',  1,  'url',    ')',  0, ['a']),
     ]
+    #print(tok)
     if stack and stack[-1] in ['url'] and tok != ')':
         return None, None, 1
     for p_o, o_o, element, p_c, o_c, auths in h:
@@ -504,7 +564,7 @@ def detect_new_or_closing_span(tok: str, stack: list):
 
 
 def html_text(element: str, content):
-    """."""
+    """Render html."""
     isBlock = '\n' if element[0] in ['p', 'h', 'b', 'u', 'o'] else ''
     if element in ['fenced', 'indented']:
         res = f'\n<pre><code>{content}</code></pre>'
@@ -512,14 +572,17 @@ def html_text(element: str, content):
         title = f' title="{content["title"]}"' if 'title' in content else ''
         res = f'<{element} href="{content["url"]}"{title}>{content["obj"]}</a>'
     elif element in ['p']:
-        res = f'{isBlock}<{element}>{content[:-1]}</{element}>'
+        #res = f'{isBlock}<{element}>{content[:-1]}</{element}>'
+        res = f'{isBlock}<{element}>{content}</{element}>'
+    elif element in ['hr /']:
+        res = f'{isBlock}<{element}>'
     else:
         res = f'{isBlock}<{element}>{content}</{element}>'
     return res
 
 
-def emit_html(toks: list, lstart = 2, tstart = 0):
-    """."""
+def render(toks: list, lstart = 2, tstart = 0):
+    """Recursively render tokens into a progressively resolving AST."""
     accu = ['']
     stack = []
     checkpoints = []
@@ -529,7 +592,7 @@ def emit_html(toks: list, lstart = 2, tstart = 0):
     list_indent = 0
     skip = False
     while i < len(toks) and j <= len(toks[i]):
-        #print(f'{i:2} {j:2} | {isLineCtx:1} | {".".join(stack):20} | {str(accu[-1])[:40].replace('\n','.')} ')
+        print(f'{i:2} {j:2} | {isLineCtx:1} | {".".join(stack):20} | {str(accu[-1])[:40].replace('\n','.')} ')
         line = toks[i]
         if not isLineCtx:
             j, k = put_line_in_context(stack, line, list_indent)
@@ -596,7 +659,7 @@ def emit_html(toks: list, lstart = 2, tstart = 0):
             isLineCtx = True
             if stack[-1] not in ['a', 'img']:
                 accu[-1] += tok
-                if j == len(line) - 1:
+                if stack[-1] in ['p'] and j == len(line) - 1:
                     accu[-1] += '\n'
             j += 1
         else:
@@ -607,6 +670,6 @@ def emit_html(toks: list, lstart = 2, tstart = 0):
             j = 0
             isLineCtx = False
 
-    return i, j, accu[0]
+    return accu[0]
 
 
