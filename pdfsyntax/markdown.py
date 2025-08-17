@@ -381,6 +381,113 @@ def tokenize(md: str) -> list:
     return res, links
 
 
+def tokenize_new(md: str, start: int = 0) -> list:
+    """."""
+    res = []
+    i = start
+    l = start
+    seq = ''
+    stack = [('root', [], i)] #node, accu, checkpoints
+    node, accu, _ = stack[0]
+    in_context = False
+    tok = l
+    wspc = 0
+    while i < len(md):
+        node, accu, _ = stack[-1]
+        if i > 0 and md[i-1] == '\n':
+            l = i
+            tok = l
+            in_context = True if len(stack) > 1 else False
+            node_cursor = 1
+
+        ###
+        c = md[i] if md[i] != '\n' else '\\n'
+        path = '.'.join([x[0] for x in stack])
+        t = md[tok:i] if i != tok else f"{tok}:..."
+        t = t if t != '\n' else '\\n'
+        print(f'{l:2} {i:2} | {in_context:1} | {c:2} | {path:20} | {tok:2} | {len(seq):2} | {t:10} ')
+        ###
+
+        if in_context:
+            broken = False
+            #if md[tok] in ' \t' and md[i] in ' \t':
+            #    seq = ' '
+
+            node = stack[node_cursor][0]
+
+            if node == 'p':
+                if md[i] == '\n' or (seq  == ' ' and md[i] != ' ' and i-tok >= 4):
+                    broken = True
+            if node == 'blockquote':
+                if md[i] == '\n':
+                    broken = True
+            elif node == 'h1':
+                    broken = True
+
+            if broken:
+                stack.pop()
+                stack[-1][1].append(html_text_new(node, accu))
+                in_context = False
+
+        else:
+
+            if md[i] == '\n' and stack[-1][0] != 'root':
+                stack[-1][1].append(md[tok:i+1])
+                tok = i+1
+
+            skip = True
+            if md[i] == ' ':
+                wspc += 1
+            elif md[i] == '\t':
+                wspc += 4
+            elif md[i] == '#':
+                seq = '#'
+            else:
+                skip = False
+            if skip:
+                i += 1
+                continue
+
+            if wspc >= 4:
+                node = 'indented'
+                stack.append((node, [], i))
+                seq = ''
+            elif seq  == '#' and wspc == 1:
+                node = 'h1'
+                stack.append((node, [], i))
+                seq = ''
+            elif md[i] == '>':
+                node = 'blockquote'
+                stack.append((node, [], i))
+                seq = ''
+            elif not seq and md[i] != '\n' and stack[-1][0] == 'root':
+                node = 'p'
+                stack.append((node, [], i))
+
+            i += 1
+    print(stack[0][1])
+    return res
+
+
+def html_text_new(element: str, content):
+    """Prepare html."""
+    isBlock = '\n' if element[0] in ['p', 'h', 'b', 'u', 'o'] else ''
+    if element in ['fenced', 'indented']:
+        #res = f'\n<pre><code>{content}</code></pre>'
+        content.insert(0, f'\n<pre><code>')
+        content.append(f'</code></pre>')
+    #elif element in ['a', 'img']:
+    #    title = f' title="{content["title"]}"' if 'title' in content else ''
+    #    res = f'<{element} href="{content["url"]}"{title}>{content["obj"]}</{element}>'
+    #elif element in ['hr /']:
+    #    res = f'{isBlock}<{element}>'
+    else:
+        #res = f'{isBlock}<{element}>{content}</{element}>'
+        content.insert(0, f'{isBlock}<{element}>')
+        content.append(f'</{element}>')
+    return content
+
+
 def put_line_in_context(stack: list, line: list, list_indent: int):
     """Align context stack with current line."""
     j = 0
@@ -428,7 +535,9 @@ def put_line_in_context(stack: list, line: list, list_indent: int):
 
 def detect_new_block(tok, prev_tok, stack: list, list_indent: int):
     """Match patterns for opening blocks."""
-    if tok and tok == len(tok) * '#':
+    if stack and stack[-1] in ['indented', 'fenced', 'code']:
+        return None, 0
+    elif tok and tok == len(tok) * '#':
         return f'h{len(tok)}', 1
     elif tok and tok == '```' or tok == '~~~':
         return 'fenced', 1
@@ -537,29 +646,35 @@ def check_hr(md: str, start = 0):
     return res, eol
 
 
-def detect_new_or_closing_span(tok: str, stack: list):
+def detect_new_or_closing_span(tok: str, stack: list, prev_tok: str):
     """Return matching opening or closing element."""
-    h = [
-        ('`',  1,  'code',   '`',  1, None),
-        ('_',  1,  'em',     '_',  1, None), # or *
-        ('__', 1,  'strong', '__', 1, None), # or **
-        ('[',  0,  'a',      ')',  1, None),
-        ('[',  0,  'a',      ']',  1, None),
-        ('![', 0, 'img',   ')',  1, None),
-        ('[',  1,  'obj',    ']',  1, ['a']),
-        ('(',  1,  'url',    ')',  0, ['a']),
-    ]
-    #print(tok)
+    H = {'`': 'code', '_': 'em', '__': 'strong'}
     if stack and stack[-1] in ['url'] and tok != ')':
         return None, None, 1
-    for p_o, o_o, element, p_c, o_c, auths in h:
-        if stack and tok == p_c and element == stack[-1]:
-            return 'closing', element, o_c
-        elif stack and tok == p_o and element == stack[-1]:
-            continue
-        elif tok == p_o:
-            if not auths or (stack and stack[-1] in auths):
-                return 'opening', element, o_o
+    if tok in H:
+        element = H[tok]
+        if element == stack[-1]:
+            return 'closing', element, 1
+        else:
+            return 'opening', element, 1
+    elif tok == '!':
+            return 'opening', 'img', 1
+    elif tok == '[' and prev_tok == ']':
+            return 'opening', 'link_id', 1
+    elif tok == '[' and stack[-1] in ['a', 'img']:
+            return 'opening', 'obj', 1
+    elif tok == '[' and stack[-1] != 'img':
+            return 'opening', 'a', 0
+    elif tok == ']' and stack[-1] == 'obj':
+            return 'closing', 'obj', 1
+    elif tok == ']' and stack[-1] == 'link_id':
+            return 'closing', 'link_id', 0
+    elif tok == '(' and stack[-1] == 'a':
+            return 'opening', 'url', 1
+    elif tok == ')' and stack[-1] == 'url':
+            return 'closing', 'url', 0
+    elif tok and tok in ')]' and stack[-1] == 'a':
+            return 'closing', 'a', 1
     return None, None, 1
 
 
@@ -570,7 +685,7 @@ def html_text(element: str, content):
         res = f'\n<pre><code>{content}</code></pre>'
     elif element in ['a', 'img']:
         title = f' title="{content["title"]}"' if 'title' in content else ''
-        res = f'<{element} href="{content["url"]}"{title}>{content["obj"]}</a>'
+        res = f'<{element} href="{content["url"]}"{title}>{content["obj"]}</{element}>'
     elif element in ['p']:
         #res = f'{isBlock}<{element}>{content[:-1]}</{element}>'
         res = f'{isBlock}<{element}>{content}</{element}>'
@@ -617,7 +732,7 @@ def render(toks: list, lstart = 2, tstart = 0):
         node, offset = detect_new_block(tok, prev_tok, stack, list_indent)
         list_indent = len(prev_tok) if node == 'li' and not list_indent else list_indent
         if not node:
-            tst = detect_new_or_closing_span(tok, stack)
+            tst = detect_new_or_closing_span(tok, stack, prev_tok)
             #print(f'{tst[0]} {tst[1]} {tst[2]}')
 
         if node:
@@ -651,6 +766,8 @@ def render(toks: list, lstart = 2, tstart = 0):
                     url = url[:-1]
                 accu[-1]['url'] += url
                 j -= 1
+            elif elt == 'link_id':
+                pass
             else:
                 accu[-1] += html_text(elt, last)
             continue
